@@ -20,8 +20,8 @@
     gtag('js', new Date());
     gtag('config', 'G-TTX4WPE230');
   </script> -->
-  <link rel="stylesheet" href="css/bootstrap.min.css">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="{{url('/')}}/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{url('/')}}/css/style.css">
   <script type="script">
     swiperConfig: SwiperOptions = {
       slidesPerView: 1,
@@ -40,12 +40,12 @@
 <body>
   <div class="container main-wrapper">
     <header class='row border-bottom border-info mb-4 pb-3'>
-      <div class="col-lg-4 col-8 pt-3">
+      <div class="col-4 pt-3">
         <a href="/" class="logo">
           <img src="/images/logo.jpg" alt="logo" title="PK Apparel Home" />
         </a>
       </div>
-      <div class='col-lg-8 col-4 mt-4 text-end'>
+      <div class='col-8 mt-4 text-end'>
         <nav class="main-menu mobile">
           <i class="menu-icon" (click)="toggleMenu()">Menu</i>
           <ul *ngIf="mainMenu">

@@ -309,3 +309,7 @@ a { text-decoration: none !important; }
 	width: 100%;
 	height: auto;
 }
+.tagline {
+	background: url('/images/landing-banner.jpg') no-repeat 100%;
+	min-height: 250px;
+}

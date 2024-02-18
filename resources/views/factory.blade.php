@@ -1,4 +1,4 @@
-@include('header')
+@include('shared/header')
 <div class="col-12 page-about">
   <div class="row">
     <div class="col-12 mb-5">
@@ -94,4 +94,4 @@
     </div>
   </div>
 </div>
-@include('footer')
+@include('shared/footer')

@@ -1,4 +1,4 @@
-@include('header')
+@include('shared/header')
 <div class="mb-3">
   <strong class="page-title">Contact Us</strong>
   <div class="contact-wrap row mb-3 pt-5 p-3">
@@ -55,4 +55,4 @@
     </div>
   </div>
 </div>
-@include('footer')
+@include('shared/footer')
