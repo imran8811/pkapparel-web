@@ -54,5 +54,8 @@ Route::get('/wholesale-women-jeans', function () {
     return view('posts/wholesale-women-jeans');
 });
 Route::get('/men/jeans-pants', function () {
-    return view('men/jeans-pants/jeans-pants');
+    return view('components/men/jeans-pants');
+});
+Route::get('/men/jeans-pants/{id}', function () {
+    return view('components/product-details');
 });
