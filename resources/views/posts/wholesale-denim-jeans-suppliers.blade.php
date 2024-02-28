@@ -1,4 +1,15 @@
-@include('shared/header')
+<?php
+$metaData = [
+  "title" => "Wholesale Denim Jeans Suppliers",
+  "keywords" => "Jeans manufacturers, Jeans Pants Manufacturers, Jeans Wholesale",
+  "description" => "Manufacturer and exporter of denim products, jeans pants, jeans jackets, jeans shorts for men, women and kids"
+]
+?>
+<x-header 
+  :title="$metaData['title']"
+  :keywords="$metaData['keywords']"
+  :description="$metaData['description']"
+/>
 @include('shared/tagline')
 @include('shared/rating-reviews')
 @include('shared/faqs')

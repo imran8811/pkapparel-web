@@ -1,4 +1,15 @@
-@include('shared/header')
+<?php
+$metaData = [
+  "title" => "Jeans Manufacturing Cost",
+  "keywords" => "Jeans manufacturers, Jeans Pants Manufacturers, Jeans Wholesale",
+  "description" => "Manufacturer and exporter of denim products, jeans pants, jeans jackets, jeans shorts for men, women and kids"
+]
+?>
+<x-header 
+  :title="$metaData['title']"
+  :keywords="$metaData['keywords']"
+  :description="$metaData['description']"
+/>
 @include('shared/tagline')
 @include('shared/rating-reviews')
 @include('shared/faqs')
@@ -22,4 +33,4 @@
     <p class='mb-4'>It is important to select the kind of wash which can come under your budget. A rinse-washed garment will have a lower cost than a bleached wash with a fashion element involved. Similarly, jeans populated with whiskers, chevrons, back knee whiskers will cost a bit more than jeans that are simply stonewashed. However, Pakistan’s manufacturers are all cooperative. They believe in building relations with their suppliers enough to compensate the cost based on your budget. This, of course, depends on the units as well. If the number of garments is increased then per unit cost decreases, which in turn proves beneficial for your business? At the end of the day, it highly depends on the order quantity for the pricing of jeans. If the quantity is low, then definitely the pricing would be high and vice versa. This factor also has a huge impact on the jeans manufacturing cost in Pakistan.</p>
     <p class='mb-4'>The trims, thread, and accessories play a part in the final cost, as well. Each major brand from overseas nominates a supplier for their desired accessories. These nominated suppliers quote a price that is suitable for both the manufacturer and the brand. Further discussion of the supplier is continued with the manufacturer as they try to complete the order.</p>
   </div>
-@include('shared/footer')
+<x-footer />

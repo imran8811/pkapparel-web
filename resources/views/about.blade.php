@@ -1,4 +1,15 @@
-@include('shared/header')
+<?php
+$metaData = [
+  "title" => "About Us - PK Apparel",
+  "keywords" => "Jeans manufacturers, Jeans Pants Manufacturers, Jeans Wholesale",
+  "description" => "Manufacturer and exporter of denim products, jeans pants, jeans jackets, jeans shorts for men, women and kids"
+]
+?>
+<x-header 
+  :title="$metaData['title']"
+  :keywords="$metaData['keywords']"
+  :description="$metaData['description']"
+/>
 <div class="col-12 page-about">
   <div class="row">
     <div class="col-lg-2"></div>
@@ -43,4 +54,4 @@
     <div class="col-lg-2"></div>
   </div>
 </div>
-@include('shared/footer')
+<x-footer />

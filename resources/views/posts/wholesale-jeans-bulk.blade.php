@@ -1,4 +1,15 @@
-@include('shared/header')
+<?php
+$metaData = [
+  "title" => "Wholesale Jeans Bulk",
+  "keywords" => "Jeans manufacturers, Jeans Pants Manufacturers, Jeans Wholesale",
+  "description" => "Manufacturer and exporter of denim products, jeans pants, jeans jackets, jeans shorts for men, women and kids"
+]
+?>
+<x-header 
+  :title="$metaData['title']"
+  :keywords="$metaData['keywords']"
+  :description="$metaData['description']"
+/>
 @include('shared/tagline')
 @include('shared/rating-reviews')
 @include('shared/faqs')
@@ -14,4 +25,4 @@
   <h5>The power of online sales</h5>
   <p class='mb-3'>Running a wholesale business has its challenges despite the category. However, with online sales gaining traction each day, it has become easier for people to purchase their favorite pair of jeans online. It has also become easier for wholesalers as the best quality of stock is just a click away. Wholesale jeans in bulk are based on months of hard work. Beginning with the initiation of design then its approval, the final products are efficiently manufactured. Each element of the blue jeans is special. When dealing with wholesale jeans in bulk, it is important to understand the challenges that come with the conventional way of business. However, with the power of an online platform, it has become convenient for trade to go smoothly.  The prices and quantity is non-negotiable so only serious clients approach. They are easily filtered out due to the strict rules of an online platform.</p>
 </div>
-@include('shared/footer')
+<x-footer />

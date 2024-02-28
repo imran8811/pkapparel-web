@@ -1,4 +1,15 @@
-@include('shared/header')
+<?php
+$metaData = [
+  "title" => "Jean Manufacturers",
+  "keywords" => "Jeans manufacturers, Jeans Pants Manufacturers, Jeans Wholesale",
+  "description" => "Manufacturer and exporter of denim products, jeans pants, jeans jackets, jeans shorts for men, women and kids"
+]
+?>
+<x-header 
+  :title="$metaData['title']"
+  :keywords="$metaData['keywords']"
+  :description="$metaData['description']"
+/>
 @include('shared/tagline')
 @include('shared/rating-reviews')
 @include('shared/faqs')
@@ -12,4 +23,4 @@
   <p class="mb-3">Distributors of good quality wholesale clothing make sure that not only the fabric used for manufacturing wholesale jeans for women and men is unique premium denim, but the optional accessories such as thread, buttons, and other trims used are also of high quality.</p>
   <p class="mb-3">So, if you are looking for a high-quality denim jeans distributor and provider, Pk apparel makes sure that your search ends. With its high-quality material and fairest of prices, it makes sure that the sole purpose of its business is the satisfaction of its customers.</p>
 </div>
-@include('shared/footer')
+<x-footer />

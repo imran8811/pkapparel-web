@@ -1,4 +1,15 @@
-@include('shared/header')
+<?php
+$metaData = [
+  "title" => "Wholesale Jeans Manufacturers",
+  "keywords" => "Jeans manufacturers, Jeans Pants Manufacturers, Jeans Wholesale",
+  "description" => "Manufacturer and exporter of denim products, jeans pants, jeans jackets, jeans shorts for men, women and kids"
+]
+?>
+<x-header 
+  :title="$metaData['title']"
+  :keywords="$metaData['keywords']"
+  :description="$metaData['description']"
+/>
 @include('shared/tagline')
 @include('shared/rating-reviews')
 @include('shared/faqs')
@@ -11,4 +22,4 @@
   <h4>Jeans based on Gender</h4>
   <p class="mb-3">Jeans that is provided by <strong>wholesale jeans manufacturers</strong> having experience in this field is going to look elegant with any type of shirt on both genders as they provide quality that is rarely found in the market. It can be worn in a casual outing or event as good quality jeans has high reputation in any region of the world. As far as the types of jeans are concerned, there are high waist and medium waist jeans that are mostly preferred for women whereas the low waist jeans are preferred for men. While manufacturing jeans for both genders, it is kept in mind that women prefer softer jeans than men.</p>
 </div>
-@include('shared/footer')
+<x-footer />

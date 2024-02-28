@@ -1,4 +1,15 @@
-@include('shared/header')
+<?php
+$metaData = [
+  "title" => "Kevlar Jeans Manufacturers",
+  "keywords" => "Jeans manufacturers, Jeans Pants Manufacturers, Jeans Wholesale",
+  "description" => "Manufacturer and exporter of denim products, jeans pants, jeans jackets, jeans shorts for men, women and kids"
+]
+?>
+<x-header 
+  :title="$metaData['title']"
+  :keywords="$metaData['keywords']"
+  :description="$metaData['description']"
+/>
 @include('shared/tagline')
 @include('shared/rating-reviews')
 @include('shared/faqs')
@@ -16,4 +27,4 @@
   <p class='mb-3'>Such types of jeans are not for dedicated heavy motorcycles as they require jeans that are flawless in all functions. These types of jeans are weather resistant, has reflective piping, provide ventilation and fit perfectly. They also include knee pucks for extra safety. <strong>Kevlar Jeans Manufacturers</strong> also provide adjustable knee armor for heavy motorcycles. </p>
   <p class='mb-3'>Each type of biker requires a different style, design and protection. Based upon their passion for biking, we make sure there are no compromises when it comes to their life. Our brand holds the trust of reputed companies and clients. We worry for the motorcycles and produce quality Kevlar jeans.</p>
 </div>
-@include('shared/footer')
+<x-footer />

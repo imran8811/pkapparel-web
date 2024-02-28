@@ -1,31 +1,31 @@
 <div class="row mb-5 pt-5 border-top border-info">
   <ul class="col-lg-3">
-    <li><a href="/posts/bulk-jeans">Bulk Jeans</a></li>
-    <li><a href="/posts/buy-jeans-in-bulk">Buy Jeans in Bulk</a></li>
-    <li><a href="/posts/cheap-mens-jeans-wholesale">Cheap Mens Jeans Wholesale</a></li>
-    <li><a href="/posts/denim-manufacturers">Denim Manufacturers</a></li>
-    <li><a href="/posts/denim-wholesale">Denim Wholesale</a></li>
+    <li><a href="/bulk-jeans">Bulk Jeans</a></li>
+    <li><a href="/buy-jeans-in-bulk">Buy Jeans in Bulk</a></li>
+    <li><a href="/cheap-mens-jeans-wholesale">Cheap Mens Jeans Wholesale</a></li>
+    <li><a href="/denim-manufacturers">Denim Manufacturers</a></li>
+    <li><a href="/denim-wholesale">Denim Wholesale</a></li>
   </ul>
   <ul class="col-lg-3">
-    <li><a href="/posts/denim-jeans-manufacturer">Denim Jeans Manufacturer</a></li>
-    <li><a href="/posts/jeans-manufacturers">Jeans Manufacturers</a></li>
-    <li><a href="/posts/jeans-manufacturer">Jeans Manufacturer</a></li>
-    <li><a href="/posts/jeans-pants-wholesale">Jeans Pants Wholesale</a></li>
-    <li><a href="/posts/jeans-factory">Jeans Factory</a></li>
+    <li><a href="/denim-jeans-manufacturer">Denim Jeans Manufacturer</a></li>
+    <li><a href="/jeans-manufacturers">Jeans Manufacturers</a></li>
+    <li><a href="/jeans-manufacturer">Jeans Manufacturer</a></li>
+    <li><a href="/jeans-pants-wholesale">Jeans Pants Wholesale</a></li>
+    <li><a href="/jeans-factory">Jeans Factory</a></li>
   </ul>
   <ul class="col-lg-3">
-    <li><a href="/posts/jeans-pants-wholesale">Jeans Pant Wholesale</a></li>
-    <li><a href="/posts/jean-manufacturers">Jean Manufacturers</a></li>
-    <li><a href="/posts/jeans-supplier">Jeans Supplier</a></li>
-    <li><a href="/posts/jeans-wholesale">Jeans Wholesale</a></li>
-    <li><a href="/posts/wholesale-denim-jeans">Wholesale Denim Jeans</a></li>
+    <li><a href="/jeans-pants-wholesale">Jeans Pant Wholesale</a></li>
+    <li><a href="/jean-manufacturers">Jean Manufacturers</a></li>
+    <li><a href="/jeans-supplier">Jeans Supplier</a></li>
+    <li><a href="/jeans-wholesale">Jeans Wholesale</a></li>
+    <li><a href="/wholesale-denim-jeans">Wholesale Denim Jeans</a></li>
   </ul>
   <ul class="col-lg-3">
-    <li><a href="/posts/wholesale-jeans-bulk">Wholesale Jeans Bulk</a></li>
-    <li><a href="/posts/wholesale-jeans-mens">Wholesale Jeans Mens</a></li>
-    <li><a href="/posts/wholesale-jeans-online">Wholesale Jeans Online</a></li>
-    <li><a href="/posts/wholesale-jeans-suppliers">Wholesale Jeans Suppliers</a></li>
-    <li><a href="/posts/wholesale-jeans">Wholesale Jeans</a></li>
+    <li><a href="/wholesale-jeans-bulk">Wholesale Jeans Bulk</a></li>
+    <li><a href="/wholesale-jeans-mens">Wholesale Jeans Mens</a></li>
+    <li><a href="/wholesale-jeans-online">Wholesale Jeans Online</a></li>
+    <li><a href="/wholesale-jeans-suppliers">Wholesale Jeans Suppliers</a></li>
+    <li><a href="/wholesale-jeans">Wholesale Jeans</a></li>
   </ul>
 </div>
 <div class="push"></div>
@@ -35,7 +35,6 @@
     <div class="mb-3 text-center">
       <nav class="main-menu">
         <ul>
-          <li><a href="/wholesale-shop">Wholesale Shop</a></li>
           <li><a href="/about">About us</a></li>
           <li><a href="/factory">Factory</a></li>
           <li><a href="/certifications">Certifications</a></li>

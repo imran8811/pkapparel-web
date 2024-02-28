@@ -1,4 +1,15 @@
-@include('shared/header')
+<?php
+$metaData = [
+  "title" => "Jeans Wholesale",
+  "keywords" => "Jeans manufacturers, Jeans Pants Manufacturers, Jeans Wholesale",
+  "description" => "Manufacturer and exporter of denim products, jeans pants, jeans jackets, jeans shorts for men, women and kids"
+]
+?>
+<x-header 
+  :title="$metaData['title']"
+  :keywords="$metaData['keywords']"
+  :description="$metaData['description']"
+/>
 @include('shared/tagline')
 @include('shared/rating-reviews')
 @include('shared/faqs')
@@ -11,4 +22,4 @@
   <p class='mb-3'>As a professional manufacturer of denim jeans, we consider it our duty to educate the consumer with the truth about the quality of denim jeans in wholesale. Denim fabric is extremely cast-sensitive. Therefore, it is essential to evaluate the shade of indigo in the jeans you are purchasing. There is no limitation on the shade. However, it is necessary to be clear about the direction you want your jeans to take. The same goes for the character of denim as well. However, what is important here is to note that the absence of character never exactly becomes a success unless the rest of the ingredients are paired well to create synchronization. As a leading manufacturer of <strong>wholesale jeans</strong> in Pakistan, we need to communicate these guidelines.</p>
   <p class='mb-3'>It is not easy to find a <strong>jeans wholesale</strong> distributor that easily. The rates fluctuate depending on the demand. It is directly proportional to the design and material used in the jeans, as well. Your trust should be aligned with platforms that are experienced and efficient in their work. It is very important to surround your business with exceptional ranges of denim jeans in both quality and quantity.</p> 
 </div>
-@include('shared/footer')
+<x-footer />

@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PK Apparel - Jeans Pants Manufacturer and Wholesaler</title>
+  <title>{{$title}}</title>
+  <meta name="keywords" content="{{$keywords}}" />
+  <meta name="description" content="{{$description}}" />
   <meta name="google-site-verification" content="WlphvHVaVW1jVWUufak-1TfWkjBAvf271H95iMGwtSw" />
   <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=UA-71901684-1"></script>
   <script>

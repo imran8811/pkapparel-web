@@ -1,4 +1,15 @@
-@include('shared/header')
+<?php
+$metaData = [
+  "title" => "Bulk Jeans",
+  "keywords" => "Bulk Jeans, Jeans manufacturers, Jeans Pants Manufacturers, Jeans Wholesale",
+  "description" => "Manufacturer and exporter of denim products, jeans pants, jeans jackets, jeans shorts for men, women and kids"
+]
+?>
+<x-header 
+  :title="$metaData['title']"
+  :keywords="$metaData['keywords']"
+  :description="$metaData['description']"
+/>
 @include('shared/tagline')
 @include('shared/rating-reviews')
 @include('shared/faqs')
@@ -12,4 +23,4 @@
   <h2 className="mb-3">Choosing a Supplier</h2>
   <p className="mb-5">A large number of suppliers provide jeans for the markets. This is the reason for the availability of such a wide variety. Choose your supplier wisely to ensure unprecedented quality. Quality ensures response in the markets. PK Apparels, in Pakistan, offers bulk jeans with consistent supreme quality. To order jeans from them online, please use their website.</p>
 </div>
-@include('shared/footer')
+<x-footer />

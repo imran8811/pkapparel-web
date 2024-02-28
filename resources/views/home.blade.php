@@ -1,4 +1,15 @@
-@include('shared/header')
+<?php
+$metaData = [
+  "title" => "PK Apparel - Jeans Manufacturer and Wholesaler",
+  "keywords" => "Jeans manufacturers, Jeans Pants Manufacturers, Jeans Wholesale",
+  "description" => "Manufacturer and exporter of denim products, jeans pants, jeans jackets, jeans shorts for men, women and kids"
+]
+?>
+<x-header 
+  :title="$metaData['title']"
+  :keywords="$metaData['keywords']"
+  :description="$metaData['description']"
+/>
   <div class="mb-5">
     <swiper class="my-swiper" [config]="swiperConfig">
       {{-- <ng-template swiperSlide><img src="/images/gallery/banner-1.jpg"></ng-template> --}}
@@ -35,25 +46,25 @@
     <h2 class="section-heading">Jeans for Men</h2>
     <ul class="row">
       <li class="col-lg-3">
-        <a href="/wholesale-shop" class="inner-manufacture">
+        <a href="#" class="inner-manufacture">
           <img src="/images/jeans-pant-main.jpg" alt="jeans pants" />
           <span class="product-category">Jeans Pants</span>
         </a>
       </li>
       <li class="col-lg-3">
-        <a href="/wholesale-shop" class="inner-manufacture">
+        <a href="#" class="inner-manufacture">
           <img src="/images/jeans-jacket-main.jpg" alt="Jeans Jackets" />
           <span class="product-category">Jeans Jackets</span>
         </a>
       </li>
       <li class="col-lg-3">
-        <a href="/wholesale-shop" class="inner-manufacture">
+        <a href="#" class="inner-manufacture">
           <img src="/images/jeans-shirt-main.jpg" alt="jeans shirts" />
           <span class="product-category">Jeans Shirts</span>
         </a>
       </li>
       <li class="col-lg-3">
-        <a href="/wholesale-shop" class="inner-manufacture">
+        <a href="#" class="inner-manufacture">
           <img src="/images/jeans-short-main.jpg" alt="jeans shorts" />
           <span class="product-category">Jeans Shorts</span>
         </a>
@@ -64,25 +75,25 @@
     <h2 class="section-heading">Jeans for Women</h2>
     <ul class="row">
       <li class="col-lg-3">
-        <a href="/wholesale-shop" class="inner-manufacture">
+        <a href="#" class="inner-manufacture">
           <img src="/images/women-jeans.jpg" alt="jeans pants" />
           <span class="product-category">Jeans Pants</span>
         </a>
       </li>
       <li class="col-lg-3">
-        <a href="/wholesale-shop" class="inner-manufacture">
+        <a href="#" class="inner-manufacture">
           <img src="/images/women-jacket.jpg" alt="Jeans Jackets" />
           <span class="product-category">Jeans Jackets</span>
         </a>
       </li>
       <li class="col-lg-3">
-        <a href="/wholesale-shop" class="inner-manufacture">
+        <a href="#" class="inner-manufacture">
           <img src="/images/women-shirt.jpg" alt="jeans shirts" />
           <span class="product-category">Jeans Shirts</span>
         </a>
       </li>
       <li class="col-lg-3">
-        <a href="/wholesale-shop" class="inner-manufacture">
+        <a href="#" class="inner-manufacture">
           <img src="/images/women-short.jpg" alt="jeans shorts" />
           <span class="product-category">Jeans Shorts</span>
         </a>
@@ -108,4 +119,4 @@
   </div>
 @include('shared/rating-reviews')
 @include('shared/faqs')
-@include('shared/footer')
+<x-footer />

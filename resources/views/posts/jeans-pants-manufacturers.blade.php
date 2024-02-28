@@ -1,4 +1,15 @@
-@include('shared/header')
+<?php
+$metaData = [
+  "title" => "Jeans Pants Manufacturers",
+  "keywords" => "Jeans manufacturers, Jeans Pants Manufacturers, Jeans Wholesale",
+  "description" => "Manufacturer and exporter of denim products, jeans pants, jeans jackets, jeans shorts for men, women and kids"
+]
+?>
+<x-header 
+  :title="$metaData['title']"
+  :keywords="$metaData['keywords']"
+  :description="$metaData['description']"
+/>
 @include('shared/tagline')
 @include('shared/rating-reviews')
 @include('shared/faqs')
@@ -12,4 +23,4 @@
   <h3>THE BEST CHOICE FOR YOU</h3>
   <p class="mb-3">What is it that you look for in a good clothing brand? Quality and value! PK Apparel promises to offer the best quality jeans in the most affordable price that maximizes the value you get. If you really want a brand that delivers consistent quality and helps you make a style statement wherever you go, then PK Apparel is surely the name to trust. So, make your purchase today and see for yourself the excellent quality and value offered here at PK Apparel.</p>
 </div>
-@include('shared/footer')
+<x-footer />
