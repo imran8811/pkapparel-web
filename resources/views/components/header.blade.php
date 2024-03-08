@@ -7,6 +7,7 @@
   <meta name="keywords" content="{{$keywords}}" />
   <meta name="description" content="{{$description}}" />
   <meta name="google-site-verification" content="WlphvHVaVW1jVWUufak-1TfWkjBAvf271H95iMGwtSw" />
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=UA-71901684-1"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
