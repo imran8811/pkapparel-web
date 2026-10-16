@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ShoppingBag, UserRound } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
+import { AccountLink, CartLink } from "@/components/layout/account-links";
 import { Container } from "@/components/layout/container";
 import { MainNav } from "@/components/layout/main-nav";
 import { MobileNav } from "@/components/layout/mobile-nav";
@@ -22,16 +22,8 @@ export function SiteHeader({ site }: { site: Site }) {
           <Button asChild size="sm" className="hidden sm:inline-flex">
             <Link href="/wholesale-shop">Shop wholesale</Link>
           </Button>
-          <Button asChild variant="ghost" size="icon" aria-label="Your account">
-            <Link href="/login">
-              <UserRound className="size-5" />
-            </Link>
-          </Button>
-          <Button asChild variant="ghost" size="icon" aria-label="Cart">
-            <Link href="/cart">
-              <ShoppingBag className="size-5" />
-            </Link>
-          </Button>
+          <AccountLink />
+          <CartLink />
           <MobileNav whatsapp={site.contact.whatsapp} className="lg:hidden" />
         </div>
       </Container>

@@ -7,6 +7,10 @@ import type { Role } from "@/lib/admin/types";
 const ACCESS = {
   content: ["admin", "editor"],
   inquiries: ["admin", "sales"],
+  orders: ["admin", "sales", "production"],
+  customers: ["admin", "sales"],
+  /** Shipping rates and add-ons (prices used at checkout). */
+  commerce: ["admin", "sales"],
   settings: ["admin"],
 } as const satisfies Record<string, readonly Role[]>;
 

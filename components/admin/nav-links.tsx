@@ -4,16 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   AwardIcon,
+  BadgePlusIcon,
   FactoryIcon,
   FileTextIcon,
   RulerIcon,
   ShirtIcon,
   TagsIcon,
+  TruckIcon,
+  UsersIcon,
   HelpCircleIcon,
   InboxIcon,
   LayoutDashboardIcon,
   MessageSquareQuoteIcon,
   NewspaperIcon,
+  ReceiptTextIcon,
   SettingsIcon,
   UserIcon,
   type LucideIcon,
@@ -26,13 +30,22 @@ type NavItem = { href: string; label: string; icon: LucideIcon; area?: Area };
 
 const SECTIONS: { title?: string; items: NavItem[] }[] = [
   { items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboardIcon }] },
-  { title: "Sales", items: [{ href: "/admin/inquiries", label: "Inquiries", icon: InboxIcon, area: "inquiries" }] },
+  {
+    title: "Sales",
+    items: [
+      { href: "/admin/orders", label: "Orders", icon: ReceiptTextIcon, area: "orders" },
+      { href: "/admin/customers", label: "Customers", icon: UsersIcon, area: "customers" },
+      { href: "/admin/inquiries", label: "Inquiries", icon: InboxIcon, area: "inquiries" },
+    ],
+  },
   {
     title: "Shop",
     items: [
       { href: "/admin/products", label: "Styles", icon: ShirtIcon, area: "content" },
       { href: "/admin/size-charts", label: "Size charts", icon: RulerIcon, area: "content" },
       { href: "/admin/shop-texts", label: "Category texts", icon: TagsIcon, area: "content" },
+      { href: "/admin/shipping", label: "Shipping rates", icon: TruckIcon, area: "commerce" },
+      { href: "/admin/addons", label: "Add-ons", icon: BadgePlusIcon, area: "commerce" },
     ],
   },
   {

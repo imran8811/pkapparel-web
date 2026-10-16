@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowRight, Minus, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, CircleCheck, LoaderCircle, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Button } from "@/components/ui/button";
+import { addToCart } from "@/lib/account/actions/cart";
+import { notifyUiChange } from "@/lib/account/use-ui-state";
 import { formatMoney } from "@/lib/format";
 import { whatsappUrl } from "@/lib/links";
 import { typeInfo } from "@/lib/nav";
@@ -17,7 +19,7 @@ const MAX_PER_SIZE = 100_000;
 
 /**
  * Quantities per size for each color, with an "add a set" shortcut, the minimum per color and a running total.
- * Until the cart exists, the result goes into a prefilled quote request (or a WhatsApp message).
+ * The pieces go into the cart; a prefilled quote request or WhatsApp message stays available.
  */
 export function OrderPanel({
   product,
@@ -31,6 +33,8 @@ export function OrderPanel({
   whatsapp: string;
 }) {
   const [quantities, setQuantities] = useState<Quantities>({});
+  const [adding, startAdding] = useTransition();
+  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
   const { moq_per_color: moq, set_pcs_per_size: perSize } = product.rules;
   const setSize = perSize * product.sizes.length;
 
@@ -80,6 +84,23 @@ export function OrderPanel({
 
   const thisColor = colorTotal(color.slug);
   const progress = Math.min(100, Math.round((thisColor / moq) * 100));
+
+  const add = () =>
+    startAdding(async () => {
+      const lines = chosen.map((c) => ({
+        colorId: c.id,
+        sizeQty: Object.fromEntries(Object.entries(quantities[c.slug] ?? {}).filter(([, qty]) => qty > 0)),
+      }));
+      const response = await addToCart(lines);
+      if (response.ok) {
+        setQuantities({});
+        notifyUiChange();
+        const colors = chosen.length === 1 ? chosen[0].name.toLowerCase() : `${chosen.length} colors`;
+        setResult({ ok: true, message: `${totalPieces} pcs of ${colors} added to your cart.` });
+      } else {
+        setResult({ ok: false, message: response.message });
+      }
+    });
 
   return (
     <div className="rounded-3xl border border-border bg-white p-5 sm:p-6">
@@ -174,24 +195,55 @@ export function OrderPanel({
           </div>
           {belowMinimum.length > 0 ? (
             <p className="mt-3 rounded-xl bg-orange-50 px-3 py-2 text-xs text-stitch-700">
-              Each color needs at least {moq} pieces. You can still ask for a quote, and we will help you plan the quantities.
+              Each color needs at least {moq} pieces before checkout. You can add them now and complete them in the cart, or ask us for a quote.
             </p>
           ) : null}
         </div>
       ) : null}
 
+      {result ? (
+        result.ok ? (
+          <div role="status" className="mt-5 rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-800">
+            <p className="flex items-start gap-2">
+              <CircleCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
+              {result.message}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2 pl-6">
+              <Button asChild size="sm">
+                <Link href="/cart">
+                  View cart <ArrowRight />
+                </Link>
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setResult(null)}>
+                Add another color
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p role="alert" className="mt-5 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {result.message}
+          </p>
+        )
+      ) : null}
+
       <div className="mt-6 grid gap-2">
-        <Button asChild size="lg" className={cn(chosen.length === 0 && "pointer-events-none opacity-50")} aria-disabled={chosen.length === 0}>
-          <Link href={chosen.length > 0 ? quoteHref : "#"} tabIndex={chosen.length === 0 ? -1 : undefined}>
-            Request a quote for this order <ArrowRight />
-          </Link>
+        <Button type="button" size="lg" onClick={add} disabled={chosen.length === 0 || adding}>
+          {adding ? <LoaderCircle className="animate-spin" /> : <ShoppingBag />}
+          {adding ? "Adding…" : "Add to cart"}
         </Button>
-        <Button asChild size="lg" variant="outline">
-          <a href={whatsappUrl(whatsapp, chosen.length > 0 ? summary : `Hello, I'm interested in ${product.name}.`)} target="_blank" rel="noopener noreferrer">
-            <WhatsAppIcon className="size-4" /> Ask on WhatsApp
-          </a>
-        </Button>
-        <p className="text-center text-xs text-muted-foreground">Online ordering is coming soon. Prices and freight are confirmed on your proforma invoice.</p>
+        <div className="grid grid-cols-2 gap-2">
+          <Button asChild variant="outline" className={cn(chosen.length === 0 && "pointer-events-none opacity-50")} aria-disabled={chosen.length === 0}>
+            <Link href={chosen.length > 0 ? quoteHref : "#"} tabIndex={chosen.length === 0 ? -1 : undefined}>
+              Request a quote
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <a href={whatsappUrl(whatsapp, chosen.length > 0 ? summary : `Hello, I'm interested in ${product.name}.`)} target="_blank" rel="noopener noreferrer">
+              <WhatsAppIcon className="size-4" /> WhatsApp
+            </a>
+          </Button>
+        </div>
+        <p className="text-center text-xs text-muted-foreground">Prices per piece, FOB Pakistan. Freight is estimated at checkout and confirmed before shipment.</p>
       </div>
     </div>
   );

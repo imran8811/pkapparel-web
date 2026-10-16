@@ -10,6 +10,8 @@ export type Site = {
   company: {
     name: string;
     legal_name: string | null;
+    /** Tax number (FBR NTN), printed on proforma invoices. */
+    ntn?: string | null;
     tagline: string;
     founded_year: number;
     city: string;
@@ -26,6 +28,19 @@ export type Site = {
     lead_time_days: number;
     sample_price_cents: number;
     shipping_modes: string[];
+    /** Days a proforma invoice's prices are valid (default 14). */
+    pi_valid_days?: number;
+    /** Above this volume (CBM) sea freight is quoted as a full container (default 15). */
+    fcl_from_cbm?: number;
+    /** Packing used for freight estimates when a style has none of its own. */
+    packing?: {
+      piece_weight_g: number;
+      pcs_per_carton: number;
+      carton_length_mm: number;
+      carton_width_mm: number;
+      carton_height_mm: number;
+      carton_weight_g: number;
+    };
   };
 };
 

@@ -62,14 +62,24 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
   - Forms post to server actions in `lib/admin/actions`.
 - **Wholesale shop (`app/(site)/wholesale-shop`):** URLs keep the old site's pattern, `/wholesale-shop/{segment}/{type}/{style}`.
   - Old product URLs ending in an article number (`…-1051`) redirect permanently to the style with that color selected.
-  - Until the cart exists, the product page's order panel sends a prefilled quote request.
+  - The product page's order panel adds pieces to the cart; a prefilled quote request and WhatsApp stay available.
+- **Buyer accounts, cart and checkout** (`/login`, `/signup`, `/cart`, `/checkout`, `/account/*`):
+  - **Cookies:**
+    - `pk_session` is the buyer's login token (HttpOnly, 30 days).
+    - `pk_cart` identifies a guest's cart (HttpOnly). The API merges that cart into the account at login.
+    - `pk_ui` is display-only (logged in, number of colors in the cart). The static header reads it in the browser; it holds nothing secret.
+  - **Data access:** `lib/account/session.ts` is the only way buyer pages reach the API. A rejected login goes through `/account/session-ended`, which clears the cookies.
+  - **Login required:** `proxy.ts` sends visitors without `pk_session` from `/account` and `/checkout` to the login page.
+  - **Forms** use `<ActionForm>` from `components/forms/action-form.tsx` (the public counterpart of the admin's `<AdminForm>`). Server actions live in `lib/account/actions`.
+  - **Downloads** (proforma invoices, and payment slips in the admin) go through route handlers that fetch the file from the API with the login token, so the token never reaches the browser.
+  - **The email confirmation link** (`/verify-email?token=…`) is a route handler that confirms the address and redirects.
 - **Next.js 16 differs from older versions:** `proxy.ts` instead of middleware, `<Image preload>`, `revalidateTag(tag, "max")`, Cache Components. Read the bundled docs in `node_modules/next/dist/docs/` before changing framework-level code (see `AGENTS.md`).
 
 | Folder | What it contains |
 |---|---|
-| `app/(site)/` | public pages, blog, shop |
+| `app/(site)/` | public pages, blog, shop, cart, checkout and the buyer account |
 | `app/admin/` | admin panel (`(panel)/` is everything behind the login) |
 | `app/api/revalidate/` | cache refresh endpoint for the API |
-| `components/` | `ui/` (shadcn), `layout/`, `site/`, `home/`, `shop/`, `forms/`, `admin/`, `brand/` |
+| `components/` | `ui/` (shadcn), `layout/`, `site/`, `home/`, `shop/`, `forms/`, `account/`, `admin/`, `brand/` |
 | `lib/` | API client, data functions, server actions, helpers |
 | `assets/` | photos and the logo used in the code |

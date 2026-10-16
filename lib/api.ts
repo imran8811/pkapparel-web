@@ -26,6 +26,8 @@ type ApiRequest = {
   token?: string;
   /** The visitor's IP address, so the API can rate-limit per visitor. */
   clientIp?: string;
+  /** Extra headers, e.g. X-Cart-Token for a guest's cart. */
+  headers?: Record<string, string>;
   timeoutMs?: number;
 };
 
@@ -39,9 +41,32 @@ type ErrorPayload = {
  */
 export async function apiWithMeta<T, M = Record<string, unknown>>(
   path: string,
-  { method = "GET", body, query, token, clientIp, timeoutMs = 10_000 }: ApiRequest = {},
+  request: ApiRequest = {},
 ): Promise<{ data: T; meta: M }> {
-  const headers = new Headers({ Accept: "application/json", "X-Client-Key": CLIENT_KEY });
+  const response = await send(path, request);
+
+  const payload: unknown = await response.json().catch(() => null);
+  if (!response.ok) throw toApiError(response, payload);
+
+  const { data, meta } = (payload ?? {}) as { data: T; meta?: M };
+  return { data, meta: meta ?? ({} as M) };
+}
+
+/** Downloads a file from the API (e.g. a proforma invoice PDF). Errors are thrown like api(). */
+export async function apiFile(path: string, request: ApiRequest = {}): Promise<{ body: ArrayBuffer; contentType: string; filename: string }> {
+  const response = await send(path, { timeoutMs: 30_000, ...request });
+  if (!response.ok) throw toApiError(response, await response.json().catch(() => null));
+
+  const disposition = response.headers.get("content-disposition") ?? "";
+  return {
+    body: await response.arrayBuffer(),
+    contentType: response.headers.get("content-type") ?? "application/octet-stream",
+    filename: /filename="([^"]+)"/.exec(disposition)?.[1] ?? "download",
+  };
+}
+
+async function send(path: string, { method = "GET", body, query, token, clientIp, headers: extra, timeoutMs = 10_000 }: ApiRequest): Promise<Response> {
+  const headers = new Headers({ Accept: "application/json", "X-Client-Key": CLIENT_KEY, ...extra });
   const multipart = body instanceof FormData;
   if (body !== undefined && !multipart) headers.set("Content-Type", "application/json");
   if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -53,9 +78,8 @@ export async function apiWithMeta<T, M = Record<string, unknown>>(
   }
   const url = `${API_URL}${path}${search.size > 0 ? `?${search}` : ""}`;
 
-  let response: Response;
   try {
-    response = await fetch(url, {
+    return await fetch(url, {
       method,
       headers,
       body: body === undefined ? undefined : multipart ? body : JSON.stringify(body),
@@ -64,20 +88,16 @@ export async function apiWithMeta<T, M = Record<string, unknown>>(
   } catch (cause) {
     throw new ApiError(503, "api_unreachable", `The PK Apparel API (${API_URL}) could not be reached.`, {}, { cause });
   }
+}
 
-  const payload: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    const error = (payload as ErrorPayload | null)?.error;
-    throw new ApiError(
-      response.status,
-      error?.code ?? "api_error",
-      error?.message ?? `The API answered with status ${response.status}.`,
-      error?.fields,
-    );
-  }
-
-  const { data, meta } = (payload ?? {}) as { data: T; meta?: M };
-  return { data, meta: meta ?? ({} as M) };
+function toApiError(response: Response, payload: unknown): ApiError {
+  const error = (payload as ErrorPayload | null)?.error;
+  return new ApiError(
+    response.status,
+    error?.code ?? "api_error",
+    error?.message ?? `The API answered with status ${response.status}.`,
+    error?.fields,
+  );
 }
 
 /** Like apiWithMeta, but returns only the `data` part. */

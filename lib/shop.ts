@@ -32,6 +32,8 @@ export type ProductCard = {
 export type Specs = Partial<Record<"fit" | "fabric" | "composition" | "fabric_weight" | "stretch" | "wash" | "closure", string | null>>;
 
 export type ProductColor = {
+  /** Used to add this color to the cart. */
+  id: number;
   code: string;
   name: string;
   slug: string;

@@ -1,5 +1,6 @@
 /* Shapes returned by the admin API (/v1/admin/…). */
 
+import type { Address as BuyerAddress, AddonPricing, BankDetails, Customer, Order, OrderSummary, Payment } from "@/lib/account/types";
 import type { Address, Site } from "@/lib/site";
 
 export type Role = "admin" | "editor" | "sales" | "production";
@@ -38,6 +39,8 @@ export type Inquiry = InquirySummary & {
 };
 
 export type Dashboard = {
+  orders?: { awaiting_deposit: number; payments_to_check: number; open: number };
+  customers?: { new_30_days: number };
   inquiries?: { new: number; open: number; last_30_days: number; latest: InquirySummary[] };
   content?: {
     posts: { published: number; scheduled: number; drafts: number };
@@ -147,6 +150,8 @@ export type AdminSettings = {
   social: Site["social"];
   commerce: Site["commerce"];
   factory_facts: FactoryFacts;
+  /** Private: only admins see it, and buyers only on orders with an amount due. */
+  bank: BankSettings;
 };
 
 export type Upload = { path: string; width: number; height: number; size: number };
@@ -251,3 +256,63 @@ export type AdminShopCategory = {
   seo_description: string | null;
   updated_at: string;
 };
+
+/* Orders, customers and checkout settings (Phase 3). The buyer-side shapes live in lib/account/types.ts. */
+
+export type AdminOrderSummary = OrderSummary & {
+  id: number;
+  customer_id: number;
+  company_name: string;
+  country_code: string;
+};
+
+export type AdminPayment = Payment & {
+  id: number;
+  slip_name: string | null;
+  reviewed_by: number | null;
+  reviewed_at: string | null;
+};
+
+export type AdminOrder = Omit<Order, "payments"> & {
+  id: number;
+  customer_id: number;
+  payments: AdminPayment[];
+  /** The buyer's account as it is now (the order keeps its own copy of the details). */
+  account: { id: number; email: string; status: "active" | "blocked"; email_verified: boolean } | null;
+};
+
+export type AdminCustomer = Customer & {
+  status: "active" | "blocked";
+  staff_notes: string | null;
+  last_login_at: string | null;
+  email_verified_at: string | null;
+  order_count: number | null;
+};
+
+export type AdminCustomerDetail = AdminCustomer & {
+  addresses: BuyerAddress[];
+  orders: AdminOrderSummary[];
+};
+
+export type ShippingRate = {
+  mode: "air" | "sea";
+  from_qty: number;
+  rate_cents: number;
+  fixed_cents: number;
+  transit_min_days: number | null;
+  transit_max_days: number | null;
+};
+
+export type ShippingZone = { id: number; name: string; sort_order: number; countries: string[]; rates: ShippingRate[] };
+
+export type AdminAddon = {
+  id: number;
+  name: string;
+  description: string | null;
+  pricing: AddonPricing;
+  price_cents: number | null;
+  is_active: boolean;
+  sort_order: number;
+};
+
+export type BankSettings = BankDetails;

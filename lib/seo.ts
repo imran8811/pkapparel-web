@@ -33,3 +33,8 @@ export function pageMetadata({
     },
   };
 }
+
+/** Account, cart and checkout pages: useful to visitors, but not for search results. */
+export function privatePageMetadata(title: string, path: string): Metadata {
+  return { title, alternates: { canonical: path }, robots: { index: false, follow: true } };
+}

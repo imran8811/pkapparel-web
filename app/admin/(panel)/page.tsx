@@ -18,7 +18,7 @@ function greeting(): string {
 
 export default async function DashboardPage() {
   const [staff, dashboard] = await Promise.all([getStaff(), adminApi<Dashboard>("/v1/admin/dashboard")]);
-  const { inquiries, content } = dashboard;
+  const { orders, customers, inquiries, content } = dashboard;
 
   return (
     <>
@@ -36,6 +36,18 @@ export default async function DashboardPage() {
           ) : null
         }
       />
+
+      {orders ? (
+        <div className="mb-6">
+          <h2 className="mb-3 font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase">Wholesale shop</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Stat label="Payments to check" value={orders.payments_to_check} href="/admin/orders?status=payment_review" highlight={orders.payments_to_check > 0} />
+            <Stat label="Orders awaiting the deposit" value={orders.awaiting_deposit} href="/admin/orders?status=awaiting_deposit" />
+            <Stat label="Open orders" value={orders.open} href="/admin/orders" />
+            {customers ? <Stat label="New buyer accounts (30 days)" value={customers.new_30_days} href="/admin/customers" /> : null}
+          </div>
+        </div>
+      ) : null}
 
       {inquiries ? (
         <div className="grid grid-cols-1 gap-6">
@@ -101,9 +113,6 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
-      <p className="mt-10 rounded-xl border border-dashed px-4 py-3 text-sm text-muted-foreground">
-        Orders, payment confirmations, products and customers will appear here when the wholesale shop opens.
-      </p>
     </>
   );
 }

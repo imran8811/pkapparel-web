@@ -12,7 +12,8 @@ import type { Address } from "@/lib/site";
 
 /** One form per group. Each is keyed by its saved values, so it shows fresh data after a save. */
 export function SettingsForms({ settings }: { settings: AdminSettings }) {
-  const { company, contact, addresses, social, commerce, factory_facts: facts } = settings;
+  const { company, contact, addresses, social, commerce, factory_facts: facts, bank } = settings;
+  const packing = commerce.packing;
 
   return (
     <div className="grid gap-6">
@@ -38,6 +39,7 @@ export function SettingsForms({ settings }: { settings: AdminSettings }) {
           <div className="grid gap-4 sm:grid-cols-2">
             <TextField label="Company name" name="name" defaultValue={company.name} />
             <TextField label="Legal name" name="legal_name" defaultValue={company.legal_name ?? ""} placeholder="As registered, for invoices" />
+            <TextField label="Tax number (NTN)" name="ntn" defaultValue={company.ntn ?? ""} hint="Printed on proforma invoices." />
             <TextField label="Tagline" name="tagline" defaultValue={company.tagline} fieldClassName="sm:col-span-2" />
             <TextField label="Founded (year)" name="founded_year" type="number" defaultValue={company.founded_year} />
             <div className="grid grid-cols-2 gap-4">
@@ -102,6 +104,54 @@ export function SettingsForms({ settings }: { settings: AdminSettings }) {
               step="0.01"
               defaultValue={(commerce.sample_price_cents / 100).toFixed(2)}
             />
+            <TextField
+              label="Proforma invoice valid for (days)"
+              name="pi_valid_days"
+              type="number"
+              min={1}
+              defaultValue={commerce.pi_valid_days ?? 14}
+            />
+            <TextField
+              label="Full container from (CBM)"
+              name="fcl_from_cbm"
+              type="number"
+              min={1}
+              step="0.1"
+              defaultValue={commerce.fcl_from_cbm ?? 15}
+              hint="Above this volume, sea freight is quoted instead of estimated."
+            />
+          </div>
+          <fieldset className="grid gap-3 rounded-xl border border-dashed p-4">
+            <legend className="px-1 text-sm font-medium">Default packing, for freight estimates</legend>
+            <p className="-mt-1 text-xs text-muted-foreground">Used for styles without their own packing data (set those on each style).</p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <TextField label="Weight per piece (g)" name="piece_weight_g" type="number" min={1} defaultValue={packing?.piece_weight_g ?? 650} />
+              <TextField label="Pieces per carton" name="pcs_per_carton" type="number" min={1} defaultValue={packing?.pcs_per_carton ?? 50} />
+              <TextField label="Empty carton weight (kg)" name="carton_weight_kg" type="number" min={0} step="0.1" defaultValue={(packing?.carton_weight_g ?? 1200) / 1000} />
+              <TextField label="Carton length (cm)" name="carton_length_cm" type="number" min={1} step="0.1" defaultValue={(packing?.carton_length_mm ?? 600) / 10} />
+              <TextField label="Carton width (cm)" name="carton_width_cm" type="number" min={1} step="0.1" defaultValue={(packing?.carton_width_mm ?? 400) / 10} />
+              <TextField label="Carton height (cm)" name="carton_height_cm" type="number" min={1} step="0.1" defaultValue={(packing?.carton_height_mm ?? 400) / 10} />
+            </div>
+          </fieldset>
+          <SaveRow />
+        </AdminForm>
+      </Section>
+
+      <Section
+        id="bank"
+        title="Bank details"
+        description="The account buyers transfer to. Private: shown only on orders with an amount due (order page, proforma invoice, order email), never elsewhere on the website."
+      >
+        <AdminForm key={JSON.stringify(bank)} action={saveSettings.bind(null, "bank")} className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField label="Beneficiary (account name)" name="beneficiary" defaultValue={bank.beneficiary ?? ""} />
+            <TextField label="Bank" name="bank_name" defaultValue={bank.bank_name ?? ""} />
+            <TextField label="Branch" name="branch" defaultValue={bank.branch ?? ""} />
+            <TextField label="Account number" name="account_number" defaultValue={bank.account_number ?? ""} />
+            <TextField label="IBAN" name="iban" defaultValue={bank.iban ?? ""} placeholder="PK00 ABCD 0000 0000 0000 0000" />
+            <TextField label="SWIFT / BIC" name="swift" defaultValue={bank.swift ?? ""} placeholder="ABCDPKKA" />
+            <TextField label="Bank address" name="bank_address" defaultValue={bank.bank_address ?? ""} fieldClassName="sm:col-span-2" />
+            <TextField label="Note for buyers" name="notes" defaultValue={bank.notes ?? ""} fieldClassName="sm:col-span-2" placeholder="e.g. Intermediary bank for USD transfers" />
           </div>
           <SaveRow />
         </AdminForm>
