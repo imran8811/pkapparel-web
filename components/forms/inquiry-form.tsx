@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useSyncExternalStore } from "react";
 import { CircleCheck, LoaderCircle, Send } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ const EXTRA_FIELDS: Record<InquiryType, ExtraField[]> = {
       name: "details.product",
       label: "Product",
       type: "select",
-      options: ["Jeans pants", "Denim jackets", "Jeans shorts", "Cargo trousers", "Chino pants", "Several products"],
+      options: ["Jeans pants", "Denim jackets", "Jeans shorts", "Cargo trousers", "Chino pants", "Denim skirts", "Several products"],
     },
     { name: "details.quantity", label: "Quantity (pieces)", type: "number", placeholder: "e.g. 600" },
     { name: "details.target_price", label: "Target price per piece (USD)", placeholder: "Optional" },
@@ -48,6 +48,33 @@ const MESSAGE_PLACEHOLDER: Record<InquiryType, string> = {
 
 const INITIAL: InquiryState = { status: "idle", attempt: 0 };
 
+/**
+ * Links may fill in the form, e.g. a product page sends ?product=Jeans%20pants&quantity=216&message=…
+ * Query parameter => form field, per form type.
+ */
+const PREFILL: Record<InquiryType, Record<string, string>> = {
+  contact: { message: "message" },
+  quote: { product: "details.product", quantity: "details.quantity", message: "message" },
+  sample: { styles: "details.styles", quantity: "details.sample_quantity", message: "message" },
+};
+
+const noSubscription = () => () => {};
+
+/** The page's query string, read after hydration so the page itself can stay static. */
+function useQueryString(): string {
+  return useSyncExternalStore(noSubscription, () => window.location.search, () => "");
+}
+
+function prefillValues(type: InquiryType, search: string): Record<string, string> {
+  const params = new URLSearchParams(search);
+  const values: Record<string, string> = {};
+  for (const [param, field] of Object.entries(PREFILL[type])) {
+    const value = params.get(param)?.trim();
+    if (value) values[field] = value.slice(0, field === "message" ? 3000 : 200);
+  }
+  return values;
+}
+
 export function InquiryForm({
   type,
   countries,
@@ -63,6 +90,8 @@ export function InquiryForm({
 }) {
   const [state, formAction, pending] = useActionState(submitInquiry, INITIAL);
   const startedAt = useRef<HTMLInputElement>(null);
+  const search = useQueryString();
+  const prefill = prefillValues(type, search);
 
   // Record when the visitor starts filling in the form; the server rejects forms sent in under 3 seconds.
   const markStarted = () => {
@@ -92,12 +121,13 @@ export function InquiryForm({
     );
   }
 
-  const value = (name: string) => state.values?.[name] ?? "";
+  const value = (name: string) => state.values?.[name] ?? prefill[name] ?? "";
   const error = (name: string) => state.fields?.[name.replace(/^details\..*/, "details")];
 
   return (
     <form
-      key={state.attempt}
+      // Re-mounts with the visitor's values after an error, and once the link's prefill is known.
+      key={`${state.attempt}${search}`}
       action={formAction}
       onFocus={markStarted}
       onInput={markStarted}

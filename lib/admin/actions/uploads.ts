@@ -7,7 +7,7 @@ import type { Upload } from "@/lib/admin/types";
 
 export type UploadResult = { ok: true; upload: Upload } | { ok: false; error: string };
 
-const FOLDERS = ["blog", "pages", "factory", "certificates"];
+const FOLDERS = ["blog", "pages", "products", "factory", "certificates"];
 const MAX_BYTES = 9 * 1024 * 1024;
 
 /** Uploads one image to the API, which checks, resizes and stores it. */

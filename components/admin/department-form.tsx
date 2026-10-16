@@ -1,20 +1,17 @@
 "use client";
 
-import { useRef, useState } from "react";
-import Image from "next/image";
-import { ArrowLeftIcon, ArrowRightIcon, ImagePlusIcon, Loader2Icon, PlusIcon, XIcon } from "lucide-react";
+import { useState } from "react";
+import { PlusIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminForm, FormError, SubmitButton, SwitchField, TextAreaField, TextField, useAdminForm } from "@/components/admin/form";
 import { inputClass } from "@/components/admin/styles";
-import { useImageUpload } from "@/components/admin/image-field";
 import { Panel } from "@/components/admin/page-parts";
+import { PhotoList } from "@/components/admin/photo-list";
 import { saveDepartment } from "@/lib/admin/actions/factory";
-import { nameToAlt } from "@/lib/admin/prepare-image";
 import type { Department } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
 
 const MAX_STATS = 6;
-const MAX_PHOTOS = 12;
 
 export function DepartmentForm({ department }: { department: Department }) {
   return (
@@ -27,7 +24,7 @@ export function DepartmentForm({ department }: { department: Department }) {
           </div>
         </Panel>
         <Panel title="Photos" description="The first photo is the main one. Use the arrows to change the order.">
-          <PhotosEditor initial={department.images} />
+          <PhotoList name="images" folder="factory" initial={department.images} />
         </Panel>
         <Panel title="Numbers" description="Optional facts shown next to the description, e.g. “Monthly capacity — 30,000+ pcs”. Only add confirmed numbers.">
           <StatsEditor initial={department.stats} />
@@ -108,107 +105,5 @@ function StatsEditor({ initial }: { initial: Department["stats"] }) {
       ) : null}
       {state.fields?.stats ? <p className="text-sm text-destructive">{state.fields.stats}</p> : null}
     </div>
-  );
-}
-
-function PhotosEditor({ initial }: { initial: Department["images"] }) {
-  const [photos, setPhotos] = useState(initial);
-  const pendingAlt = useRef("");
-  const fileInput = useRef<HTMLInputElement>(null);
-  const { state } = useAdminForm();
-  const { busy, error, upload } = useImageUpload("factory", (path) =>
-    setPhotos((current) => [...current, { path, alt: pendingAlt.current }]),
-  );
-
-  const move = (index: number, offset: number) =>
-    setPhotos((current) => {
-      const next = [...current];
-      const [photo] = next.splice(index, 1);
-      next.splice(index + offset, 0, photo);
-      return next;
-    });
-
-  return (
-    <div className="grid gap-4">
-      <input type="hidden" name="images" value={JSON.stringify(photos)} />
-      <ul className="grid gap-4 sm:grid-cols-2">
-        {photos.map((photo, index) => {
-          const altError = state.fields?.[`images.${index}.alt`] ?? state.fields?.[`images.${index}.path`];
-          return (
-            <li key={photo.path} className="overflow-hidden rounded-xl border bg-white">
-              <div className="relative aspect-[4/3] bg-cotton-100">
-                <Image src={`/${photo.path}`} alt="" fill sizes="(min-width: 640px) 30vw, 90vw" className="object-cover" />
-                {index === 0 ? (
-                  <span className="absolute top-2 left-2 rounded-full bg-denim-900/85 px-2 py-0.5 text-xs text-white">Main photo</span>
-                ) : null}
-                <div className="absolute top-2 right-2 flex gap-1">
-                  <IconButton label="Move earlier" disabled={index === 0} onClick={() => move(index, -1)}>
-                    <ArrowLeftIcon />
-                  </IconButton>
-                  <IconButton label="Move later" disabled={index === photos.length - 1} onClick={() => move(index, 1)}>
-                    <ArrowRightIcon />
-                  </IconButton>
-                  <IconButton label="Remove photo" onClick={() => setPhotos((current) => current.filter((_, i) => i !== index))}>
-                    <XIcon />
-                  </IconButton>
-                </div>
-              </div>
-              <div className="grid gap-1 p-3">
-                <input
-                  value={photo.alt}
-                  onChange={(event) =>
-                    setPhotos((current) => current.map((item, i) => (i === index ? { ...item, alt: event.target.value } : item)))
-                  }
-                  placeholder="What the photo shows"
-                  aria-label={`Photo ${index + 1} description`}
-                  aria-invalid={altError ? true : undefined}
-                  maxLength={200}
-                  className={inputClass}
-                />
-                {altError ? <p className="text-sm text-destructive">{altError}</p> : null}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      {photos.length < MAX_PHOTOS ? (
-        <div>
-          <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => fileInput.current?.click()}>
-            {busy ? <Loader2Icon className="animate-spin" /> : <ImagePlusIcon />}
-            Add photo
-          </Button>
-          <input
-            ref={fileInput}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = "";
-              if (!file) return;
-              pendingAlt.current = nameToAlt(file.name);
-              void upload(file);
-            }}
-          />
-        </div>
-      ) : null}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      {state.fields?.images ? <p className="text-sm text-destructive">{state.fields.images}</p> : null}
-    </div>
-  );
-}
-
-function IconButton({ label, disabled, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      disabled={disabled}
-      onClick={onClick}
-      className="grid size-7 place-items-center rounded-full bg-white/90 text-denim-900 shadow-sm hover:bg-white disabled:opacity-40 [&_svg]:size-3.5"
-    >
-      {children}
-    </button>
   );
 }

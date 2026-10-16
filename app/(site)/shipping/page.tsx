@@ -7,6 +7,7 @@ import { PageHero } from "@/components/site/page-hero";
 import { SectionHeading } from "@/components/site/section-heading";
 import { Button } from "@/components/ui/button";
 import { getFaqs } from "@/lib/content";
+import { shippingModes } from "@/lib/shipping";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -16,29 +17,8 @@ export const metadata = pageMetadata({
   path: "/shipping",
 });
 
-const modes = [
-  {
-    icon: Plane,
-    name: "Air freight",
-    transit: "Usually 5 to 10 days in transit",
-    bestFor: "Smaller orders, samples and urgent deliveries",
-    priced: "By weight (per kg)",
-  },
-  {
-    icon: Ship,
-    name: "Sea freight",
-    transit: "Usually 20 to 45 days, depending on the destination",
-    bestFor: "Larger orders, where cost matters more than speed",
-    priced: "By volume (per cubic meter); full containers on request",
-  },
-  {
-    icon: Truck,
-    name: "Your own forwarder",
-    transit: "You book the freight; we hand over the goods in Pakistan",
-    bestFor: "Buyers who already have a freight partner",
-    priced: "Ex-factory (FOB) prices, no freight from us",
-  },
-];
+const icons = { air: Plane, sea: Ship, forwarder: Truck };
+const modes = shippingModes.map((mode) => ({ ...mode, icon: icons[mode.key] }));
 
 const terms = [
   { code: "EXW", name: "Ex works", body: "You collect the goods from our factory and handle everything after that." },

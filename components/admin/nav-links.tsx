@@ -6,6 +6,9 @@ import {
   AwardIcon,
   FactoryIcon,
   FileTextIcon,
+  RulerIcon,
+  ShirtIcon,
+  TagsIcon,
   HelpCircleIcon,
   InboxIcon,
   LayoutDashboardIcon,
@@ -24,6 +27,14 @@ type NavItem = { href: string; label: string; icon: LucideIcon; area?: Area };
 const SECTIONS: { title?: string; items: NavItem[] }[] = [
   { items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboardIcon }] },
   { title: "Sales", items: [{ href: "/admin/inquiries", label: "Inquiries", icon: InboxIcon, area: "inquiries" }] },
+  {
+    title: "Shop",
+    items: [
+      { href: "/admin/products", label: "Styles", icon: ShirtIcon, area: "content" },
+      { href: "/admin/size-charts", label: "Size charts", icon: RulerIcon, area: "content" },
+      { href: "/admin/shop-texts", label: "Category texts", icon: TagsIcon, area: "content" },
+    ],
+  },
   {
     title: "Website",
     items: [

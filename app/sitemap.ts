@@ -1,9 +1,12 @@
 import type { MetadataRoute } from "next";
+import { getProducts, getShopCategories } from "@/lib/catalog";
 import { getPosts } from "@/lib/content";
 import { absoluteUrl } from "@/lib/seo";
+import { productUrl } from "@/lib/shop";
 
 const PAGES: { path: string; priority: number }[] = [
   { path: "/", priority: 1 },
+  { path: "/wholesale-shop", priority: 0.9 },
   { path: "/factory", priority: 0.9 },
   { path: "/private-label", priority: 0.9 },
   { path: "/how-to-order", priority: 0.8 },
@@ -21,10 +24,18 @@ const PAGES: { path: string; priority: number }[] = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const posts = await getPosts(100);
+  const [posts, categories, { items: products }] = await Promise.all([getPosts(100), getShopCategories(), getProducts()]);
 
   return [
     ...PAGES.map((page) => ({ url: absoluteUrl(page.path), priority: page.priority })),
+    // Shop pages without styles online are "made to order" pages, kept out of search results.
+    ...categories
+      .filter((category) => category.style_count > 0)
+      .map((category) => ({
+        url: absoluteUrl(`/wholesale-shop/${category.segment}${category.product_type ? `/${category.product_type}` : ""}`),
+        priority: category.product_type ? 0.8 : 0.85,
+      })),
+    ...products.map((product) => ({ url: absoluteUrl(productUrl(product)), priority: 0.7 })),
     ...posts.map((post) => ({
       url: absoluteUrl(`/post/${post.slug}`),
       lastModified: post.updated_at ?? undefined,

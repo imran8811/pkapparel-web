@@ -9,7 +9,7 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import { mainLinks, manufacturingLinks, productTypes, segments, shopUrl } from "@/lib/nav";
+import { mainLinks, manufacturingLinks, segments, shopUrl, typesFor } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 const triggerClass = "bg-transparent text-[15px] text-foreground/80 hover:text-foreground data-open:text-foreground";
@@ -29,7 +29,7 @@ export function MainNav({ moq, className }: { moq: number; className?: string })
                     <Link href={shopUrl(segment.slug)}>{segment.label}</Link>
                   </NavigationMenuLink>
                   <ul className="mt-1">
-                    {productTypes.map((type) => (
+                    {typesFor(segment.slug).map((type) => (
                       <li key={type.slug}>
                         <NavigationMenuLink
                           asChild

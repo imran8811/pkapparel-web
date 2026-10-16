@@ -12,6 +12,12 @@ import { getPost, getPosts, mediaSrc } from "@/lib/content";
 import { formatDate } from "@/lib/format";
 import { absoluteUrl, pageMetadata } from "@/lib/seo";
 
+/**
+ * Always served as a complete static page. After staff change the content, the next visitor waits
+ * for the fresh page instead of getting the generic fallback shell with the old content.
+ */
+export const ensureStatic = "navigation";
+
 /** Prerender every published article. New articles render on their first visit, then stay cached. */
 export async function generateStaticParams() {
   const posts = await getPosts(100);

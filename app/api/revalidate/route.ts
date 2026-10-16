@@ -15,7 +15,8 @@ function secretMatches(given: string | null): boolean {
 /**
  * Called by the PHP API after content changes, e.g. when an admin saves a product:
  *   POST /api/revalidate   X-Revalidate-Secret: …   { "tags": ["products", "product:pk-1058"] }
- * Pages using those cache tags are refreshed in the background (stale-while-revalidate).
+ * The tagged data expires at once ({ expire: 0 }): the next visitor gets fresh content, never the old
+ * version, so staff see their change as soon as they open the page. ("max" would serve the old version once more.)
  */
 export async function POST(request: Request) {
   if (!secretMatches(request.headers.get("x-revalidate-secret"))) {
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
   }
 
   for (const tag of tags) {
-    revalidateTag(tag, "max");
+    revalidateTag(tag, { expire: 0 });
   }
 
   return Response.json({ data: { revalidated: tags } });

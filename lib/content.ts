@@ -142,7 +142,4 @@ export function factoryNumbers(facts: FactoryFacts): { value: string; label: str
   ].filter((item): item is { value: string; label: string } => Boolean(item.value));
 }
 
-/** Uploaded files are served on the website's own domain (/uploads is proxied to the API). */
-export function mediaSrc(path: string): string {
-  return `/${path.replace(/^\/+/, "")}`;
-}
+export { mediaSrc } from "@/lib/media";

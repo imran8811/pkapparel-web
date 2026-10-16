@@ -9,7 +9,7 @@ import { uploadImage } from "@/lib/admin/actions/uploads";
 import { prepareImage } from "@/lib/admin/prepare-image";
 import { cn } from "@/lib/utils";
 
-export type UploadFolder = "blog" | "pages" | "factory" | "certificates";
+export type UploadFolder = "blog" | "pages" | "products" | "factory" | "certificates";
 
 /** Uploads one image right away and keeps its path in a hidden input called `name`. */
 export function ImageField({

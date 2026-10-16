@@ -16,10 +16,27 @@ export const productTypes = [
   { slug: "jeans-short", label: "Jeans shorts" },
   { slug: "cargo-trouser", label: "Cargo trousers" },
   { slug: "chino-pant", label: "Chino pants" },
+  { slug: "denim-skirt", label: "Denim skirts", segments: ["women", "girls"] },
 ] as const;
 
 export type Segment = (typeof segments)[number]["slug"];
 export type ProductType = (typeof productTypes)[number]["slug"];
+
+/** Product types sold in a segment (skirts are for women and girls only). */
+export function typesFor(segment: Segment) {
+  return productTypes.filter((type) => !("segments" in type) || (type.segments as readonly string[]).includes(segment));
+}
+
+export function isSegment(value: string): value is Segment {
+  return segments.some((segment) => segment.slug === value);
+}
+
+export function isProductType(value: string): value is ProductType {
+  return productTypes.some((type) => type.slug === value);
+}
+
+export const segmentInfo = (slug: Segment) => segments.find((segment) => segment.slug === slug)!;
+export const typeInfo = (slug: ProductType) => productTypes.find((type) => type.slug === slug)!;
 
 export const shopUrl = (segment?: Segment, type?: ProductType): string =>
   ["/wholesale-shop", segment, type].filter(Boolean).join("/");
