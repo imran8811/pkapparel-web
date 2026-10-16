@@ -1,0 +1,281 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ------------------------------------------------------------------
+   PK Apparel design tokens: "Indigo & Stitch"
+   Brand   the logo blue (#0048AC); denim-600 is the same colour
+   Denim   cobalt blues for accents (50-700), near-black navy for dark sections (800-950)
+   Stitch  the orange contrast thread on jeans (accent, use sparingly)
+   Cotton  warm off-white backgrounds
+   ------------------------------------------------------------------ */
+@theme {
+  --color-brand: #0048ac;
+
+  --color-denim-50: #f2f6fd;
+  --color-denim-100: #e4ecfa;
+  --color-denim-200: #c8d8f4;
+  --color-denim-300: #9bb8ea;
+  --color-denim-400: #5d8ddb;
+  --color-denim-500: #2a67c9;
+  --color-denim-600: #0048ac;
+  --color-denim-700: #003b8e;
+  --color-denim-800: #13204a;
+  --color-denim-900: #0b132b;
+  --color-denim-950: #070c1f;
+
+  --color-stitch-300: #f7b985;
+  --color-stitch-400: #f09a55;
+  --color-stitch-500: #e57a2e;
+  --color-stitch-600: #c8621c;
+  --color-stitch-700: #9f4b15;
+
+  --color-cotton-50: #fbfaf7;
+  --color-cotton-100: #f5f2eb;
+  --color-cotton-200: #eae4d8;
+  --color-cotton-300: #d9d0bf;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-heading: var(--font-bricolage);
+  --font-mono: var(--font-geist-mono);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --radius: 0.875rem;
+
+  --background: #fbfaf7;
+  --foreground: #070c1f;
+  --card: #ffffff;
+  --card-foreground: #070c1f;
+  --popover: #ffffff;
+  --popover-foreground: #070c1f;
+  --primary: #0b132b;
+  --primary-foreground: #fbfaf7;
+  --secondary: #f5f2eb;
+  --secondary-foreground: #0b132b;
+  --muted: #f5f2eb;
+  --muted-foreground: #5c6170;
+  --accent: #f5f2eb;
+  --accent-foreground: #0b132b;
+  --destructive: #b42318;
+  --border: #e6e0d4;
+  --input: #ddd6c8;
+  --ring: #2a67c9;
+
+  --chart-1: #0048ac;
+  --chart-2: #e57a2e;
+  --chart-3: #5d8ddb;
+  --chart-4: #13204a;
+  --chart-5: #9bb8ea;
+
+  --sidebar: #0b132b;
+  --sidebar-foreground: #e6ebf9;
+  --sidebar-primary: #e57a2e;
+  --sidebar-primary-foreground: #070c1f;
+  --sidebar-accent: #13204a;
+  --sidebar-accent-foreground: #fbfaf7;
+  --sidebar-border: rgb(255 255 255 / 0.08);
+  --sidebar-ring: #5d8ddb;
+}
+
+.dark {
+  --background: #070c1f;
+  --foreground: #fbfaf7;
+  --card: #0b132b;
+  --card-foreground: #fbfaf7;
+  --popover: #0b132b;
+  --popover-foreground: #fbfaf7;
+  --primary: #fbfaf7;
+  --primary-foreground: #070c1f;
+  --secondary: #13204a;
+  --secondary-foreground: #fbfaf7;
+  --muted: #13204a;
+  --muted-foreground: #a3abc2;
+  --accent: #13204a;
+  --accent-foreground: #fbfaf7;
+  --destructive: #f97066;
+  --border: rgb(255 255 255 / 0.1);
+  --input: rgb(255 255 255 / 0.15);
+  --ring: #5d8ddb;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-heading tracking-tight text-balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: #f7b985;
+    color: #070c1f;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Denim twill: fine diagonal weave lines for dark sections */
+@utility twill-texture {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgb(255 255 255 / 0.04) 0 1px,
+    transparent 1px 7px
+  );
+}
+
+/* Dashed orange underline, like contrast stitching */
+@utility stitch-underline {
+  background-image: linear-gradient(to right, #e57a2e 0 60%, transparent 60% 100%);
+  background-size: 14px 4px;
+  background-repeat: repeat-x;
+  background-position: 0 96%;
+  padding-bottom: 0.1em;
+}
+
+/* Rich text from the API (blog posts, legal pages), on top of the typography plugin */
+.prose-pk {
+  --tw-prose-body: #2a2f3d;
+  --tw-prose-headings: #070c1f;
+  --tw-prose-lead: #2a2f3d;
+  --tw-prose-links: #0048ac;
+  --tw-prose-bold: #070c1f;
+  --tw-prose-counters: #5c6170;
+  --tw-prose-bullets: #e57a2e;
+  --tw-prose-hr: #e6e0d4;
+  --tw-prose-quotes: #070c1f;
+  --tw-prose-quote-borders: #e57a2e;
+  --tw-prose-captions: #5c6170;
+  --tw-prose-code: #070c1f;
+  --tw-prose-th-borders: #d9d0bf;
+  --tw-prose-td-borders: #eae4d8;
+}
+.prose-pk :where(h2, h3, h4)[id] {
+  scroll-margin-top: 6.5rem;
+}
+.prose-pk .pk-table-wrap {
+  overflow-x: auto;
+  margin-block: 2em;
+  border: 1px solid #e6e0d4;
+  border-radius: 1rem;
+}
+.prose-pk .pk-table-wrap table {
+  margin: 0;
+  min-width: 36rem;
+}
+.prose-pk .pk-table-wrap :where(th, td) {
+  padding-inline: 0.9rem;
+}
+
+/* Dashed divider line that takes the current text colour */
+@utility stitch-line {
+  height: 2px;
+  background-image: linear-gradient(to right, currentColor 0 55%, transparent 55% 100%);
+  background-size: 10px 2px;
+  background-repeat: repeat-x;
+}
+
+/* Admin rich text editor (TipTap): placeholder, tables and selected images */
+.pk-editor .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--muted-foreground);
+}
+.pk-editor .tiptap .tableWrapper {
+  overflow-x: auto;
+  margin-block: 1.5em;
+}
+.pk-editor .tiptap table {
+  margin: 0;
+  border-collapse: collapse;
+  width: 100%;
+}
+.pk-editor .tiptap :where(th, td) {
+  position: relative;
+  min-width: 6rem;
+  border: 1px solid #d9d0bf;
+  padding: 0.4rem 0.6rem;
+  vertical-align: top;
+}
+.pk-editor .tiptap :where(th, td) > p {
+  margin: 0;
+}
+.pk-editor .tiptap .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgb(0 72 172 / 0.12);
+  pointer-events: none;
+}
+.pk-editor .tiptap img.ProseMirror-selectednode {
+  outline: 3px solid #5d8ddb;
+}
