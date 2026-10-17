@@ -39,7 +39,7 @@ export type Inquiry = InquirySummary & {
 };
 
 export type Dashboard = {
-  orders?: { awaiting_deposit: number; payments_to_check: number; open: number };
+  orders?: { awaiting_deposit: number; payments_to_check: number; open: number; late: number };
   customers?: { new_30_days: number };
   inquiries?: { new: number; open: number; last_30_days: number; latest: InquirySummary[] };
   content?: {
@@ -264,6 +264,9 @@ export type AdminOrderSummary = OrderSummary & {
   customer_id: number;
   company_name: string;
   country_code: string;
+  /** Orders list only. */
+  production_due_on?: string | null;
+  production_days_left?: number | null;
 };
 
 export type AdminPayment = Payment & {
@@ -271,6 +274,8 @@ export type AdminPayment = Payment & {
   slip_name: string | null;
   reviewed_by: number | null;
   reviewed_at: string | null;
+  /** Entered by staff ("Record a payment"), not reported by the buyer. */
+  recorded_by_staff: boolean;
 };
 
 export type AdminOrder = Omit<Order, "payments"> & {

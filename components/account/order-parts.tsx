@@ -205,15 +205,28 @@ export function PaymentList({ payments }: { payments: Payment[] }) {
   );
 }
 
+/** How a status change reads in the history. */
+const STATUS_EVENT: Partial<Record<OrderStatus, string>> = {
+  awaiting_deposit: "Waiting for the deposit",
+  payment_review: "Payment reported, under review",
+  confirmed: "Deposit confirmed, production scheduled",
+  in_production: "Production started",
+  ready_to_ship: "Ready to ship",
+  shipped: "Shipped",
+  delivered: "Delivered",
+  on_hold: "Put on hold",
+  cancelled: "Order cancelled",
+};
+
 const EVENT_TEXT: Record<string, (event: OrderEvent) => string> = {
   placed: () => "Order placed",
   payment_submitted: (event) => event.note ?? "Payment reported",
-  status: (event) => {
-    if (event.to_status === "payment_review") return "Payment reported, under review";
-    if (event.to_status === "cancelled") return "Order cancelled";
-    return `Status: ${event.to_status?.replaceAll("_", " ") ?? "updated"}`;
-  },
+  status: (event) =>
+    event.from_status === "on_hold" ? "Hold lifted, the order continues" : event.to_status ? (STATUS_EVENT[event.to_status] ?? "Status updated") : "Status updated",
 };
+
+/** Status changes whose note is shown under them (the reason for a hold or a cancellation). */
+const SHOW_NOTE_FOR: (OrderStatus | null)[] = ["cancelled", "on_hold", "confirmed"];
 
 export function OrderTimeline({ events }: { events: OrderEvent[] }) {
   return (
@@ -222,7 +235,8 @@ export function OrderTimeline({ events }: { events: OrderEvent[] }) {
         <li key={index} className="relative text-sm">
           <span aria-hidden className="absolute top-1.5 -left-[25px] size-2.5 rounded-full bg-denim-600 ring-4 ring-cotton-50" />
           <p className="font-medium">{(EVENT_TEXT[event.type] ?? (() => event.note ?? event.type))(event)}</p>
-          {event.type === "status" && event.to_status === "cancelled" && event.note ? <p className="text-muted-foreground">“{event.note}”</p> : null}
+          {event.type === "status" && SHOW_NOTE_FOR.includes(event.to_status) && event.note ? <p className="text-muted-foreground">{event.note}</p> : null}
+          {event.type === "note" ? <p className="text-xs font-medium text-stitch-700">Internal note</p> : null}
           <p className="text-xs text-muted-foreground">{shortDate(event.created_at)}</p>
         </li>
       ))}

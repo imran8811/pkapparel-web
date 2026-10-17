@@ -1,21 +1,35 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DownloadIcon, MailIcon, PaperclipIcon } from "lucide-react";
-import { NoAccess, PageHeader, Panel, Pill } from "@/components/admin/page-parts";
+import { DownloadIcon, MailIcon, PaperclipIcon, ReceiptIcon } from "lucide-react";
+import { NoAccess, OrderStatusPill, PageHeader, Panel, Pill } from "@/components/admin/page-parts";
+import {
+  ChargesForm,
+  DeleteDocument,
+  DocumentUpload,
+  NoteForm,
+  OrderActions,
+  PaymentReview,
+  ProductionManager,
+} from "@/components/admin/order-manager";
 import { OrderLines, OrderTimeline, OrderTotals, shippingSummary, sizesText } from "@/components/account/order-parts";
+import { DocumentList, dueText, ShipmentCard } from "@/components/account/order-progress";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
-import { BUSINESS_TYPES } from "@/lib/account/types";
-import { ORDER_STATUSES } from "@/lib/admin/labels";
+import { BUSINESS_TYPES, type OrderDocumentItem, type OrderStatus } from "@/lib/account/types";
 import { can } from "@/lib/admin/permissions";
 import { adminApi, getStaff } from "@/lib/admin/session";
-import { formatDateTime, formatDay } from "@/lib/admin/time";
+import { ADMIN_TIME_ZONE, formatDateTime, formatDay } from "@/lib/admin/time";
 import type { AdminOrder } from "@/lib/admin/types";
 import { countryName, formatMoney } from "@/lib/format";
 import { whatsappUrl } from "@/lib/links";
 
 export const metadata: Metadata = { title: "Order" };
+
+/** Statuses with a production timeline. */
+const PRODUCTION: OrderStatus[] = ["confirmed", "in_production", "on_hold", "ready_to_ship", "shipped", "delivered"];
+/** Statuses in which production can still be updated (as the API allows). */
+const PRODUCTION_OPEN: OrderStatus[] = ["confirmed", "in_production", "on_hold", "ready_to_ship"];
 
 export default async function OrderPage({ params }: PageProps<"/admin/orders/[id]">) {
   const staff = await getStaff();
@@ -30,10 +44,28 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
   }
+  // The page is rendered per request (it reads the staff session), so "today" is the current date in Lahore.
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: ADMIN_TIME_ZONE }).format(new Date());
   const { customer, address, amounts } = order;
-  const status = ORDER_STATUSES[order.status];
-  const canDownload = can(staff.role, "customers"); // PDFs and slips: admins and sales
+  const canManage = can(staff.role, "order_workflow");
+  const canPay = can(staff.role, "payments_review");
   const business = BUSINESS_TYPES.find((type) => type.value === customer.business_type)?.label;
+  const due = dueText(order);
+  const late = order.production_days_left !== null && order.production_days_left < 0;
+  const editableCharges = canManage && !["shipped", "delivered", "cancelled"].includes(order.status);
+
+  const documentHref = (document: OrderDocumentItem): string => {
+    switch (document.kind) {
+      case "proforma":
+        return `/admin/orders/${order.id}/proforma-invoice`;
+      case "invoice":
+        return `/admin/orders/${order.id}/invoice`;
+      case "receipt":
+        return `/admin/payments/${order.payments.find((p) => p.receipt_no === document.number)?.id ?? 0}/receipt`;
+      default:
+        return `/admin/order-documents/${document.id}`;
+    }
+  };
 
   return (
     <>
@@ -42,12 +74,12 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
         title={
           <span className="flex flex-wrap items-center gap-3">
             <span className="font-mono">{order.order_no}</span>
-            <Pill tone={status.tone}>{status.label}</Pill>
+            <OrderStatusPill status={order.status} dueNowCents={amounts.due_now_cents} />
           </span>
         }
         description={`Placed ${formatDateTime(order.placed_at)} · ${order.total_pcs} pcs · ${formatMoney(amounts.total_cents)}${order.buyer_reference ? ` · Buyer's reference ${order.buyer_reference}` : ""}`}
         actions={
-          canDownload && order.status !== "cancelled" ? (
+          canManage ? (
             <Button asChild variant="outline" size="sm">
               <a href={`/admin/orders/${order.id}/proforma-invoice`} download>
                 <DownloadIcon /> Proforma invoice
@@ -57,17 +89,32 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
         }
       />
 
+      {due ? (
+        <p className={late ? "mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive" : "mb-4 rounded-xl bg-denim-50 px-4 py-3 text-sm text-denim-800"}>
+          Production: {due}
+        </p>
+      ) : null}
+
+      <div className="mb-6">
+        <OrderActions order={order} canManage={canManage} canPay={canPay} today={today} />
+      </div>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
         <div className="grid min-w-0 grid-cols-1 gap-6 lg:col-span-2">
           {order.payments.length > 0 ? (
-            <Panel title="Reported payments" description="Check each transfer against the bank statement. Confirming payments in the admin (with automatic receipts) comes in the next update; until then, reply to the buyer by email.">
+            <Panel
+              title="Payments"
+              description={canPay ? "Check each transfer against the bank statement before confirming it. Confirming emails the buyer a receipt." : "Admins confirm or reject reported transfers."}
+            >
               <ul className="grid gap-3">
                 {order.payments.map((payment) => (
                   <li key={payment.id} className="rounded-xl border p-4 text-sm">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-medium">
-                        {payment.kind_label}: {formatMoney(payment.amount_cents)}{" "}
-                        <span className="font-normal text-muted-foreground">(due {formatMoney(amounts.due_now_cents)})</span>
+                        {payment.kind_label}: {formatMoney(payment.amount_cents)}
+                        {payment.received_cents !== null && payment.received_cents !== payment.amount_cents ? (
+                          <span className="font-normal text-muted-foreground"> · {formatMoney(payment.received_cents)} arrived</span>
+                        ) : null}
                       </p>
                       <Pill tone={payment.status === "confirmed" ? "green" : payment.status === "rejected" ? "red" : "orange"}>{payment.status_label}</Pill>
                     </div>
@@ -76,22 +123,62 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
                       <Item label="Transfer date" value={formatDay(payment.transferred_on)} />
                       <Item label="Sent by" value={payment.payer_name} />
                       <Item label="From bank" value={payment.payer_bank} />
-                      <Item label="Reported" value={formatDateTime(payment.created_at)} />
+                      <Item label={payment.recorded_by_staff ? "Recorded" : "Reported"} value={formatDateTime(payment.created_at)} />
                       {payment.notes ? <Item label="Notes" value={payment.notes} /> : null}
+                      {payment.rejection_reason ? <Item label="Rejected because" value={payment.rejection_reason} /> : null}
                     </dl>
-                    {payment.has_slip && canDownload ? (
-                      <a href={`/admin/payments/${payment.id}/slip`} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-denim-600 hover:underline">
-                        <PaperclipIcon className="size-4" /> {payment.slip_name ?? "Transfer slip"}
-                      </a>
-                    ) : null}
+                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+                      {payment.has_slip && canManage ? (
+                        <a href={`/admin/payments/${payment.id}/slip`} className="inline-flex items-center gap-1.5 font-medium text-denim-600 hover:underline">
+                          <PaperclipIcon className="size-4" /> {payment.slip_name ?? "Transfer slip"}
+                        </a>
+                      ) : null}
+                      {payment.receipt_no && canManage ? (
+                        <a href={`/admin/payments/${payment.id}/receipt`} className="inline-flex items-center gap-1.5 font-medium text-denim-600 hover:underline">
+                          <ReceiptIcon className="size-4" /> Receipt {payment.receipt_no}
+                        </a>
+                      ) : null}
+                    </div>
+                    {payment.status === "submitted" && canPay ? <PaymentReview payment={payment} dueCents={amounts.due_now_cents} today={today} /> : null}
                   </li>
                 ))}
               </ul>
             </Panel>
           ) : null}
 
+          {PRODUCTION.includes(order.status) ? (
+            <Panel title="Production" description="Mark each stage as it starts and finishes, and add photos. The buyer sees them on their order page.">
+              <ProductionManager
+                orderId={order.id}
+                stages={order.stages}
+                photos={order.photos}
+                canEdit={can(staff.role, "production") && PRODUCTION_OPEN.includes(order.status)}
+                today={today}
+              />
+            </Panel>
+          ) : null}
+
+          {order.shipment ? (
+            <Panel title="Shipment">
+              <ShipmentCard shipment={order.shipment} />
+            </Panel>
+          ) : null}
+
           <Panel title="Items">
             <OrderLines order={order} />
+          </Panel>
+
+          <Panel title="Documents" description="The proforma invoice, balance invoice and receipts are made by the website. Upload your own export paperwork here.">
+            <DocumentList
+              documents={order.documents}
+              href={documentHref}
+              action={(document) => (document.kind === "file" && canManage ? <DeleteDocument id={document.id} title={document.title} /> : null)}
+            />
+            {canManage && order.status !== "cancelled" ? (
+              <div className="mt-4">
+                <DocumentUpload orderId={order.id} />
+              </div>
+            ) : null}
           </Panel>
 
           {order.notes ? (
@@ -123,8 +210,8 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
               {business ? ` · ${business}` : ""} · {countryName(customer.country_code)}
             </p>
             <div className="mt-3 grid gap-1 text-sm">
-              <a href={`mailto:${customer.email}?subject=${encodeURIComponent(`Your order ${order.order_no}`)}`} className="inline-flex items-center gap-1.5 text-denim-600 hover:underline">
-                <MailIcon className="size-4" /> {customer.email}
+              <a href={`mailto:${customer.email}?subject=${encodeURIComponent(`Your order ${order.order_no}`)}`} className="inline-flex items-center gap-1.5 break-all text-denim-600 hover:underline">
+                <MailIcon className="size-4 shrink-0" /> {customer.email}
               </a>
               <a href={whatsappUrl(customer.phone.replace(/\D/g, ""), `Hello ${customer.contact_name}, about your order ${order.order_no}:`)} target="_blank" rel="noopener noreferrer" className="text-denim-600 hover:underline">
                 WhatsApp {customer.phone}
@@ -147,6 +234,11 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
 
           <Panel title="Totals">
             <OrderTotals order={order} />
+            {editableCharges && (order.shipping_mode !== "forwarder" || order.addons.some((addon) => addon.pricing !== "per_piece")) ? (
+              <div className="mt-5 border-t pt-4">
+                <ChargesForm order={order} />
+              </div>
+            ) : null}
           </Panel>
 
           <Panel title="Delivery">
@@ -176,6 +268,9 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
 
           <Panel title="History">
             <OrderTimeline events={order.events} />
+            <div className="mt-5 border-t pt-4">
+              <NoteForm orderId={order.id} />
+            </div>
           </Panel>
         </aside>
       </div>

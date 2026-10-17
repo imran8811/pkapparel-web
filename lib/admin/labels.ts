@@ -50,12 +50,18 @@ export const ORDER_STATUSES: Record<OrderStatus, { label: string; tone: Tone }> 
   payment_review: { label: "Payment to check", tone: "red" },
   confirmed: { label: "Confirmed", tone: "blue" },
   in_production: { label: "In production", tone: "blue" },
-  ready_to_ship: { label: "Ready, balance due", tone: "orange" },
+  ready_to_ship: { label: "Ready to ship", tone: "orange" },
   shipped: { label: "Shipped", tone: "green" },
   delivered: { label: "Delivered", tone: "green" },
   on_hold: { label: "On hold", tone: "neutral" },
   cancelled: { label: "Cancelled", tone: "muted" },
 };
+
+/** An order's status for staff; a ready order also says whether the balance has arrived. */
+export function orderStatus(status: OrderStatus, dueNowCents: number): { label: string; tone: Tone } {
+  if (status === "ready_to_ship") return dueNowCents > 0 ? { label: "Ready, balance due", tone: "orange" } : { label: "Ready to ship, paid", tone: "green" };
+  return ORDER_STATUSES[status];
+}
 
 export const ADDON_PRICING: { value: AddonPricing; label: string }[] = [
   { value: "per_piece", label: "Per piece (× all pieces of the order)" },

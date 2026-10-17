@@ -18,7 +18,7 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
 3. Start the API, then run `npm run dev`.
 4. Open http://localhost:3000.
    - The design system is at `/styleguide` (development only).
-   - The admin panel is at `/admin`. Staff accounts are created in the API repository with `php bin/create-staff.php`.
+   - The admin panel is at `/admin`. The first staff account is created in the API repository with `php bin/create-staff.php`; admins add the others under *Staff accounts*.
 
 **Change `.env.local` rather than overriding variables on the command line** (e.g. `API_URL=… npm run dev`). A mismatch puts the browser into an endless reload loop.
 
@@ -59,7 +59,9 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
   - Staff log in with their API account. The login token is kept in the HttpOnly cookie `pk_admin` (path `/admin`).
   - `proxy.ts` sends visitors without that cookie to the login page.
   - The API checks the token and the staff member's role on every request. `lib/admin/session.ts` is the only way admin pages reach the API.
+  - `lib/admin/permissions.ts` mirrors the roles, only to hide what a role cannot use: production staff see stages and photos, sales staff the order workflow and a read-only payment queue, admins everything (only they confirm payments).
   - Forms post to server actions in `lib/admin/actions`.
+  - **Orders:** the order page (`app/admin/(panel)/orders/[id]`) offers the next steps for its status: payments, production stages and photos, charges, documents, ready to ship, shipped, delivered, hold, cancel and notes. *Payments* is the queue of reported transfers.
 - **Wholesale shop (`app/(site)/wholesale-shop`):** URLs keep the old site's pattern, `/wholesale-shop/{segment}/{type}/{style}`.
   - Old product URLs ending in an article number (`…-1051`) redirect permanently to the style with that color selected.
   - The product page's order panel adds pieces to the cart; a prefilled quote request and WhatsApp stay available.
@@ -71,7 +73,11 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
   - **Data access:** `lib/account/session.ts` is the only way buyer pages reach the API. A rejected login goes through `/account/session-ended`, which clears the cookies.
   - **Login required:** `proxy.ts` sends visitors without `pk_session` from `/account` and `/checkout` to the login page.
   - **Forms** use `<ActionForm>` from `components/forms/action-form.tsx` (the public counterpart of the admin's `<AdminForm>`). Server actions live in `lib/account/actions`.
-  - **Downloads** (proforma invoices, and payment slips in the admin) go through route handlers that fetch the file from the API with the login token, so the token never reaches the browser.
+  - **The order page** shows the production timeline with photos, the shipment and tracking, and the documents (proforma and balance invoice, receipts, files staff share).
+  - **Downloads and private photos** go through route handlers that fetch the file from the API with the login token, so the token never reaches the browser:
+    - buyers: `/account/orders/{orderNo}/` + `proforma-invoice`, `invoice`, `receipts/{receiptNo}`, `documents/{id}`, `photos/{id}`
+    - admin: `/admin/orders/{id}/proforma-invoice` and `/invoice`, `/admin/payments/{id}/slip` and `/receipt`, `/admin/order-documents/{id}`, `/admin/order-photos/{id}`
+    - Photos are shown with a plain `<img>`, because the image optimizer would fetch them without the login cookie. They are shrunk in the browser before upload (one per request; the host accepts at most 4.5 MB per request).
   - **The email confirmation link** (`/verify-email?token=…`) is a route handler that confirms the address and redirects.
 - **Next.js 16 differs from older versions:** `proxy.ts` instead of middleware, `<Image preload>`, `revalidateTag(tag, "max")`, Cache Components. Read the bundled docs in `node_modules/next/dist/docs/` before changing framework-level code (see `AGENTS.md`).
 

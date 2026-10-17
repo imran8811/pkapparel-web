@@ -3,10 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MailIcon } from "lucide-react";
 import { CustomerStatusForm } from "@/components/admin/customer-status-form";
-import { EmptyState, NoAccess, PageHeader, Panel, Pill } from "@/components/admin/page-parts";
+import { EmptyState, NoAccess, OrderStatusPill, PageHeader, Panel, Pill } from "@/components/admin/page-parts";
 import { ApiError } from "@/lib/api";
 import { BUSINESS_TYPES } from "@/lib/account/types";
-import { ORDER_STATUSES } from "@/lib/admin/labels";
 import { can } from "@/lib/admin/permissions";
 import { adminApi, getStaff } from "@/lib/admin/session";
 import { formatDateTime, formatDay } from "@/lib/admin/time";
@@ -63,7 +62,7 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
                       </span>
                       <span className="flex items-center gap-3">
                         <span className="tabular-nums">{formatMoney(order.total_cents)}</span>
-                        <Pill tone={ORDER_STATUSES[order.status].tone}>{ORDER_STATUSES[order.status].label}</Pill>
+                        <OrderStatusPill status={order.status} dueNowCents={order.due_now_cents} />
                       </span>
                     </Link>
                   </li>

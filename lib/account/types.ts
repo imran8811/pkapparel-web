@@ -167,6 +167,7 @@ export type OrderLine = {
 };
 
 export type OrderAddon = {
+  id: number;
   name: string;
   pricing: AddonPricing;
   unit_price_cents: number | null;
@@ -193,6 +194,10 @@ export type Payment = {
   status_label: string;
   rejection_reason: string | null;
   receipt_no: string | null;
+  /** What actually arrived (confirmed payments; bank fees can make it less than reported). */
+  received_cents: number | null;
+  received_on: string | null;
+  reviewed_at: string | null;
   created_at: string;
 };
 
@@ -203,6 +208,45 @@ export type OrderEvent = {
   note: string | null;
   actor_type: "customer" | "staff" | "system";
   created_at: string;
+};
+
+export type StageStatus = "not_started" | "in_progress" | "done";
+
+export type ProductionStage = {
+  key: "fabric" | "cutting" | "stitching" | "washing" | "finishing" | "qc" | "packing";
+  label: string;
+  status: StageStatus;
+  started_on: string | null;
+  completed_on: string | null;
+  note: string | null;
+};
+
+export type ProductionPhoto = { id: number; stage: ProductionStage["key"] | null; caption: string | null; width: number; height: number; created_at: string };
+
+/** A document of the order: made by the site (proforma, invoice, receipt) or a file attached by staff. */
+export type OrderDocumentItem =
+  | { kind: "proforma" | "invoice" | "receipt"; title: string; number: string; date: string | null }
+  | {
+      kind: "file";
+      id: number;
+      type: string;
+      type_label: string;
+      title: string;
+      date: string;
+      mime: string;
+      size_bytes: number;
+      /** Staff views only. */
+      is_public?: boolean;
+    };
+
+export type Shipment = {
+  carrier: string;
+  tracking_no: string | null;
+  tracking_url: string | null;
+  shipped_on: string;
+  cartons: number | null;
+  gross_g: number | null;
+  note: string | null;
 };
 
 export type BankDetails = {
@@ -245,6 +289,16 @@ export type Order = {
   bank: BankDetails | null;
   confirmed_at: string | null;
   production_due_on: string | null;
+  /** Days until the production due date (negative when late); null when not in production. */
+  production_days_left: number | null;
+  stages: ProductionStage[];
+  photos: ProductionPhoto[];
+  documents: OrderDocumentItem[];
+  shipment: Shipment | null;
+  balance_invoice_no: string | null;
+  balance_invoiced_at: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
   cancelled_at: string | null;
   cancel_reason: string | null;
 };

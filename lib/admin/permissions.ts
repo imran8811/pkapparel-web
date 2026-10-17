@@ -8,6 +8,13 @@ const ACCESS = {
   content: ["admin", "editor"],
   inquiries: ["admin", "sales"],
   orders: ["admin", "sales", "production"],
+  /** Hold, cancel, ready date, charges, ready to ship, shipped, documents. */
+  order_workflow: ["admin", "sales"],
+  /** Production stages and photos. */
+  production: ["admin", "sales", "production"],
+  /** The payment queue (seen by sales; only admins confirm, reject or record: owner decision 2026-10-16). */
+  payments: ["admin", "sales"],
+  payments_review: ["admin"],
   customers: ["admin", "sales"],
   /** Shipping rates and add-ons (prices used at checkout). */
   commerce: ["admin", "sales"],

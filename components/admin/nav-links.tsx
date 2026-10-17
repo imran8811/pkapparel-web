@@ -18,6 +18,8 @@ import {
   MessageSquareQuoteIcon,
   NewspaperIcon,
   ReceiptTextIcon,
+  BanknoteIcon,
+  ShieldCheckIcon,
   SettingsIcon,
   UserIcon,
   type LucideIcon,
@@ -34,6 +36,7 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
     title: "Sales",
     items: [
       { href: "/admin/orders", label: "Orders", icon: ReceiptTextIcon, area: "orders" },
+      { href: "/admin/payments", label: "Payments", icon: BanknoteIcon, area: "payments" },
       { href: "/admin/customers", label: "Customers", icon: UsersIcon, area: "customers" },
       { href: "/admin/inquiries", label: "Inquiries", icon: InboxIcon, area: "inquiries" },
     ],
@@ -63,6 +66,7 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
     title: "Settings",
     items: [
       { href: "/admin/settings", label: "Company & business", icon: SettingsIcon, area: "settings" },
+      { href: "/admin/staff", label: "Staff accounts", icon: ShieldCheckIcon, area: "settings" },
       { href: "/admin/account", label: "My account", icon: UserIcon },
     ],
   },

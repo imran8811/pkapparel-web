@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowLeftIcon, LockIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { OrderStatus } from "@/lib/account/types";
+import { orderStatus } from "@/lib/admin/labels";
 import { cn } from "@/lib/utils";
 
 /* Building blocks shared by admin pages. */
@@ -100,6 +102,12 @@ export function Pill({ tone = "neutral", children }: { tone?: "neutral" | "blue"
       {children}
     </span>
   );
+}
+
+/** An order's status (a ready order also says whether the balance has arrived). */
+export function OrderStatusPill({ status, dueNowCents }: { status: OrderStatus; dueNowCents: number }) {
+  const { label, tone } = orderStatus(status, dueNowCents);
+  return <Pill tone={tone}>{label}</Pill>;
 }
 
 /** Page links for long lists (keeps the other filters in the URL). */

@@ -12,13 +12,31 @@ import {
   shortDate,
   StatusBadge,
 } from "@/components/account/order-parts";
+import { DocumentList, dueText, ProductionTimeline, readyText, ShipmentCard } from "@/components/account/order-progress";
 import { Button } from "@/components/ui/button";
 import { panelClass } from "@/components/forms/styles";
 import { ApiError } from "@/lib/api";
 import { countryName, formatMoney } from "@/lib/format";
 import { customerApi } from "@/lib/account/session";
-import type { Order } from "@/lib/account/types";
+import type { Order, OrderDocumentItem } from "@/lib/account/types";
 import { privatePageMetadata } from "@/lib/seo";
+
+/** Statuses in which the buyer sees the production timeline. */
+const IN_PRODUCTION = ["confirmed", "in_production", "on_hold", "ready_to_ship", "shipped", "delivered"];
+
+function documentHref(orderNo: string, document: OrderDocumentItem): string {
+  const base = `/account/orders/${orderNo}`;
+  switch (document.kind) {
+    case "proforma":
+      return `${base}/proforma-invoice`;
+    case "invoice":
+      return `${base}/invoice`;
+    case "receipt":
+      return `${base}/receipts/${document.number}`;
+    default:
+      return `${base}/documents/${document.id}`;
+  }
+}
 
 export async function generateMetadata({ params }: PageProps<"/account/orders/[orderNo]">) {
   const { orderNo } = await params;
@@ -93,6 +111,35 @@ export default async function OrderPage({ params }: PageProps<"/account/orders/[
             </section>
           ) : null}
 
+          {order.shipment ? (
+            <section aria-labelledby="shipment" className={panelClass}>
+              <h2 id="shipment" className="text-lg font-semibold">
+                Shipment
+              </h2>
+              <div className="mt-4">
+                <ShipmentCard shipment={order.shipment} />
+              </div>
+            </section>
+          ) : null}
+
+          {IN_PRODUCTION.includes(order.status) ? (
+            <section aria-labelledby="production" className={panelClass}>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h2 id="production" className="text-lg font-semibold">
+                  Production
+                </h2>
+                {dueText(order) ? <p className="text-sm text-muted-foreground">{dueText(order)}</p> : null}
+              </div>
+              <div className="mt-5">
+                <ProductionTimeline
+                  stages={order.stages}
+                  photos={order.photos}
+                  photoSrc={(id, full) => `/account/orders/${order.order_no}/photos/${id}${full ? "?size=full" : ""}`}
+                />
+              </div>
+            </section>
+          ) : null}
+
           <section aria-labelledby="items" className={panelClass}>
             <h2 id="items" className="text-lg font-semibold">
               What you ordered
@@ -101,6 +148,17 @@ export default async function OrderPage({ params }: PageProps<"/account/orders/[
               <OrderLines order={order} />
             </div>
           </section>
+
+          {order.documents.length > 0 ? (
+            <section aria-labelledby="documents" className={panelClass}>
+              <h2 id="documents" className="text-lg font-semibold">
+                Documents
+              </h2>
+              <div className="mt-2">
+                <DocumentList documents={order.documents} href={(document) => documentHref(order.order_no, document)} />
+              </div>
+            </section>
+          ) : null}
 
           {order.payments.length > 0 ? (
             <section aria-labelledby="payments" className={panelClass}>
@@ -157,9 +215,7 @@ export default async function OrderPage({ params }: PageProps<"/account/orders/[
               <br />
               {countryName(address.country_code)}
             </address>
-            <p className="mt-4 text-sm text-muted-foreground">
-              Ready about {order.lead_time_days} days after the deposit is confirmed{order.production_due_on ? ` (due ${shortDate(order.production_due_on)})` : ""}.
-            </p>
+            {readyText(order) ? <p className="mt-4 text-sm text-muted-foreground">{readyText(order)}</p> : null}
           </section>
 
           <section aria-labelledby="history" className={panelClass}>

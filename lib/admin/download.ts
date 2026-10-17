@@ -3,8 +3,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import { apiFile, ApiError } from "@/lib/api";
 import { ADMIN_COOKIE } from "@/lib/admin/session";
 
-/** Streams a private file from the admin API (proforma invoices, payment slips) to a logged-in staff member. */
-export async function adminDownload(request: NextRequest, path: string): Promise<NextResponse> {
+/**
+ * Streams a private file from the admin API (invoices, receipts, payment slips, documents, production photos)
+ * to a logged-in staff member. Photos are shown inline and may be cached privately for a while.
+ */
+export async function adminDownload(request: NextRequest, path: string, options: { inline?: boolean } = {}): Promise<NextResponse> {
   const token = request.cookies.get(ADMIN_COOKIE)?.value;
   if (!token) return NextResponse.redirect(new URL("/admin/login", request.url), 303);
 
@@ -13,8 +16,8 @@ export async function adminDownload(request: NextRequest, path: string): Promise
     return new NextResponse(file.body, {
       headers: {
         "Content-Type": file.contentType,
-        "Content-Disposition": `attachment; filename="${file.filename}"`,
-        "Cache-Control": "private, no-store",
+        "Content-Disposition": `${options.inline ? "inline" : "attachment"}; filename="${file.filename}"`,
+        "Cache-Control": options.inline ? "private, max-age=3600" : "private, no-store",
       },
     });
   } catch (error) {

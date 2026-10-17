@@ -40,8 +40,9 @@ export default async function DashboardPage() {
       {orders ? (
         <div className="mb-6">
           <h2 className="mb-3 font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase">Wholesale shop</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Payments to check" value={orders.payments_to_check} href="/admin/orders?status=payment_review" highlight={orders.payments_to_check > 0} />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <Stat label="Payments to check" value={orders.payments_to_check} href="/admin/payments" highlight={orders.payments_to_check > 0} />
+            <Stat label="Late orders" value={orders.late} href="/admin/orders?status=late" highlight={orders.late > 0} />
             <Stat label="Orders awaiting the deposit" value={orders.awaiting_deposit} href="/admin/orders?status=awaiting_deposit" />
             <Stat label="Open orders" value={orders.open} href="/admin/orders" />
             {customers ? <Stat label="New buyer accounts (30 days)" value={customers.new_30_days} href="/admin/customers" /> : null}

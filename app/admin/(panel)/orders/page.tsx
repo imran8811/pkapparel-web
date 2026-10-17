@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SearchIcon } from "lucide-react";
-import { EmptyState, NoAccess, PageHeader, Pager, Pill } from "@/components/admin/page-parts";
+import { EmptyState, NoAccess, OrderStatusPill, PageHeader, Pager } from "@/components/admin/page-parts";
 import { inputClass } from "@/components/admin/styles";
 import { ORDER_STATUSES } from "@/lib/admin/labels";
 import { can } from "@/lib/admin/permissions";
@@ -21,15 +21,16 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
   if (!can(staff.role, "orders")) return <NoAccess />;
 
   const search = (await searchParams) as Search;
-  const status = search.status && search.status in ORDER_STATUSES ? (search.status as OrderStatus) : undefined;
+  const status = search.status === "late" || (search.status && search.status in ORDER_STATUSES) ? (search.status as OrderStatus | "late") : undefined;
   const q = search.q?.trim() || undefined;
   const page = Math.max(1, Number(search.page) || 1);
 
-  const { data: orders, meta } = await adminApiWithMeta<AdminOrderSummary[], { pagination: Pagination; counts: Partial<Record<OrderStatus, number>>; payments_to_check: number }>(
-    "/v1/admin/orders",
-    { query: { status, q, page } },
-  );
-  const total = Object.values(meta.counts).reduce((sum, count) => sum + (count ?? 0), 0);
+  const { data: orders, meta } = await adminApiWithMeta<
+    AdminOrderSummary[],
+    { pagination: Pagination; counts: Partial<Record<OrderStatus | "late", number>>; payments_to_check: number }
+  >("/v1/admin/orders", { query: { status, q, page } });
+  const { late: lateCount = 0, ...statusCounts } = meta.counts;
+  const total = Object.values(statusCounts).reduce((sum, count) => sum + (count ?? 0), 0);
 
   const href = (changes: Partial<Record<keyof Search, string | number | undefined>>) => {
     const params = new URLSearchParams();
@@ -39,12 +40,13 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
     }
     return `/admin/orders${params.size ? `?${params}` : ""}`;
   };
-  const filters: { value: OrderStatus | undefined; label: string; count: number }[] = [
+  const filters: { value: OrderStatus | "late" | undefined; label: string; count: number }[] = [
     { value: undefined, label: "All", count: total },
-    ...(Object.keys(ORDER_STATUSES) as OrderStatus[]).filter((key) => (meta.counts[key] ?? 0) > 0 || key === status).map((key) => ({
+    ...(lateCount > 0 || status === "late" ? [{ value: "late" as const, label: "Late", count: lateCount }] : []),
+    ...(Object.keys(ORDER_STATUSES) as OrderStatus[]).filter((key) => (statusCounts[key] ?? 0) > 0 || key === status).map((key) => ({
       value: key,
       label: ORDER_STATUSES[key].label,
-      count: meta.counts[key] ?? 0,
+      count: statusCounts[key] ?? 0,
     })),
   ];
 
@@ -113,7 +115,16 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
                   </p>
                 </div>
                 <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-1">
-                  <Pill tone={ORDER_STATUSES[order.status].tone}>{ORDER_STATUSES[order.status].label}</Pill>
+                  <OrderStatusPill status={order.status} dueNowCents={order.due_now_cents} />
+                  {order.production_days_left !== null && order.production_days_left !== undefined ? (
+                    <span className={order.production_days_left < 0 ? "text-xs font-medium text-destructive" : "text-xs text-muted-foreground"}>
+                      {order.production_days_left < 0
+                        ? `${-order.production_days_left} ${order.production_days_left === -1 ? "day" : "days"} late`
+                        : order.production_days_left === 0
+                          ? "Due today"
+                          : `Due in ${order.production_days_left} ${order.production_days_left === 1 ? "day" : "days"}`}
+                    </span>
+                  ) : null}
                   <span className="text-sm font-medium tabular-nums">{formatMoney(order.total_cents)}</span>
                   <span className="text-xs text-muted-foreground">{formatRelative(order.placed_at)}</span>
                 </div>
