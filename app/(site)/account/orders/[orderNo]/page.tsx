@@ -60,7 +60,7 @@ export default async function OrderPage({ params }: PageProps<"/account/orders/[
         <OrderNotice orderNo={order.order_no} leadTime={order.lead_time_days} kind={order.kind} pricing={order.status === "awaiting_price"} />
         <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            {sample ? <p className="font-mono text-xs font-medium tracking-[0.2em] text-stitch-600 uppercase">Sample order</p> : null}
+            {sample ? <p className="font-mono text-xs font-medium tracking-[0.2em] text-stitch-700 uppercase">Sample order</p> : null}
             <h1 className="flex flex-wrap items-center gap-3 text-3xl font-bold tracking-tight sm:text-4xl">
               <span className="font-mono">{order.order_no}</span>
               <StatusBadge status={order.status} label={order.status_label} className="text-sm" />

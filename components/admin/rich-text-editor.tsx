@@ -105,6 +105,8 @@ export function RichTextEditor({
       attributes: {
         class:
           "prose prose-pk max-w-none min-h-[420px] px-5 py-4 outline-none prose-headings:font-heading prose-headings:tracking-tight prose-img:rounded-xl",
+        role: "textbox",
+        "aria-multiline": "true",
         "aria-label": label,
       },
     },

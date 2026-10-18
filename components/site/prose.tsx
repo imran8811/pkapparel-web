@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils";
  * scroll wrapper so they never break the layout on phones.
  */
 export function Prose({ html, className }: { html: string; className?: string }) {
+  // The table wrapper scrolls sideways on phones, so keyboard users can focus it and scroll with the arrow keys.
   const withTableWrappers = responsiveImages(orderedHeadings(html))
-    .replace(/<table\b/g, '<div class="pk-table-wrap"><table')
+    .replace(/<table\b/g, '<div class="pk-table-wrap" tabindex="0" role="region" aria-label="Table"><table')
     .replace(/<\/table>/g, "</table></div>");
 
   return (

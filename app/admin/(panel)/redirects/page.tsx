@@ -64,7 +64,7 @@ export default async function RedirectsPage({ searchParams }: PageProps<"/admin/
         }
       />
 
-      <nav aria-label="Redirects" className="mb-5 flex gap-4 overflow-x-auto border-b text-sm">
+      <nav aria-label="Redirects" className="mb-5 flex flex-wrap gap-x-4 border-b text-sm">
         {(
           [
             ["redirects", `Redirects (${counts.redirects})`],

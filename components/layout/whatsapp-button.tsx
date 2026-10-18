@@ -22,7 +22,7 @@ export function WhatsAppButton({ number }: { number: string }) {
           `Hello PK Apparel, I'm interested in: ${document.title}\n${window.location.href}`,
         );
       }}
-      className="group fixed right-4 bottom-4 z-40 flex items-center gap-2 rounded-full bg-[#25d366] p-3.5 text-white shadow-lg shadow-black/20 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:ring-4 focus-visible:ring-[#25d366]/40 focus-visible:outline-none sm:right-6 sm:bottom-6"
+      className="group fixed right-4 bottom-4 z-40 flex items-center gap-2 rounded-full bg-[#25d366] p-3.5 text-denim-950 shadow-lg shadow-black/20 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:ring-4 focus-visible:ring-[#25d366]/40 focus-visible:outline-none sm:right-6 sm:bottom-6"
     >
       <WhatsAppIcon className="size-6" />
       <span className="hidden pr-1 text-sm font-semibold md:inline">Chat with us</span>

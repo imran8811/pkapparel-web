@@ -85,7 +85,7 @@ export function NavLinks({ role, onNavigate }: { role: Role; onNavigate?: () => 
         return (
           <div key={section.title ?? index} className="grid gap-0.5">
             {section.title ? (
-              <p className="px-3 pb-1 font-mono text-[10px] tracking-[0.2em] text-cotton-50/45 uppercase">{section.title}</p>
+              <p className="px-3 pb-1 font-mono text-[10px] tracking-[0.2em] text-cotton-50/60 uppercase">{section.title}</p>
             ) : null}
             {items.map((item) => {
               const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);

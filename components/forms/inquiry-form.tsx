@@ -132,7 +132,7 @@ export function InquiryForm({
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#25d366] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1fbe5b]"
+          className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#25d366] px-5 py-3 text-sm font-semibold text-denim-950 hover:bg-[#1fbe5b]"
         >
           <WhatsAppIcon className="size-4" /> Need a faster reply? WhatsApp us
         </a>

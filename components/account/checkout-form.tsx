@@ -191,7 +191,7 @@ export function CheckoutForm({ initial, customer, countries }: { initial: Checko
               <span className="font-semibold text-stitch-700">Deposit due now ({data.deposit_percent}%)</span>
               <span className="font-heading text-xl font-semibold tabular-nums text-stitch-700">{formatMoney(deposit)}</span>
             </div>
-            <p className="mt-1 text-xs text-stitch-700/80">
+            <p className="mt-1 text-xs text-stitch-700">
               Of the goods{addonsCents > 0 ? " and add-ons" : ""}, by bank transfer. The balance of {formatMoney(Math.max(0, total - deposit))}
               {mode === "forwarder" ? "" : " plus the final freight"} is due before shipment.
             </p>

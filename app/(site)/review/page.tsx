@@ -16,7 +16,7 @@ export const metadata = privatePageMetadata("Review your order", "/review");
 export default function ReviewPage({ searchParams }: PageProps<"/review">) {
   return (
     <Container className="max-w-3xl py-14 lg:py-20">
-      <p className="font-mono text-xs font-medium tracking-[0.2em] text-stitch-600 uppercase">Your review</p>
+      <p className="font-mono text-xs font-medium tracking-[0.2em] text-stitch-700 uppercase">Your review</p>
       <Suspense
         fallback={
           <div className="mt-4 grid gap-4" aria-busy="true" aria-label="Loading">

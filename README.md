@@ -64,6 +64,10 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
   - These pages decide on the redirect or the 404 before anything streams, so both keep their HTTP status. For the same reason they export `instant = false`: reading the address at the top would otherwise raise the "URL data outside of Suspense" insight in development.
   - The "page not found" pages report the address (`MissingPageReporter`, `lib/actions/missing-pages.ts`). Staff see these addresses in *Redirects → Not found*, most visited first.
 - **Error pages:** `app/(site)/error.tsx` (inside the site header and footer), `app/admin/(panel)/error.tsx`, and `app/global-error.tsx` when the root layout fails.
+- **Rich text** (`components/site/prose.tsx`: blog posts and legal pages):
+  - Headings are renumbered so they never skip a level.
+  - Uploaded images (whose size the API adds) are served by the image optimizer at the reader's width and load lazily.
+  - Wide tables scroll sideways and can be reached with the keyboard.
 - **Security headers** (`next.config.ts`):
   - A Content-Security-Policy without per-request nonces, so pages stay static. Everything loads from this domain; adding a third-party script, font or frame means adding it to the policy.
   - On an `https://` site URL, also HSTS (one year) and `upgrade-insecure-requests`.

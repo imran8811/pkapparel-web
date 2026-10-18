@@ -101,7 +101,7 @@ export default async function ReviewsPage({ searchParams }: PageProps<"/admin/re
           {reviews.map((review) => (
             <li key={review.id} className="flex flex-col rounded-2xl border bg-white p-5">
               <div className="flex items-start justify-between gap-3">
-                <div className="flex gap-0.5 text-stitch-500" aria-label={review.rating ? `${review.rating} stars` : "No rating"}>
+                <div className="flex gap-0.5 text-stitch-500" role="img" aria-label={review.rating ? `${review.rating} stars` : "No rating"}>
                   {Array.from({ length: review.rating ?? 0 }, (_, index) => (
                     <StarIcon key={index} className="size-4 fill-current" />
                   ))}
@@ -175,7 +175,7 @@ function OrderReviews({ reviews, status, counts }: { reviews: OrderReview[]; sta
           {reviews.map((review) => (
             <li key={review.id} className="rounded-2xl border bg-white p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex gap-0.5 text-stitch-500" aria-label={`${review.rating} of 5 stars`}>
+                <div className="flex gap-0.5 text-stitch-500" role="img" aria-label={`${review.rating} of 5 stars`}>
                   {Array.from({ length: 5 }, (_, index) => (
                     <StarIcon key={index} className={cn("size-4", index < review.rating ? "fill-current" : "text-cotton-300")} />
                   ))}
