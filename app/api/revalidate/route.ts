@@ -1,10 +1,11 @@
 import { timingSafeEqual } from "node:crypto";
 import { revalidateTag } from "next/cache";
+import { secret } from "@/lib/api";
 
 const TAG_PATTERN = /^[a-z0-9][a-z0-9:_.-]{0,99}$/i;
 
 function secretMatches(given: string | null): boolean {
-  const expected = process.env.REVALIDATE_SECRET ?? "";
+  const expected = secret(process.env.REVALIDATE_SECRET);
   if (!expected || !given) return false;
 
   const a = Buffer.from(given);

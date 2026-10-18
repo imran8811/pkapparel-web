@@ -2,7 +2,16 @@ import "server-only";
 
 // The live API unless API_URL says otherwise (locally: http://127.0.0.1:8080 in .env.local).
 const API_URL = (process.env.API_URL || "https://api.pkapparel.com").replace(/\/+$/, "");
-const CLIENT_KEY = process.env.API_CLIENT_KEY ?? "";
+const CLIENT_KEY = secret(process.env.API_CLIENT_KEY);
+
+/**
+ * A secret from the environment, without the spaces or quotes a copy-paste can add (the API reads its .env the same
+ * way), so the two sides compare equal.
+ */
+export function secret(value: string | undefined): string {
+  const trimmed = (value ?? "").trim();
+  return /^(["']).*\1$/.test(trimmed) && trimmed.length >= 2 ? trimmed.slice(1, -1) : trimmed;
+}
 
 /** An error returned by the PHP API, with its HTTP status and machine-readable code. */
 export class ApiError extends Error {
