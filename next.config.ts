@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
-const apiUrl = new URL(process.env.API_URL ?? "http://127.0.0.1:8080");
+// The live addresses unless the environment says otherwise (locally: .env.local).
+const apiUrl = new URL(process.env.API_URL || "https://api.pkapparel.com");
 
 /** The old blog's posts. Earlier versions of the old site also served them at /{slug}, /posts/{slug} and /jeans-pants/{slug}. */
 const OLD_POSTS = [
@@ -19,7 +20,7 @@ const OLD_POSTS = [
 ].join("|");
 
 /** The live site runs on HTTPS; local copies (http://localhost) must not be pushed to HTTPS. */
-const https = (process.env.NEXT_PUBLIC_SITE_URL ?? "").startsWith("https://");
+const https = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.pkapparel.com").startsWith("https://");
 
 /*
  * Content-Security-Policy without per-request nonces, so pages stay static (see the Next.js CSP guide).

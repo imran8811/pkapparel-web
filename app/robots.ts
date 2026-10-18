@@ -1,9 +1,8 @@
 import type { MetadataRoute } from "next";
+import { siteUrl } from "@/lib/seo";
 
 /** Search engines may only index the live site (SITE_INDEXABLE=true). */
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
   if (process.env.SITE_INDEXABLE !== "true") {
     return { rules: { userAgent: "*", disallow: "/" } };
   }

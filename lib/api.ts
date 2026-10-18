@@ -1,6 +1,7 @@
 import "server-only";
 
-const API_URL = (process.env.API_URL ?? "http://127.0.0.1:8080").replace(/\/+$/, "");
+// The live API unless API_URL says otherwise (locally: http://127.0.0.1:8080 in .env.local).
+const API_URL = (process.env.API_URL || "https://api.pkapparel.com").replace(/\/+$/, "");
 const CLIENT_KEY = process.env.API_CLIENT_KEY ?? "";
 
 /** An error returned by the PHP API, with its HTTP status and machine-readable code. */
