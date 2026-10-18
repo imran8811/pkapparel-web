@@ -15,7 +15,7 @@ import { getSite } from "@/lib/site";
 export const metadata = pageMetadata({
   title: "Wholesale shop: made-to-order denim",
   description:
-    "Wholesale jeans, chinos, cargo trousers and denim skirts for men, women and kids, made to order in Lahore. Prices per piece, from 100 pieces per color, shipped by air or sea.",
+    "Wholesale jeans for men, women and kids, men's chinos and cargo trousers, and denim skirts, made to order in Lahore. Prices per piece, from 100 pieces per color, shipped by air or sea.",
   path: "/wholesale-shop",
 });
 
@@ -37,6 +37,8 @@ export default async function ShopPage({ searchParams }: PageProps<"/wholesale-s
       />
       <section className="py-12 sm:py-16">
         <Container>
+          {/* Keeps the heading order (h1, h2, then the styles' h3) for screen readers. */}
+          <h2 className="sr-only">Styles</h2>
           <Suspense fallback={<ShopSkeleton />}>
             <ShopResults searchParams={searchParams} />
           </Suspense>

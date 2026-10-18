@@ -36,13 +36,19 @@ export type Inquiry = InquirySummary & {
   notes: string | null;
   handled_by: { id: number; name: string | null } | null;
   updated_at: string;
+  /** Files the sender attached (tech packs, photos), downloaded from /admin/inquiry-files/{id}. */
+  files: { id: number; name: string; mime: string; size_bytes: number }[];
 };
 
 export type Dashboard = {
-  orders?: { awaiting_deposit: number; payments_to_check: number; open: number; late: number };
+  orders?: { samples_to_price: number; awaiting_deposit: number; payments_to_check: number; open: number; late: number };
   customers?: { new_30_days: number };
   inquiries?: { new: number; open: number; last_30_days: number; latest: InquirySummary[] };
   content?: {
+    /** Reviews buyers wrote about delivered orders, waiting for approval. */
+    reviews_to_approve: number;
+    /** Addresses visitors hit that do not exist (Admin → Redirects). */
+    missing_pages: number;
     posts: { published: number; scheduled: number; drafts: number };
     faqs: number;
     testimonials: number;
@@ -109,6 +115,62 @@ export type Testimonial = {
   rating: number | null;
   sort_order: number;
   is_published: boolean;
+};
+
+/** A review a buyer wrote about a delivered order (GET /v1/admin/reviews). */
+export type OrderReview = {
+  id: number;
+  order_no: string;
+  company_name: string;
+  /** How the website names the buyer: the company, or the business type. */
+  display_name: string;
+  country_code: string | null;
+  total_pcs: number;
+  styles: string[];
+  rating: number;
+  body: string;
+  show_as: "company" | "business";
+  status: "pending" | "approved" | "hidden";
+  submitted_at: string;
+  /** Added to the home page reviews. */
+  featured: boolean;
+};
+
+/** A redirect from an old address (Admin → Redirects). */
+export type AdminRedirect = {
+  id: number;
+  from_path: string;
+  /** A path of this website (maybe with a query), or a full https:// address. */
+  to_path: string;
+  source: "staff" | "style" | "post";
+  source_label: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** An address that showed "page not found", reported by visitors' browsers. */
+export type MissingPage = {
+  id: number;
+  path: string;
+  hits: number;
+  last_referrer: string | null;
+  first_seen_at: string;
+  last_seen_at: string;
+  ignored: boolean;
+};
+
+export type RedirectCounts = { redirects: number; missing: number; ignored: number };
+
+/** GET /v1/admin/launch-checklist: what is still missing before the shop takes orders. */
+export type LaunchChecklistItem = {
+  key: string;
+  label: string;
+  done: boolean;
+  note: string | null;
+  href: string | null;
+  /** Ticked by staff (the website cannot check it). */
+  manual: boolean;
 };
 
 export type Certification = {
@@ -215,6 +277,7 @@ export type AdminProduct = {
   price_cents: number;
   moq_per_color: number | null;
   set_pcs_per_size: number | null;
+  min_pcs_per_size: number | null;
   lead_time_days: number | null;
   sample_price_cents: number | null;
   piece_weight_g: number | null;
@@ -300,7 +363,8 @@ export type AdminCustomerDetail = AdminCustomer & {
 };
 
 export type ShippingRate = {
-  mode: "air" | "sea";
+  /** "courier": sample orders, priced per piece. */
+  mode: "air" | "sea" | "courier";
   from_qty: number;
   rate_cents: number;
   fixed_cents: number;

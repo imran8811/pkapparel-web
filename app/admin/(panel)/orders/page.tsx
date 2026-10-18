@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Orders" };
 
-type Search = { status?: string; q?: string; page?: string };
+type Search = { status?: string; kind?: string; q?: string; page?: string };
 
 export default async function OrdersPage({ searchParams }: PageProps<"/admin/orders">) {
   const staff = await getStaff();
@@ -22,19 +22,20 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
 
   const search = (await searchParams) as Search;
   const status = search.status === "late" || (search.status && search.status in ORDER_STATUSES) ? (search.status as OrderStatus | "late") : undefined;
+  const kind = search.kind === "bulk" || search.kind === "sample" ? search.kind : undefined;
   const q = search.q?.trim() || undefined;
   const page = Math.max(1, Number(search.page) || 1);
 
   const { data: orders, meta } = await adminApiWithMeta<
     AdminOrderSummary[],
-    { pagination: Pagination; counts: Partial<Record<OrderStatus | "late", number>>; payments_to_check: number }
-  >("/v1/admin/orders", { query: { status, q, page } });
+    { pagination: Pagination; counts: Partial<Record<OrderStatus | "late", number>>; samples: number; payments_to_check: number }
+  >("/v1/admin/orders", { query: { status, kind, q, page } });
   const { late: lateCount = 0, ...statusCounts } = meta.counts;
   const total = Object.values(statusCounts).reduce((sum, count) => sum + (count ?? 0), 0);
 
   const href = (changes: Partial<Record<keyof Search, string | number | undefined>>) => {
     const params = new URLSearchParams();
-    const next = { status, q, page: undefined as number | undefined, ...changes };
+    const next = { status, kind, q, page: undefined as number | undefined, ...changes };
     for (const [key, value] of Object.entries(next)) {
       if (value !== undefined && value !== "" && !(key === "page" && value === 1)) params.set(key, String(value));
     }
@@ -54,7 +55,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
     <>
       <PageHeader
         title="Orders"
-        description="Orders placed in the wholesale shop. Each has a proforma invoice; buyers report their bank transfers on the order."
+        description="Orders placed in the wholesale shop, and sample orders. Each has an invoice; buyers report their bank transfers on the order."
       />
 
       {meta.payments_to_check > 0 ? (
@@ -62,6 +63,23 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
           {meta.payments_to_check} reported {meta.payments_to_check === 1 ? "payment needs" : "payments need"} checking against the bank statement. Open the orders marked “Payment to check”.
         </p>
       ) : null}
+
+      <nav aria-label="Kind of order" className="mb-3 flex gap-4 text-sm">
+        {[
+          { value: undefined, label: "All orders" },
+          { value: "bulk", label: "Bulk orders" },
+          { value: "sample", label: `Samples (${meta.samples})` },
+        ].map((option) => (
+          <Link
+            key={option.label}
+            href={href({ kind: option.value, status: undefined })}
+            aria-current={option.value === kind ? "page" : undefined}
+            className={cn("border-b-2 pb-1", option.value === kind ? "border-denim-900 font-medium" : "border-transparent text-muted-foreground hover:text-foreground")}
+          >
+            {option.label}
+          </Link>
+        ))}
+      </nav>
 
       <div className="mb-4 flex gap-1 overflow-x-auto pb-1">
         {filters.map((filter) => {
@@ -85,6 +103,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
 
       <form action="/admin/orders" className="mb-5 flex flex-wrap gap-2">
         {status ? <input type="hidden" name="status" value={status} /> : null}
+        {kind ? <input type="hidden" name="kind" value={kind} /> : null}
         <div className="relative min-w-60 flex-1">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <input name="q" defaultValue={q} placeholder="Search order number, company, email or the buyer's reference" aria-label="Search orders" className={cn(inputClass, "pl-9")} />
@@ -110,12 +129,12 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
                     <span className="text-muted-foreground">{countryName(order.country_code)}</span>
                   </p>
                   <p className="mt-1 truncate text-sm text-muted-foreground">
-                    {order.total_pcs} pcs · {order.styles.join(", ")} · {order.shipping_mode_label}
+                    {order.total_pcs} pcs · {order.styles.length > 0 ? order.styles.join(", ") : "Custom-design sample"} · {order.shipping_mode_label}
                     {order.buyer_reference ? ` · ${order.buyer_reference}` : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-1">
-                  <OrderStatusPill status={order.status} dueNowCents={order.due_now_cents} />
+                  <OrderStatusPill status={order.status} dueNowCents={order.due_now_cents} kind={order.kind} />
                   {order.production_days_left !== null && order.production_days_left !== undefined ? (
                     <span className={order.production_days_left < 0 ? "text-xs font-medium text-destructive" : "text-xs text-muted-foreground"}>
                       {order.production_days_left < 0
@@ -125,7 +144,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
                           : `Due in ${order.production_days_left} ${order.production_days_left === 1 ? "day" : "days"}`}
                     </span>
                   ) : null}
-                  <span className="text-sm font-medium tabular-nums">{formatMoney(order.total_cents)}</span>
+                  <span className="text-sm font-medium tabular-nums">{order.status === "awaiting_price" ? "To price" : formatMoney(order.total_cents)}</span>
                   <span className="text-xs text-muted-foreground">{formatRelative(order.placed_at)}</span>
                 </div>
               </Link>

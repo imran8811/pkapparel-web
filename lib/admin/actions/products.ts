@@ -82,6 +82,7 @@ export async function saveProduct(_previous: FormState, form: FormData): Promise
     tiers,
     moq_per_color: number(form, "moq_per_color"),
     set_pcs_per_size: number(form, "set_pcs_per_size"),
+    min_pcs_per_size: number(form, "min_pcs_per_size"),
     lead_time_days: number(form, "lead_time_days"),
     sample_price_cents: samplePrice,
     piece_weight_g: number(form, "piece_weight_g"),

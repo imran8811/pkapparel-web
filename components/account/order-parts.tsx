@@ -11,6 +11,7 @@ import {
   type Order,
   type OrderAmounts,
   type OrderEvent,
+  type OrderKind,
   type OrderStatus,
   type Payment,
 } from "@/lib/account/types";
@@ -104,17 +105,25 @@ export function freightText(amounts: Pick<OrderAmounts, "freight_status" | "frei
   }
 }
 
-export function OrderTotals({ order }: { order: Pick<Order, "amounts" | "total_pcs" | "addons"> }) {
+export function OrderTotals({ order }: { order: Pick<Order, "kind" | "status" | "amounts" | "total_pcs" | "addons" | "credits" | "pending_credit_cents"> }) {
   const { amounts } = order;
-  const rows: [string, string, string?][] = [[`Goods (${order.total_pcs} pcs)`, formatMoney(amounts.goods_cents)]];
+  const sample = order.kind === "sample";
+  const pricing = order.status === "awaiting_price";
+  // A sample order's add-on is the custom-design sample, whose pieces count in total_pcs too.
+  const goodsPcs = sample ? order.total_pcs - order.addons.reduce((sum, addon) => sum + addon.qty, 0) : order.total_pcs;
+  const rows: [string, string, string?][] = sample && goodsPcs === 0 ? [] : [[`${sample ? "Samples" : "Goods"} (${goodsPcs} pcs)`, formatMoney(amounts.goods_cents)]];
   if (order.addons.length > 0) {
+    const label = sample ? "Custom-design sample" : "Add-ons";
     rows.push(
       amounts.addons_cents === 0
-        ? ["Add-ons", "On request", "Quoted and added to the balance"]
-        : ["Add-ons", formatMoney(amounts.addons_cents), amounts.has_quoted_addons ? "Items on request are added later" : undefined],
+        ? [label, sample ? "We price it" : "On request", sample ? undefined : "Quoted and added to the balance"]
+        : [label, formatMoney(amounts.addons_cents), amounts.has_quoted_addons ? "Items on request are added later" : undefined],
     );
   }
-  rows.push(["Freight", freightText(amounts)]);
+  rows.push([sample ? "Courier" : "Freight", sample && amounts.freight_status === "quoted" ? "We price it" : freightText(amounts)]);
+  if (amounts.credit_cents > 0) {
+    rows.push(["Samples deducted", `−${formatMoney(amounts.credit_cents)}`, order.credits.map((credit) => credit.order_no).join(", ")]);
+  }
 
   return (
     <dl className="grid gap-2 text-sm">
@@ -129,21 +138,32 @@ export function OrderTotals({ order }: { order: Pick<Order, "amounts" | "total_p
       ))}
       <div className="mt-2 flex items-baseline justify-between gap-4 border-t border-border pt-3">
         <dt className="font-semibold">Total</dt>
-        <dd className="font-heading text-xl font-semibold tabular-nums">{formatMoney(amounts.total_cents)}</dd>
+        <dd className="font-heading text-xl font-semibold tabular-nums">{pricing ? "Follows by email" : formatMoney(amounts.total_cents)}</dd>
       </div>
-      <div className="flex items-baseline justify-between gap-4 text-muted-foreground">
-        <dt>{amounts.deposit_percent}% deposit</dt>
-        <dd className="tabular-nums">{formatMoney(amounts.deposit_cents)}</dd>
-      </div>
-      <div className="flex items-baseline justify-between gap-4 text-muted-foreground">
-        <dt>Balance before shipment</dt>
-        <dd className="tabular-nums">{formatMoney(amounts.balance_cents)}</dd>
-      </div>
+      {sample ? (
+        <p className="text-muted-foreground">Paid in full before dispatch.</p>
+      ) : (
+        <>
+          <div className="flex items-baseline justify-between gap-4 text-muted-foreground">
+            <dt>{amounts.deposit_percent}% deposit</dt>
+            <dd className="tabular-nums">{formatMoney(amounts.deposit_cents)}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-4 text-muted-foreground">
+            <dt>Balance before shipment</dt>
+            <dd className="tabular-nums">{formatMoney(amounts.balance_cents)}</dd>
+          </div>
+        </>
+      )}
       {amounts.paid_cents > 0 ? (
         <div className="flex items-baseline justify-between gap-4 text-emerald-700">
           <dt>Paid so far</dt>
           <dd className="tabular-nums">{formatMoney(amounts.paid_cents)}</dd>
         </div>
+      ) : null}
+      {order.pending_credit_cents > 0 ? (
+        <p className="mt-1 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+          Your samples ({formatMoney(order.pending_credit_cents)}) are deducted from the balance once this order is confirmed.
+        </p>
       ) : null}
     </dl>
   );
@@ -218,23 +238,38 @@ const STATUS_EVENT: Partial<Record<OrderStatus, string>> = {
   cancelled: "Order cancelled",
 };
 
-const EVENT_TEXT: Record<string, (event: OrderEvent) => string> = {
-  placed: () => "Order placed",
-  payment_submitted: (event) => event.note ?? "Payment reported",
-  status: (event) =>
-    event.from_status === "on_hold" ? "Hold lifted, the order continues" : event.to_status ? (STATUS_EVENT[event.to_status] ?? "Status updated") : "Status updated",
+/** The same for a sample order, where they differ. */
+const SAMPLE_STATUS_EVENT: Partial<Record<OrderStatus, string>> = {
+  awaiting_deposit: "Waiting for the payment",
+  confirmed: "Payment confirmed, preparing the samples",
 };
+
+function eventText(event: OrderEvent, kind: OrderKind): string {
+  switch (event.type) {
+    case "placed":
+      return "Order placed";
+    case "payment_submitted":
+      return event.note ?? "Payment reported";
+    case "status":
+      if (event.from_status === "on_hold") return "Hold lifted, the order continues";
+      if (event.from_status === "awaiting_price" && event.to_status === "awaiting_deposit") return event.note ?? "Price sent";
+      if (!event.to_status) return "Status updated";
+      return (kind === "sample" ? SAMPLE_STATUS_EVENT[event.to_status] : undefined) ?? STATUS_EVENT[event.to_status] ?? "Status updated";
+    default:
+      return event.note ?? event.type;
+  }
+}
 
 /** Status changes whose note is shown under them (the reason for a hold or a cancellation). */
 const SHOW_NOTE_FOR: (OrderStatus | null)[] = ["cancelled", "on_hold", "confirmed"];
 
-export function OrderTimeline({ events }: { events: OrderEvent[] }) {
+export function OrderTimeline({ events, kind = "bulk" }: { events: OrderEvent[]; kind?: OrderKind }) {
   return (
     <ol className="relative grid gap-4 border-l border-dashed border-border pl-5">
       {events.map((event, index) => (
         <li key={index} className="relative text-sm">
           <span aria-hidden className="absolute top-1.5 -left-[25px] size-2.5 rounded-full bg-denim-600 ring-4 ring-cotton-50" />
-          <p className="font-medium">{(EVENT_TEXT[event.type] ?? (() => event.note ?? event.type))(event)}</p>
+          <p className="font-medium">{eventText(event, kind)}</p>
           {event.type === "status" && SHOW_NOTE_FOR.includes(event.to_status) && event.note ? <p className="text-muted-foreground">{event.note}</p> : null}
           {event.type === "note" ? <p className="text-xs font-medium text-stitch-700">Internal note</p> : null}
           <p className="text-xs text-muted-foreground">{shortDate(event.created_at)}</p>

@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { LoaderCircle, MapPin, Plane, Ship, Warehouse } from "lucide-react";
-import { AddressFields } from "@/components/account/address-fields";
+import { LoaderCircle, Plane, Ship, Warehouse } from "lucide-react";
+import { AddressChoice } from "@/components/account/address-choice";
 import { VerifyEmailBanner } from "@/components/account/account-notices";
 import { ActionForm, CheckboxInput, FormMessage, SubmitButton, TextAreaInput, TextInput, useActionForm } from "@/components/forms/action-form";
 import { panelClass } from "@/components/forms/styles";
@@ -60,53 +60,17 @@ export function CheckoutForm({ initial, customer, countries }: { initial: Checko
         {!data.email_verified ? <VerifyEmailBanner email={customer.email} /> : null}
 
         <Section number={1} title="Delivery address" hint="The consignee on your documents. Your forwarder's address works too.">
-          <div className="grid gap-3" role="radiogroup" aria-label="Delivery address">
-            {data.addresses.map((option) => (
-              <label
-                key={option.id}
-                className={cn(
-                  "flex cursor-pointer gap-3 rounded-2xl border p-4 transition-colors",
-                  address === option.id ? "border-denim-600 bg-denim-50/50 ring-1 ring-denim-600" : "border-border hover:border-denim-300",
-                )}
-              >
-                <input
-                  type="radio"
-                  name="address_id"
-                  value={option.id}
-                  checked={address === option.id}
-                  onChange={() => {
-                    setAddress(option.id);
-                    reload(option.id, null);
-                  }}
-                  className="mt-1 accent-denim-600"
-                />
-                <span className="min-w-0 text-sm">
-                  <span className="block font-medium">{option.company}</span>
-                  <span className="block text-muted-foreground">
-                    {option.contact_name} · {option.line1}, {option.city}, {countryName(option.country_code)}
-                  </span>
-                </span>
-              </label>
-            ))}
-            <label
-              className={cn(
-                "flex cursor-pointer items-center gap-3 rounded-2xl border p-4 text-sm font-medium transition-colors",
-                address === "new" ? "border-denim-600 bg-denim-50/50 ring-1 ring-denim-600" : "border-border hover:border-denim-300",
-              )}
-            >
-              <input type="radio" name="address_id" value="new" checked={address === "new"} onChange={() => setAddress("new")} className="accent-denim-600" />
-              <MapPin aria-hidden className="size-4 text-denim-600" /> {data.addresses.length > 0 ? "A new address" : "Add your delivery address"}
-            </label>
-          </div>
-          {address === "new" ? (
-            <div className="mt-5 rounded-2xl bg-cotton-50 p-4 sm:p-5">
-              <AddressFields
-                countries={countries}
-                address={{ company: customer.company_name, contact_name: customer.contact_name, phone: customer.phone, country_code: data.country_code }}
-              />
-              <p className="mt-4 text-xs text-muted-foreground">The address is saved to your account for next time.</p>
-            </div>
-          ) : null}
+          <AddressChoice
+            addresses={data.addresses}
+            value={address}
+            onChange={(next) => {
+              setAddress(next);
+              if (next !== "new") reload(next, null);
+            }}
+            customer={customer}
+            countries={countries}
+            countryCode={data.country_code}
+          />
         </Section>
 
         <Section
@@ -232,6 +196,11 @@ export function CheckoutForm({ initial, customer, countries }: { initial: Checko
               {mode === "forwarder" ? "" : " plus the final freight"} is due before shipment.
             </p>
           </div>
+          {data.sample_credit_cents > 0 ? (
+            <p className="mt-3 rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-800">
+              Your samples ({formatMoney(data.sample_credit_cents)}) are deducted from the balance once this order is confirmed.
+            </p>
+          ) : null}
           <p className="mt-4 text-xs text-muted-foreground">Ready about {cart.lead_time_days} days after your deposit is confirmed. Bank details and your proforma invoice follow as soon as you place the order.</p>
           <div className="mt-5 grid gap-4">
             <CheckboxInput

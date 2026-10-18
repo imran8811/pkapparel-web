@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowLeftIcon, LockIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { OrderStatus } from "@/lib/account/types";
+import type { OrderKind, OrderStatus } from "@/lib/account/types";
 import { orderStatus } from "@/lib/admin/labels";
 import { cn } from "@/lib/utils";
 
@@ -104,10 +104,15 @@ export function Pill({ tone = "neutral", children }: { tone?: "neutral" | "blue"
   );
 }
 
-/** An order's status (a ready order also says whether the balance has arrived). */
-export function OrderStatusPill({ status, dueNowCents }: { status: OrderStatus; dueNowCents: number }) {
-  const { label, tone } = orderStatus(status, dueNowCents);
-  return <Pill tone={tone}>{label}</Pill>;
+/** An order's status (a ready order also says whether the balance has arrived); sample orders are marked. */
+export function OrderStatusPill({ status, dueNowCents, kind = "bulk" }: { status: OrderStatus; dueNowCents: number; kind?: OrderKind }) {
+  const { label, tone } = orderStatus(status, dueNowCents, kind);
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {kind === "sample" ? <Pill tone="muted">Sample</Pill> : null}
+      <Pill tone={tone}>{label}</Pill>
+    </span>
+  );
 }
 
 /** Page links for long lists (keeps the other filters in the URL). */

@@ -6,10 +6,12 @@ import { JsonLd } from "@/components/site/json-ld";
 import { SectionHeading } from "@/components/site/section-heading";
 import { ProductDetails } from "@/components/shop/product-details";
 import { ProductGrid } from "@/components/shop/product-grid";
+import { ProductReviews } from "@/components/shop/product-reviews";
 import { ProductView } from "@/components/shop/product-view";
 import { findLegacyProduct, getProduct, getProducts } from "@/lib/catalog";
 import { mediaSrc } from "@/lib/content";
 import { segmentInfo, shopUrl, typeInfo, type ProductType } from "@/lib/nav";
+import { findRedirect } from "@/lib/redirects";
 import { absoluteUrl, pageMetadata } from "@/lib/seo";
 import { productUrl, type Product } from "@/lib/shop";
 import { getSite } from "@/lib/site";
@@ -19,6 +21,9 @@ import { getSite } from "@/lib/site";
  * for the fresh page instead of getting the generic fallback shell with the old content.
  */
 export const ensureStatic = "navigation";
+// The address is read before anything streams, so a redirect or a 404 keeps its HTTP status. Every style is
+// prerendered (generateStaticParams), so navigating to one still uses static output.
+export const instant = false;
 
 export async function generateStaticParams() {
   const { items } = await getProducts();
@@ -43,6 +48,9 @@ export default async function ProductPage({ params }: PageProps<"/wholesale-shop
   const product = await getProduct(slug);
 
   if (!product) {
+    // A redirect from the admin (e.g. the style's address changed).
+    const moved = await findRedirect(`/wholesale-shop/${segment}/${type}/${slug}`);
+    if (moved) permanentRedirect(moved);
     // Old product URLs end with the article number: …/men-sky-blue-stretch-zipper-jeans-pant-1051
     const article = /-(\d{3,})$/.exec(slug)?.[1];
     const target = article ? await findLegacyProduct(article) : null;
@@ -78,6 +86,8 @@ export default async function ProductPage({ params }: PageProps<"/wholesale-shop
 
       <ProductDetails product={product} />
 
+      <ProductReviews reviews={product.reviews} />
+
       {product.related.length > 0 ? (
         <section className="border-t border-border py-16 sm:py-20">
           <Container>
@@ -97,9 +107,23 @@ function description(product: Product): string {
   return (text || `${product.name}, made to order in Lahore, Pakistan.`).slice(0, 160);
 }
 
-/** Product structured data: made to order, priced per piece, minimum quantity per color. */
+/** Product structured data: made to order, priced per piece, minimum quantity per color, buyer reviews. */
 function structuredData(product: Product, currency: string) {
   const money = (cents: number) => (cents / 100).toFixed(2);
+  const { reviews } = product;
+  const rated =
+    reviews.count > 0 && reviews.average !== null
+      ? {
+          aggregateRating: { "@type": "AggregateRating", ratingValue: reviews.average, reviewCount: reviews.count, bestRating: 5, worstRating: 1 },
+          review: reviews.items.slice(0, 5).map((review) => ({
+            "@type": "Review",
+            reviewRating: { "@type": "Rating", ratingValue: review.rating, bestRating: 5, worstRating: 1 },
+            author: { "@type": "Organization", name: review.name },
+            datePublished: review.date.slice(0, 10),
+            reviewBody: review.body,
+          })),
+        }
+      : {};
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -121,5 +145,6 @@ function structuredData(product: Product, currency: string) {
       eligibleQuantity: { "@type": "QuantitativeValue", minValue: product.rules.moq_per_color, unitText: "pieces per color" },
       url: absoluteUrl(productUrl(product)),
     },
+    ...rated,
   };
 }

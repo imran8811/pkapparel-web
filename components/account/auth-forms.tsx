@@ -24,7 +24,9 @@ function LoginNotice() {
         ? { tone: "info", text: "That confirmation link is not valid any more. Log in and we can send you a new one." }
         : next?.startsWith("/checkout")
           ? { tone: "info", text: "Log in or create a buyer account to check out. Your cart is kept." }
-          : null;
+          : next?.startsWith("/samples/order")
+            ? { tone: "info", text: "Log in or create a buyer account to order your samples. Your choice is kept." }
+            : null;
   if (!notice) return null;
 
   return (

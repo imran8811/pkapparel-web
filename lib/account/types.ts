@@ -56,6 +56,8 @@ export type CartColor = {
   line_cents: number;
   available: boolean;
   below_moq: boolean;
+  /** Sizes ordered below the style's minimum per size. */
+  small_sizes: string[];
 };
 
 export type CartStyle = {
@@ -89,7 +91,11 @@ export type Cart = {
   can_checkout: boolean;
 };
 
-export type ShippingMode = "air" | "sea" | "forwarder";
+/** "courier" is for sample orders. */
+export type ShippingMode = "air" | "sea" | "forwarder" | "courier";
+
+/** A wholesale order, or a sample order (paid in full before dispatch). */
+export type OrderKind = "bulk" | "sample";
 
 export type FreightQuote = {
   cost_cents: number | null;
@@ -119,9 +125,12 @@ export type Checkout = {
   addons: Addon[];
   deposit_percent: number;
   email_verified: boolean;
+  /** Paid samples, deducted from the balance once this order is confirmed. */
+  sample_credit_cents: number;
 };
 
 export type OrderStatus =
+  | "awaiting_price"
   | "awaiting_deposit"
   | "payment_review"
   | "confirmed"
@@ -140,6 +149,8 @@ export type OrderAmounts = {
   has_quoted_addons: boolean;
   freight_cents: number | null;
   freight_status: FreightStatus;
+  /** Sample costs deducted from this (bulk) order. */
+  credit_cents: number;
   total_cents: number;
   deposit_percent: number;
   deposit_cents: number;
@@ -262,9 +273,12 @@ export type BankDetails = {
 
 export type Order = {
   order_no: string;
+  kind: OrderKind;
   status: OrderStatus;
   status_label: string;
   placed_at: string;
+  /** When the order became payable (a sample order priced by staff: later than placed). */
+  priced_at: string | null;
   valid_until: string;
   currency: string;
   shipping_mode: ShippingMode;
@@ -301,10 +315,20 @@ export type Order = {
   delivered_at: string | null;
   cancelled_at: string | null;
   cancel_reason: string | null;
+  /** A delivered bulk order the buyer has not reviewed yet. */
+  can_review: boolean;
+  review_status: "pending" | "approved" | "hidden" | null;
+  /** Sample orders deducted from this order. */
+  credits: { order_no: string; cents: number }[];
+  /** Paid samples to be deducted once this order is confirmed. */
+  pending_credit_cents: number;
+  /** A sample order: the bulk order its cost was deducted from. */
+  credited_to: string | null;
 };
 
 export type OrderSummary = {
   order_no: string;
+  kind: OrderKind;
   status: OrderStatus;
   status_label: string;
   placed_at: string;
@@ -322,6 +346,7 @@ export type OrderSummary = {
 
 /** Badge colors per order status (Tailwind classes). */
 export const STATUS_TONE: Record<OrderStatus, string> = {
+  awaiting_price: "bg-stone-100 text-stone-700 ring-stone-200",
   awaiting_deposit: "bg-orange-50 text-stitch-700 ring-orange-200",
   payment_review: "bg-amber-50 text-amber-800 ring-amber-200",
   confirmed: "bg-denim-50 text-denim-700 ring-denim-200",
@@ -337,6 +362,7 @@ export const SHIPPING_MODE_LABELS: Record<ShippingMode, string> = {
   air: "Air freight",
   sea: "Sea freight",
   forwarder: "Your own forwarder",
+  courier: "Express courier",
 };
 
 /** "5–8 days" from a freight quote, or null. */

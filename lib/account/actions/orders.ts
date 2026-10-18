@@ -2,8 +2,9 @@
 
 import { refresh } from "next/cache";
 import { ApiError } from "@/lib/api";
+import { chosenAddress } from "@/lib/account/address-form";
 import { customerApi, setUiState } from "@/lib/account/session";
-import type { Address, Checkout, Order } from "@/lib/account/types";
+import type { Checkout, Order } from "@/lib/account/types";
 import { checked, errorState, failure, optional, success, text, type FormState } from "@/lib/forms";
 
 /** Checkout data for another address or destination country (freight estimates change with it). */
@@ -20,30 +21,12 @@ export async function checkoutFor(addressId: number | null, country: string | nu
 
 /** Places the order from the cart; a new delivery address is saved to the address book first. */
 export async function placeOrder(_previous: FormState, form: FormData): Promise<FormState> {
-  let addressId = Number(text(form, "address_id"));
-  const newAddress = text(form, "address_id") === "new";
-  if (newAddress) {
-    try {
-      const address = await customerApi<Address>("/v1/account/addresses", {
-        method: "POST",
-        body: {
-          company: text(form, "company"),
-          contact_name: text(form, "contact_name"),
-          phone: text(form, "phone"),
-          email: optional(form, "email"),
-          line1: text(form, "line1"),
-          line2: optional(form, "line2"),
-          city: text(form, "city"),
-          state: optional(form, "state"),
-          postal_code: optional(form, "postal_code"),
-          country_code: text(form, "country_code"),
-          tax_id: optional(form, "tax_id"),
-        },
-      });
-      addressId = address.id;
-    } catch (error) {
-      return errorState(error);
-    }
+  let addressId: number;
+  let newAddress: boolean;
+  try {
+    ({ id: addressId, created: newAddress } = await chosenAddress(form));
+  } catch (error) {
+    return errorState(error);
   }
   if (!addressId) return failure("Choose a delivery address.", { address_id: "Choose a delivery address." });
 

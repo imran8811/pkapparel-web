@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRightIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LaunchChecklist } from "@/components/admin/launch-checklist";
 import { PageHeader, Panel, Pill } from "@/components/admin/page-parts";
 import { INQUIRY_STATUSES, INQUIRY_TYPES } from "@/lib/admin/labels";
 import { adminApi, getStaff } from "@/lib/admin/session";
 import { ADMIN_TIME_ZONE, formatRelative } from "@/lib/admin/time";
-import type { Dashboard } from "@/lib/admin/types";
+import type { Dashboard, LaunchChecklistItem } from "@/lib/admin/types";
 import { countryName } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -19,6 +20,7 @@ function greeting(): string {
 export default async function DashboardPage() {
   const [staff, dashboard] = await Promise.all([getStaff(), adminApi<Dashboard>("/v1/admin/dashboard")]);
   const { orders, customers, inquiries, content } = dashboard;
+  const checklist = staff.role === "admin" ? await launchChecklist() : null;
 
   return (
     <>
@@ -37,11 +39,16 @@ export default async function DashboardPage() {
         }
       />
 
+      {checklist ? <LaunchChecklist items={checklist} /> : null}
+
       {orders ? (
         <div className="mb-6">
           <h2 className="mb-3 font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase">Wholesale shop</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <Stat label="Payments to check" value={orders.payments_to_check} href="/admin/payments" highlight={orders.payments_to_check > 0} />
+            {orders.samples_to_price > 0 ? (
+              <Stat label="Sample orders to price" value={orders.samples_to_price} href="/admin/orders?kind=sample&status=awaiting_price" highlight />
+            ) : null}
             <Stat label="Late orders" value={orders.late} href="/admin/orders?status=late" highlight={orders.late > 0} />
             <Stat label="Orders awaiting the deposit" value={orders.awaiting_deposit} href="/admin/orders?status=awaiting_deposit" />
             <Stat label="Open orders" value={orders.open} href="/admin/orders" />
@@ -108,14 +115,40 @@ export default async function DashboardPage() {
                 .join(" · ")}
             />
             <Stat label="FAQs" value={content.faqs} href="/admin/faqs" />
-            <Stat label="Buyer reviews" value={content.testimonials} href="/admin/reviews" />
+            <Stat
+              label="Buyer reviews"
+              value={content.testimonials}
+              href={content.reviews_to_approve > 0 ? "/admin/reviews?tab=orders" : "/admin/reviews"}
+              note={content.reviews_to_approve > 0 ? `${content.reviews_to_approve} from orders to approve` : undefined}
+              highlight={content.reviews_to_approve > 0}
+            />
             <Stat label="Certificates" value={content.certifications} href="/admin/certificates" />
+            {content.missing_pages > 0 ? (
+              <Stat label="Addresses not found" value={content.missing_pages} href="/admin/redirects?tab=missing" note="Redirect them to the right page" highlight />
+            ) : null}
           </div>
         </div>
       ) : null}
 
     </>
   );
+}
+
+/** The API's checklist, plus what only the website knows: whether search engines may index it. */
+async function launchChecklist(): Promise<LaunchChecklistItem[]> {
+  const items = await adminApi<LaunchChecklistItem[]>("/v1/admin/launch-checklist");
+  const indexable = process.env.SITE_INDEXABLE === "true";
+  return [
+    ...items,
+    {
+      key: "indexable",
+      label: "Search engines may index the website",
+      done: indexable,
+      note: indexable ? null : "Set SITE_INDEXABLE=true on the live website only (it stays hidden from Google everywhere else).",
+      href: null,
+      manual: false,
+    },
+  ];
 }
 
 function Stat({ label, value, href, note, highlight }: { label: string; value: number; href: string; note?: string; highlight?: boolean }) {

@@ -108,6 +108,11 @@ export async function saveCharges(orderId: number, _previous: FormState, form: F
   return run(`/v1/admin/orders/${orderId}/charges`, "PUT", body, "Charges saved.", { freight_cents: "freight" });
 }
 
+/** A sample order is priced (courier, custom sample): the buyer gets the sample invoice and can pay. */
+export async function sendPrice(orderId: number): Promise<FormState> {
+  return run(`/v1/admin/orders/${orderId}/send-price`, "POST", undefined, "Price sent. The buyer was emailed the sample invoice.");
+}
+
 export async function readyToShip(orderId: number): Promise<FormState> {
   return run(`/v1/admin/orders/${orderId}/ready-to-ship`, "POST", undefined, "Ready to ship. The balance invoice was emailed to the buyer.");
 }

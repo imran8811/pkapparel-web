@@ -52,7 +52,9 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
   const business = BUSINESS_TYPES.find((type) => type.value === customer.business_type)?.label;
   const due = dueText(order);
   const late = order.production_days_left !== null && order.production_days_left < 0;
-  const editableCharges = canManage && !["shipped", "delivered", "cancelled"].includes(order.status);
+  const sample = order.kind === "sample";
+  // A sample order is priced once (before the buyer pays); a bulk order's charges can change until it ships.
+  const editableCharges = canManage && (sample ? order.status === "awaiting_price" : !["shipped", "delivered", "cancelled"].includes(order.status));
 
   const documentHref = (document: OrderDocumentItem): string => {
     switch (document.kind) {
@@ -74,7 +76,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
         title={
           <span className="flex flex-wrap items-center gap-3">
             <span className="font-mono">{order.order_no}</span>
-            <OrderStatusPill status={order.status} dueNowCents={amounts.due_now_cents} />
+            <OrderStatusPill status={order.status} dueNowCents={amounts.due_now_cents} kind={order.kind} />
           </span>
         }
         description={`Placed ${formatDateTime(order.placed_at)} · ${order.total_pcs} pcs · ${formatMoney(amounts.total_cents)}${order.buyer_reference ? ` · Buyer's reference ${order.buyer_reference}` : ""}`}
@@ -82,7 +84,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
           canManage ? (
             <Button asChild variant="outline" size="sm">
               <a href={`/admin/orders/${order.id}/proforma-invoice`} download>
-                <DownloadIcon /> Proforma invoice
+                <DownloadIcon /> {sample ? "Sample invoice" : "Proforma invoice"}
               </a>
             </Button>
           ) : null
@@ -91,7 +93,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
 
       {due ? (
         <p className={late ? "mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive" : "mb-4 rounded-xl bg-denim-50 px-4 py-3 text-sm text-denim-800"}>
-          Production: {due}
+          {sample ? "Samples" : "Production"}: {due}
         </p>
       ) : null}
 
@@ -146,7 +148,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
             </Panel>
           ) : null}
 
-          {PRODUCTION.includes(order.status) ? (
+          {!sample && PRODUCTION.includes(order.status) ? (
             <Panel title="Production" description="Mark each stage as it starts and finishes, and add photos. The buyer sees them on their order page.">
               <ProductionManager
                 orderId={order.id}
@@ -187,19 +189,21 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
             </Panel>
           ) : null}
 
-          <Panel title="Packing estimate">
-            <p className="text-sm">
-              {order.packing.cartons} cartons · {(order.packing.gross_g / 1000).toFixed(1)} kg gross · {order.packing.cbm.toFixed(2)} CBM
-              {order.packing.freight?.basis ? ` · freight estimate based on ${order.packing.freight.basis}` : ""}
-            </p>
-            <ul className="mt-3 grid gap-1 text-xs text-muted-foreground">
-              {order.lines.map((line, index) => (
-                <li key={index}>
-                  {line.style_name}, {line.color_name}: {sizesText(line.size_qty)}
-                </li>
-              ))}
-            </ul>
-          </Panel>
+          {sample ? null : (
+            <Panel title="Packing estimate">
+              <p className="text-sm">
+                {order.packing.cartons} cartons · {(order.packing.gross_g / 1000).toFixed(1)} kg gross · {order.packing.cbm.toFixed(2)} CBM
+                {order.packing.freight?.basis ? ` · freight estimate based on ${order.packing.freight.basis}` : ""}
+              </p>
+              <ul className="mt-3 grid gap-1 text-xs text-muted-foreground">
+                {order.lines.map((line, index) => (
+                  <li key={index}>
+                    {line.style_name}, {line.color_name}: {sizesText(line.size_qty)}
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          )}
         </div>
 
         <aside className="grid min-w-0 grid-cols-1 gap-6">
@@ -267,7 +271,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
           </Panel>
 
           <Panel title="History">
-            <OrderTimeline events={order.events} />
+            <OrderTimeline events={order.events} kind={order.kind} />
             <div className="mt-5 border-t pt-4">
               <NoteForm orderId={order.id} />
             </div>

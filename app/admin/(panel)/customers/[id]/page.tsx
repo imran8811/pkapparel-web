@@ -62,7 +62,7 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
                       </span>
                       <span className="flex items-center gap-3">
                         <span className="tabular-nums">{formatMoney(order.total_cents)}</span>
-                        <OrderStatusPill status={order.status} dueNowCents={order.due_now_cents} />
+                        <OrderStatusPill status={order.status} dueNowCents={order.due_now_cents} kind={order.kind} />
                       </span>
                     </Link>
                   </li>

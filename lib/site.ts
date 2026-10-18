@@ -24,9 +24,15 @@ export type Site = {
     currency: string;
     moq_per_color: number;
     set_pcs_per_size: number;
+    /** Every size ordered in a color needs at least this many pieces (default 20). */
+    min_pcs_per_size: number;
     deposit_percent: number;
     lead_time_days: number;
     sample_price_cents: number;
+    /** Days to prepare samples of shop styles after the payment (default 7). */
+    sample_lead_time_days: number;
+    /** Days to make a custom-design sample (default 14). */
+    custom_sample_lead_time_days: number;
     shipping_modes: string[];
     /** Days a proforma invoice's prices are valid (default 14). */
     pi_valid_days?: number;

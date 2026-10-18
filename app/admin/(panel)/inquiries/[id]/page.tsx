@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { MailIcon, MessageCircleIcon, PhoneIcon } from "lucide-react";
+import { MailIcon, MessageCircleIcon, PaperclipIcon, PhoneIcon } from "lucide-react";
 import { InquiryFollowUpForm } from "@/components/admin/inquiry-follow-up-form";
 import { NoAccess, PageHeader, Panel, Pill } from "@/components/admin/page-parts";
 import { ApiError } from "@/lib/api";
@@ -50,12 +50,38 @@ export default async function InquiryPage({ params }: PageProps<"/admin/inquirie
             {details.length > 0 ? (
               <dl className="mt-6 grid gap-x-6 gap-y-3 border-t pt-5 text-sm sm:grid-cols-2">
                 {details.map(([key, value]) => (
-                  <div key={key}>
+                  <div key={key} className="min-w-0">
                     <dt className="text-xs text-muted-foreground">{detailLabel(key)}</dt>
-                    <dd className="mt-0.5 font-medium">{value}</dd>
+                    <dd className="mt-0.5 font-medium break-words">
+                      {key === "link" && /^https?:\/\//i.test(value) ? (
+                        <a href={value} target="_blank" rel="noopener noreferrer nofollow" className="text-denim-600 hover:underline">
+                          {value}
+                        </a>
+                      ) : (
+                        value
+                      )}
+                    </dd>
                   </div>
                 ))}
               </dl>
+            ) : null}
+            {inquiry.files.length > 0 ? (
+              <div className="mt-6 border-t pt-5">
+                <h3 className="text-xs text-muted-foreground">Attached files</h3>
+                <ul className="mt-2 grid gap-2">
+                  {inquiry.files.map((file) => (
+                    <li key={file.id}>
+                      <a href={`/admin/inquiry-files/${file.id}`} download className="inline-flex max-w-full items-center gap-2 text-sm font-medium text-denim-600 hover:underline">
+                        <PaperclipIcon className="size-4 shrink-0" />
+                        <span className="truncate">{file.name}</span>
+                        <span className="shrink-0 text-xs font-normal text-muted-foreground">
+                          {file.size_bytes < 1024 * 1024 ? `${Math.max(1, Math.round(file.size_bytes / 1024))} KB` : `${(file.size_bytes / 1024 / 1024).toFixed(1)} MB`}
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
           </Panel>
 

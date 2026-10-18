@@ -28,7 +28,7 @@ const STRETCH_OPTIONS = [
 /** Dollars for an input: 520 → "5.20" */
 const dollars = (cents: number | null | undefined) => (cents == null ? "" : (cents / 100).toFixed(2));
 
-export type ShopDefaults = { moq_per_color: number; set_pcs_per_size: number; lead_time_days: number; sample_price_cents: number };
+export type ShopDefaults = { moq_per_color: number; set_pcs_per_size: number; min_pcs_per_size: number; lead_time_days: number; sample_price_cents: number };
 
 export function ProductForm({ product, charts, defaults }: { product: AdminProduct | null; charts: AdminSizeChart[]; defaults: ShopDefaults }) {
   // A new style opens in its own editor once saved; the "new style" form then starts empty again.
@@ -183,6 +183,15 @@ function ProductEditor({
         <Panel title="Order rules" description="Leave empty to use the site settings.">
           <div className="grid gap-4">
             <TextField label="Minimum per color (pcs)" name="moq_per_color" type="number" min={1} defaultValue={product?.moq_per_color ?? ""} placeholder={`${defaults.moq_per_color} (default)`} />
+            <TextField
+              label="Minimum per size (pcs)"
+              name="min_pcs_per_size"
+              type="number"
+              min={1}
+              defaultValue={product?.min_pcs_per_size ?? ""}
+              placeholder={`${defaults.min_pcs_per_size} (default)`}
+              hint="Every size ordered in a color needs at least this many pieces."
+            />
             <TextField label="Pieces per size in a set" name="set_pcs_per_size" type="number" min={1} defaultValue={product?.set_pcs_per_size ?? ""} placeholder={`${defaults.set_pcs_per_size} (default)`} />
             <TextField label="Production time (days)" name="lead_time_days" type="number" min={1} defaultValue={product?.lead_time_days ?? ""} placeholder={`${defaults.lead_time_days} (default)`} />
             <TextField label="Sample price (USD)" name="sample_price" inputMode="decimal" defaultValue={dollars(product?.sample_price_cents)} placeholder={`${dollars(defaults.sample_price_cents)} (default)`} />

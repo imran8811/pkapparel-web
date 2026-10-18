@@ -37,7 +37,7 @@ export function Hero({ site }: { site: Site }) {
           </h1>
 
           <p className="mt-7 max-w-xl text-lg leading-relaxed text-cotton-50/75 sm:text-xl">
-            Jeans, jackets, shorts, cargo and chino pants for men, women and kids. Cut, sewn and washed in our own{" "}
+            Jeans, jackets and shorts for men, women and kids, and men&apos;s cargo and chino pants. Cut, sewn and washed in our own{" "}
             {company.city} factory, then shipped worldwide by air or sea.
           </p>
 

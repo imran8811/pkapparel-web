@@ -6,13 +6,44 @@ import { ActionForm, FormMessage, SubmitButton, TextAreaInput } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cancelOrder } from "@/lib/account/actions/orders";
+import type { OrderKind } from "@/lib/account/types";
 import { useSearchParam } from "@/lib/use-search-param";
 
 /** "Thank you" after checkout (?placed=1) or after reporting a payment (?payment=sent). */
-export function OrderNotice({ orderNo, leadTime }: { orderNo: string; leadTime: number }) {
+export function OrderNotice({ orderNo, leadTime, kind = "bulk", pricing = false }: { orderNo: string; leadTime: number; kind?: OrderKind; pricing?: boolean }) {
   const placed = useSearchParam("placed");
   const payment = useSearchParam("payment");
 
+  if (placed && kind === "sample") {
+    return (
+      <div role="status" className="mb-8 rounded-3xl bg-denim-900 p-6 text-cotton-50 sm:p-8">
+        <div className="flex items-start gap-4">
+          <PartyPopper aria-hidden className="mt-1 size-6 shrink-0 text-stitch-400" />
+          <div>
+            <p className="text-xl font-semibold">Thank you, your sample order {orderNo} is placed.</p>
+            {pricing ? (
+              <p className="mt-3 text-sm text-cotton-50/80">
+                We confirm the price within 1 to 2 working days and email you the sample invoice with the bank details. Then you pay, and we prepare
+                your samples (about {leadTime} days).
+              </p>
+            ) : (
+              <ol className="mt-4 grid gap-2 text-sm text-cotton-50/80 sm:grid-cols-3 sm:gap-6">
+                <li>
+                  <span className="font-mono text-stitch-300">01</span> Transfer the amount below, with {orderNo} as the reference.
+                </li>
+                <li>
+                  <span className="font-mono text-stitch-300">02</span> Tell us the transaction ID on the Confirm payment page.
+                </li>
+                <li>
+                  <span className="font-mono text-stitch-300">03</span> We confirm it, email your receipt and prepare your samples (about {leadTime} days).
+                </li>
+              </ol>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (placed) {
     return (
       <div role="status" className="mb-8 rounded-3xl bg-denim-900 p-6 text-cotton-50 sm:p-8">

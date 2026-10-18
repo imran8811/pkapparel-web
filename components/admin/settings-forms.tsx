@@ -80,6 +80,14 @@ export function SettingsForms({ settings }: { settings: AdminSettings }) {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <TextField label="Minimum order per color (pcs)" name="moq_per_color" type="number" min={1} defaultValue={commerce.moq_per_color} />
             <TextField
+              label="Minimum per size (pcs)"
+              name="min_pcs_per_size"
+              type="number"
+              min={1}
+              defaultValue={commerce.min_pcs_per_size}
+              hint="Every size ordered in a color needs at least this many pieces (20: 100 pieces cover up to 5 sizes)."
+            />
+            <TextField
               label="Pieces per size in a set"
               name="set_pcs_per_size"
               type="number"
@@ -103,6 +111,23 @@ export function SettingsForms({ settings }: { settings: AdminSettings }) {
               min={0}
               step="0.01"
               defaultValue={(commerce.sample_price_cents / 100).toFixed(2)}
+              hint="Per piece, for styles without their own sample price."
+            />
+            <TextField
+              label="Samples ready in (days)"
+              name="sample_lead_time_days"
+              type="number"
+              min={1}
+              defaultValue={commerce.sample_lead_time_days}
+              hint="Samples of shop styles, counted from the payment."
+            />
+            <TextField
+              label="Custom-design samples ready in (days)"
+              name="custom_sample_lead_time_days"
+              type="number"
+              min={1}
+              defaultValue={commerce.custom_sample_lead_time_days}
+              hint="Made from the buyer's tech pack or reference."
             />
             <TextField
               label="Proforma invoice valid for (days)"

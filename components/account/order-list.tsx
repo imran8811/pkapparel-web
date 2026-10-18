@@ -23,8 +23,9 @@ export function OrderList({ orders }: { orders: OrderSummary[] }) {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono text-sm font-semibold">{order.order_no}</span>
                 <StatusBadge status={order.status} label={order.status_label} />
+                {order.kind === "sample" ? <span className="text-xs font-medium text-stitch-700">Samples</span> : null}
               </div>
-              <p className="mt-1 truncate text-sm">{order.styles.join(", ")}</p>
+              <p className="mt-1 truncate text-sm">{order.styles.length > 0 ? order.styles.join(", ") : "Custom-design sample"}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {shortDate(order.placed_at)} · {order.total_pcs} pcs · {order.shipping_mode_label}
                 {order.buyer_reference ? ` · ${order.buyer_reference}` : ""}
@@ -32,7 +33,7 @@ export function OrderList({ orders }: { orders: OrderSummary[] }) {
             </div>
             <div className="flex items-center gap-2 text-right">
               <div>
-                <p className="font-semibold tabular-nums">{formatMoney(order.total_cents)}</p>
+                <p className="font-semibold tabular-nums">{order.status === "awaiting_price" ? "Price follows" : formatMoney(order.total_cents)}</p>
                 {order.due_now_cents > 0 && order.status !== "payment_review" ? (
                   <p className="text-xs text-stitch-700">{formatMoney(order.due_now_cents)} due</p>
                 ) : null}

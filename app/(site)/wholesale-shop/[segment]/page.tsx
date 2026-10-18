@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { CtaPanel } from "@/components/site/cta-panel";
@@ -10,6 +10,7 @@ import { CategoryIntro } from "@/components/shop/category-intro";
 import { MadeToOrderPanel, ProductGrid } from "@/components/shop/product-grid";
 import { getProducts, getShopCategories } from "@/lib/catalog";
 import { isSegment, segmentInfo, segments, shopUrl, typesFor } from "@/lib/nav";
+import { findRedirect } from "@/lib/redirects";
 import { pageMetadata } from "@/lib/seo";
 
 /**
@@ -17,6 +18,9 @@ import { pageMetadata } from "@/lib/seo";
  * for the fresh page instead of getting the generic fallback shell with the old content.
  */
 export const ensureStatic = "navigation";
+// The address is read before anything streams, so a redirect or a 404 keeps its HTTP status. Every segment page is
+// prerendered (generateStaticParams), so navigating to one still uses static output.
+export const instant = false;
 
 export function generateStaticParams() {
   return segments.map((segment) => ({ segment: segment.slug }));
@@ -48,7 +52,11 @@ export async function generateMetadata({ params }: PageProps<"/wholesale-shop/[s
 export default async function SegmentPage({ params }: PageProps<"/wholesale-shop/[segment]">) {
   const { segment } = await params;
   const found = await segmentPage(segment);
-  if (!found || !isSegment(segment)) notFound();
+  if (!found || !isSegment(segment)) {
+    const moved = await findRedirect(`/wholesale-shop/${segment}`);
+    if (moved) permanentRedirect(moved);
+    notFound();
+  }
   const { page, categories } = found;
   const { items } = await getProducts({ segment });
   const info = segmentInfo(segment);

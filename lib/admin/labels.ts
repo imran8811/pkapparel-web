@@ -1,4 +1,4 @@
-import type { AddonPricing, OrderStatus } from "@/lib/account/types";
+import type { AddonPricing, OrderKind, OrderStatus } from "@/lib/account/types";
 import type { InquiryStatus, InquiryType } from "@/lib/admin/types";
 
 /* Wording used across the admin. */
@@ -27,6 +27,12 @@ export const INQUIRY_DETAILS: Record<string, string> = {
   needed_by: "Needed by",
   styles: "Styles",
   sample_quantity: "Number of samples",
+  fit: "Fit",
+  fabric: "Fabric",
+  wash: "Wash or color",
+  sizes: "Sizes",
+  extras: "Brand extras",
+  link: "Link to files",
 };
 
 export function detailLabel(key: string): string {
@@ -46,6 +52,7 @@ type Tone = "blue" | "orange" | "green" | "red" | "muted" | "neutral";
 
 /** Order statuses in the admin, in the order of the order's life. */
 export const ORDER_STATUSES: Record<OrderStatus, { label: string; tone: Tone }> = {
+  awaiting_price: { label: "Needs a price", tone: "red" },
   awaiting_deposit: { label: "Awaiting deposit", tone: "orange" },
   payment_review: { label: "Payment to check", tone: "red" },
   confirmed: { label: "Confirmed", tone: "blue" },
@@ -57,9 +64,11 @@ export const ORDER_STATUSES: Record<OrderStatus, { label: string; tone: Tone }> 
   cancelled: { label: "Cancelled", tone: "muted" },
 };
 
-/** An order's status for staff; a ready order also says whether the balance has arrived. */
-export function orderStatus(status: OrderStatus, dueNowCents: number): { label: string; tone: Tone } {
+/** An order's status for staff; a ready order also says whether the balance has arrived, a sample order uses its own words. */
+export function orderStatus(status: OrderStatus, dueNowCents: number, kind: OrderKind = "bulk"): { label: string; tone: Tone } {
   if (status === "ready_to_ship") return dueNowCents > 0 ? { label: "Ready, balance due", tone: "orange" } : { label: "Ready to ship, paid", tone: "green" };
+  if (kind === "sample" && status === "awaiting_deposit") return { label: "Awaiting payment", tone: "orange" };
+  if (kind === "sample" && status === "confirmed") return { label: "Preparing samples", tone: "blue" };
   return ORDER_STATUSES[status];
 }
 

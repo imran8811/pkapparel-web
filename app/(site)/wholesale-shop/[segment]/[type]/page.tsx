@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { Container } from "@/components/layout/container";
 import { CtaPanel } from "@/components/site/cta-panel";
 import { FaqList } from "@/components/site/faq-list";
@@ -9,6 +9,7 @@ import { CategoryIntro } from "@/components/shop/category-intro";
 import { MadeToOrderPanel, ProductGrid } from "@/components/shop/product-grid";
 import { getProducts, getShopCategories } from "@/lib/catalog";
 import { isProductType, isSegment, segmentInfo, segments, shopUrl, typeInfo, typesFor, type ProductType, type Segment } from "@/lib/nav";
+import { findRedirect } from "@/lib/redirects";
 import { pageMetadata } from "@/lib/seo";
 
 /**
@@ -16,6 +17,9 @@ import { pageMetadata } from "@/lib/seo";
  * for the fresh page instead of getting the generic fallback shell with the old content.
  */
 export const ensureStatic = "navigation";
+// The address is read before anything streams, so a redirect or a 404 keeps its HTTP status. Every category page is
+// prerendered (generateStaticParams), so navigating to one still uses static output.
+export const instant = false;
 
 export function generateStaticParams() {
   return segments.flatMap((segment) => typesFor(segment.slug).map((type) => ({ segment: segment.slug, type: type.slug })));
@@ -44,7 +48,11 @@ export async function generateMetadata({ params }: PageProps<"/wholesale-shop/[s
 export default async function CategoryPage({ params }: PageProps<"/wholesale-shop/[segment]/[type]">) {
   const { segment, type } = await params;
   const page = await categoryPage(segment, type);
-  if (!page) notFound();
+  if (!page) {
+    const moved = await findRedirect(`/wholesale-shop/${segment}/${type}`);
+    if (moved) permanentRedirect(moved);
+    notFound();
+  }
   const segmentSlug = segment as Segment;
   const typeSlug = type as ProductType;
   const { items } = await getProducts({ segment: segmentSlug, type: typeSlug });
@@ -65,6 +73,8 @@ export default async function CategoryPage({ params }: PageProps<"/wholesale-sho
 
       <section className="py-12 sm:py-16">
         <Container>
+          {/* Keeps the heading order (h1, h2, then the styles' h3) for screen readers. */}
+          <h2 className="sr-only">Styles</h2>
           {items.length > 0 ? (
             <ProductGrid products={items} />
           ) : (

@@ -1,46 +1,49 @@
+import type { Metadata } from "next";
 import { Palette, Shirt } from "lucide-react";
 import { Container } from "@/components/layout/container";
-import { InquiryForm } from "@/components/forms/inquiry-form";
+import { SamplePicker } from "@/components/samples/sample-picker";
 import { FaqList } from "@/components/site/faq-list";
 import { PageHero } from "@/components/site/page-hero";
 import { SectionHeading } from "@/components/site/section-heading";
+import { getSampleStyles } from "@/lib/catalog";
 import { getFaqs } from "@/lib/content";
-import { countryOptions, formatMoney } from "@/lib/format";
-import { whatsappUrl } from "@/lib/links";
+import { formatMoney } from "@/lib/format";
 import { pageMetadata } from "@/lib/seo";
 import { getSite } from "@/lib/site";
 
-export const metadata = pageMetadata({
-  title: "Order samples",
-  description:
-    "Check fit, fabric and wash before you order. Samples of PK Apparel styles cost $50 per piece plus courier; custom samples take about 2 weeks.",
-  path: "/samples",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const { commerce } = await getSite();
+  return pageMetadata({
+    title: "Order samples",
+    description: `Check fit, fabric and wash before you order. Samples of PK Apparel styles cost ${formatMoney(commerce.sample_price_cents)} per piece plus courier, deducted from your first order.`,
+    path: "/samples",
+  });
+}
 
 export default async function SamplesPage() {
-  const [site, faqs] = await Promise.all([getSite(), getFaqs()]);
-  const price = formatMoney(site.commerce.sample_price_cents);
+  const [site, faqs, styles] = await Promise.all([getSite(), getFaqs(), getSampleStyles()]);
+  const { sample_price_cents: price, sample_lead_time_days: ready, custom_sample_lead_time_days: customReady } = site.commerce;
 
   const options = [
     {
       icon: Shirt,
       title: "Samples of our styles",
-      price: `${price} per piece`,
-      body: "Any style from the wholesale shop, in your chosen size and color. Courier cost is added at cost.",
+      price: `${formatMoney(price)} per piece`,
+      body: `Any style from the wholesale shop, in your chosen size and color, ready about ${ready} days after your payment. Courier to your door is added.`,
     },
     {
       icon: Palette,
       title: "Samples of your design",
       price: "Priced by design",
-      body: "Made from your tech pack or reference, usually in about 2 weeks. You approve it before bulk production.",
+      body: `Made from your tech pack or reference, usually in about ${customReady} days. You approve it before bulk production.`,
     },
   ];
 
   const steps = [
-    "Send the request below with the styles you want.",
-    "We confirm the price and courier cost for your country.",
-    "You pay by bank transfer and confirm the payment.",
-    "We make or pick your samples and send them with tracking.",
+    "Choose styles, colors and sizes, then log in or create your buyer account.",
+    "See the courier to your country and place the sample order.",
+    "Pay by bank transfer and tell us the transaction ID. You get a receipt by email.",
+    "We prepare your samples and send them by express courier with tracking.",
   ];
 
   return (
@@ -69,6 +72,9 @@ export default async function SamplesPage() {
                 </li>
               ))}
             </ul>
+            <p className="rounded-3xl bg-emerald-50 p-6 text-sm leading-relaxed text-emerald-900">
+              <strong>Your samples pay for themselves.</strong> We deduct their cost (without the courier) from your first bulk order once it is confirmed.
+            </p>
             <div>
               <h2 className="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">How it works</h2>
               <ol className="mt-5 space-y-4">
@@ -84,13 +90,8 @@ export default async function SamplesPage() {
             </div>
           </div>
 
-          <div className="lg:col-span-7">
-            <InquiryForm
-              type="sample"
-              countries={countryOptions()}
-              whatsappUrl={whatsappUrl(site.contact.whatsapp)}
-              submitLabel="Request samples"
-            />
+          <div className="min-w-0 lg:col-span-7">
+            <SamplePicker styles={styles} />
           </div>
         </Container>
       </section>

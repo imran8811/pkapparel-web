@@ -1,6 +1,7 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { api, ApiError, apiWithMeta } from "@/lib/api";
+import type { SampleStyle } from "@/lib/samples";
 import type { Product, ProductCard, ShopCategory, ShopFilters } from "@/lib/shop";
 
 /*
@@ -30,6 +31,33 @@ export async function getProduct(slug: string): Promise<Product | null> {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
   }
+}
+
+/** Every style with its colors, sizes and sample price, for the sample picker. */
+export async function getSampleStyles(): Promise<SampleStyle[]> {
+  "use cache";
+  cacheLife("max");
+  cacheTag("products");
+
+  const { items } = await getProducts();
+  const products = await Promise.all(items.map((card) => getProduct(card.slug)));
+  return products
+    .filter((product): product is Product => product !== null)
+    .map((product) => ({
+      slug: product.slug,
+      name: product.name,
+      style_no: product.style_no,
+      sizes: product.sizes,
+      sample_price_cents: product.rules.sample_price_cents,
+      colors: product.colors.map((color) => ({
+        id: color.id,
+        name: color.name,
+        slug: color.slug,
+        code: color.code,
+        hex: color.hex,
+        image: color.images[0]?.path ?? null,
+      })),
+    }));
 }
 
 /** Texts of the segment and category pages, with how many styles each one has. */

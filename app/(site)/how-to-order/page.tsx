@@ -19,12 +19,12 @@ export const metadata = pageMetadata({
 
 export default async function HowToOrderPage() {
   const [site, faqs] = await Promise.all([getSite(), getFaqs()]);
-  const { moq_per_color: moq, set_pcs_per_size: perSize, deposit_percent: deposit, lead_time_days: leadTime } = site.commerce;
+  const { moq_per_color: moq, set_pcs_per_size: perSize, min_pcs_per_size: minPerSize, deposit_percent: deposit, lead_time_days: leadTime } = site.commerce;
 
   const steps = [
     {
       title: "Choose styles, colors and sizes",
-      body: `Pick styles in the wholesale shop. The minimum is ${moq} pieces per style and color. Enter a quantity for each size, or add ready-made sets (1 set = ${perSize} pieces of every size).`,
+      body: `Pick styles in the wholesale shop. The minimum is ${moq} pieces per style and color, with at least ${minPerSize} pieces in each size you order: ${moq} pieces cover up to ${Math.floor(moq / minPerSize)} sizes, and more sizes need more pieces. Enter a quantity for each size, or add ready-made sets (1 set = ${perSize} pieces of every size).`,
     },
     {
       title: "Place your order",

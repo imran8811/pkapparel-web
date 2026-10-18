@@ -17,9 +17,9 @@ type Session = { token: string; expires_at: string; customer: Customer };
 
 const MIN_FILL_TIME_MS = 3000;
 
-/** Pages a buyer may be sent to after logging in (no outside links). */
+/** Pages a buyer may be sent to after logging in (no outside links). The sample order keeps its choice as ?i=id|size|qty. */
 function safeNext(next: string, fallback = "/account"): string {
-  return /^\/(?:account|checkout|cart|wholesale-shop)(?:[/?][A-Za-z0-9\-/?=&%_.]*)?$/.test(next) ? next : fallback;
+  return /^\/(?:account|checkout|cart|wholesale-shop|samples\/order)(?:[/?][A-Za-z0-9\-/?=&%_.|]*)?$/.test(next) ? next : fallback;
 }
 
 /** Stores the session and refreshes the header's display cookie (the guest cart was merged into the account). */

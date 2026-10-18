@@ -21,6 +21,7 @@ import {
   BanknoteIcon,
   ShieldCheckIcon,
   SettingsIcon,
+  SignpostIcon,
   UserIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -60,6 +61,7 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
       { href: "/admin/certificates", label: "Certificates", icon: AwardIcon, area: "content" },
       { href: "/admin/factory", label: "Factory", icon: FactoryIcon, area: "content" },
       { href: "/admin/pages", label: "Legal pages", icon: FileTextIcon, area: "content" },
+      { href: "/admin/redirects", label: "Redirects", icon: SignpostIcon, area: "content" },
     ],
   },
   {

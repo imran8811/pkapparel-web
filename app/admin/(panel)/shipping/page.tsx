@@ -67,7 +67,7 @@ export default async function ShippingPage() {
                     <tbody>
                       {zone.rates.map((rate, index) => (
                         <tr key={index} className="border-t">
-                          <td className="py-2 pr-3">{rate.mode === "air" ? "Air" : "Sea"}</td>
+                          <td className="py-2 pr-3">{MODE_LABELS[rate.mode]}</td>
                           <td className="py-2 pr-3 tabular-nums">
                             {rate.from_qty} {unit(rate)}
                           </td>
@@ -90,8 +90,10 @@ export default async function ShippingPage() {
   );
 }
 
+const MODE_LABELS: Record<ShippingRate["mode"], string> = { air: "Air", sea: "Sea", courier: "Courier" };
+
 function unit(rate: ShippingRate): string {
-  return rate.mode === "air" ? "kg" : "CBM";
+  return { air: "kg", sea: "CBM", courier: "pcs" }[rate.mode];
 }
 
 function transit(rate: ShippingRate): string {

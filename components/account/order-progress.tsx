@@ -18,7 +18,7 @@ export function dueText(order: Pick<Order, "status" | "production_due_on" | "pro
 
 /** Where the order stands on its way to the buyer, for the Delivery panel; null for a cancelled order. */
 export function readyText(
-  order: Pick<Order, "status" | "production_due_on" | "production_days_left" | "lead_time_days" | "shipment" | "shipped_at" | "delivered_at">,
+  order: Pick<Order, "kind" | "status" | "production_due_on" | "production_days_left" | "lead_time_days" | "shipment" | "shipped_at" | "delivered_at">,
 ): string | null {
   const shippedOn = order.shipment?.shipped_on ?? order.shipped_at;
   switch (order.status) {
@@ -31,7 +31,7 @@ export function readyText(
     case "delivered":
       return order.delivered_at ? `Delivered ${shortDate(order.delivered_at)}` : "Delivered";
     default:
-      return dueText(order) ?? `Ready about ${order.lead_time_days} days after the deposit is confirmed.`;
+      return dueText(order) ?? `Ready about ${order.lead_time_days} days after the ${order.kind === "sample" ? "payment" : "deposit"} is confirmed.`;
   }
 }
 

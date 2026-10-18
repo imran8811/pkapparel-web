@@ -32,9 +32,12 @@ function bodyFor(group: Group, form: FormData): Record<string, unknown> {
       return {
         moq_per_color: number(form, "moq_per_color"),
         set_pcs_per_size: number(form, "set_pcs_per_size"),
+        min_pcs_per_size: number(form, "min_pcs_per_size"),
         deposit_percent: number(form, "deposit_percent"),
         lead_time_days: number(form, "lead_time_days"),
         sample_price_cents: samplePrice === null ? null : Math.round(samplePrice * 100),
+        sample_lead_time_days: number(form, "sample_lead_time_days"),
+        custom_sample_lead_time_days: number(form, "custom_sample_lead_time_days"),
         pi_valid_days: number(form, "pi_valid_days"),
         fcl_from_cbm: number(form, "fcl_from_cbm"),
         // The form uses centimeters and kilograms; the API stores millimeters and grams.

@@ -11,9 +11,16 @@ import type { ShippingZone } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
 
 type Country = { code: string; name: string };
-type RateRow = { key: number; mode: "air" | "sea"; from_qty: string; rate: string; fixed: string; transit_min_days: string; transit_max_days: string };
+type Mode = "air" | "sea" | "courier";
+type RateRow = { key: number; mode: Mode; from_qty: string; rate: string; fixed: string; transit_min_days: string; transit_max_days: string };
 
 let nextKey = 1;
+
+/** What a band's quantity counts, per mode. */
+const UNITS: Record<Mode, string> = { air: "kg", sea: "CBM", courier: "piece" };
+
+/** Suggested transit days for a new band. */
+const TRANSIT: Record<Mode, [string, string]> = { air: ["5", "10"], sea: ["25", "45"], courier: ["3", "6"] };
 
 function toRows(zone?: ShippingZone): RateRow[] {
   return (zone?.rates ?? []).map((rate) => ({
@@ -27,7 +34,7 @@ function toRows(zone?: ShippingZone): RateRow[] {
   }));
 }
 
-/** Add or edit a shipping zone: its countries and its air and sea rate bands. */
+/** Add or edit a shipping zone: its countries and its air, sea and courier (samples) rate bands. */
 export function ZoneDialog({ zone, zones, countries }: { zone?: ShippingZone; zones: ShippingZone[]; countries: Country[] }) {
   const [open, setOpen] = useState(false);
   // Opening the dialog again starts from the saved zone.
@@ -141,8 +148,8 @@ function RatesEditor({ initial }: { initial: RateRow[] }) {
   const { state } = useAdminForm();
   const [rows, setRows] = useState<RateRow[]>(initial);
   const update = (key: number, changes: Partial<RateRow>) => setRows((current) => current.map((row) => (row.key === key ? { ...row, ...changes } : row)));
-  const add = (mode: "air" | "sea") =>
-    setRows((current) => [...current, { key: nextKey++, mode, from_qty: "0", rate: "", fixed: "", transit_min_days: mode === "air" ? "5" : "25", transit_max_days: mode === "air" ? "10" : "45" }]);
+  const add = (mode: Mode) =>
+    setRows((current) => [...current, { key: nextKey++, mode, from_qty: mode === "courier" ? "1" : "0", rate: "", fixed: "", transit_min_days: TRANSIT[mode][0], transit_max_days: TRANSIT[mode][1] }]);
 
   return (
     <fieldset className="grid gap-3">
@@ -150,6 +157,7 @@ function RatesEditor({ initial }: { initial: RateRow[] }) {
       <p className="text-xs leading-relaxed text-muted-foreground">
         Rates should cover delivery to the buyer&apos;s address (DAP: duties and taxes paid by the buyer). Air is priced per chargeable kg, sea (LCL) per CBM. Add bands for
         larger shipments, e.g. air from 100 kg at a lower rate; checkout picks the cheapest band. The fixed charge is added once per shipment.
+        Courier rates price sample orders: a fixed amount plus a price per piece (without one, staff price the courier by hand).
       </p>
       <input
         type="hidden"
@@ -158,19 +166,20 @@ function RatesEditor({ initial }: { initial: RateRow[] }) {
       />
       {rows.length === 0 ? <p className="rounded-lg bg-cotton-50 px-3 py-2 text-sm text-muted-foreground">No rates yet: checkout says “freight quoted” for these countries.</p> : null}
       {rows.map((row) => {
-        const unit = row.mode === "air" ? "kg" : "CBM";
+        const unit = UNITS[row.mode];
         return (
           <div key={row.key} className="grid grid-cols-2 gap-2 rounded-xl border p-3 sm:grid-cols-[6rem_repeat(3,minmax(0,1fr))_minmax(0,1.3fr)_auto] sm:items-end">
             <label className="grid gap-1 text-xs text-muted-foreground">
               Mode
-              <select value={row.mode} onChange={(event) => update(row.key, { mode: event.target.value as "air" | "sea" })} className={inputClass}>
+              <select value={row.mode} onChange={(event) => update(row.key, { mode: event.target.value as Mode })} className={inputClass}>
                 <option value="air">Air</option>
                 <option value="sea">Sea</option>
+                <option value="courier">Courier</option>
               </select>
             </label>
             <label className="grid gap-1 text-xs text-muted-foreground">
               From ({unit})
-              <input type="number" min={0} step="0.001" value={row.from_qty} onChange={(event) => update(row.key, { from_qty: event.target.value })} className={inputClass} />
+              <input type="number" min={0} step={row.mode === "courier" ? 1 : 0.001} value={row.from_qty} onChange={(event) => update(row.key, { from_qty: event.target.value })} className={inputClass} />
             </label>
             <label className="grid gap-1 text-xs text-muted-foreground">
               USD per {unit}
@@ -202,6 +211,9 @@ function RatesEditor({ initial }: { initial: RateRow[] }) {
         </Button>
         <Button type="button" variant="secondary" size="sm" onClick={() => add("sea")}>
           <PlusIcon /> Sea rate
+        </Button>
+        <Button type="button" variant="secondary" size="sm" onClick={() => add("courier")}>
+          <PlusIcon /> Courier rate (samples)
         </Button>
       </div>
       {state.fields?.rates ? <p className="text-sm text-destructive">{state.fields.rates}</p> : null}

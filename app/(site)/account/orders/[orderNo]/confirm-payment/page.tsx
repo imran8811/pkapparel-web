@@ -28,7 +28,7 @@ export default async function ConfirmPaymentPage({ params }: PageProps<"/account
   }
   // The page reads the session first, so it is rendered per request and "today" is the current date.
   const today = new Date().toISOString().slice(0, 10);
-  const kind = order.next_payment_kind === "balance" ? "balance" : "deposit";
+  const kind = order.next_payment_kind === "balance" ? "balance" : order.kind === "sample" ? "payment" : "deposit";
 
   return (
     <div className="grid grid-cols-1 gap-8">
@@ -50,7 +50,7 @@ export default async function ConfirmPaymentPage({ params }: PageProps<"/account
           </div>
           <aside className="grid min-w-0 grid-cols-1 gap-4 lg:col-span-5">
             <div className="rounded-3xl border border-orange-200 bg-orange-50/50 p-6">
-              <p className="text-sm text-muted-foreground">{kind === "balance" ? "Balance" : "Deposit"} due</p>
+              <p className="text-sm text-muted-foreground">{kind === "balance" ? "Balance" : kind === "payment" ? "Payment" : "Deposit"} due</p>
               <p className="mt-1 font-heading text-3xl font-semibold tabular-nums">{formatMoney(order.amounts.due_now_cents)}</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Payment reference: <span className="font-mono text-foreground">{order.order_no}</span>

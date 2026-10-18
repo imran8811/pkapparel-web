@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { notFound, permanentRedirect } from "next/navigation";
 import { Container } from "@/components/layout/container";
 import { CtaPanel } from "@/components/site/cta-panel";
 import { JsonLd } from "@/components/site/json-ld";
@@ -10,6 +9,7 @@ import { PostCard } from "@/components/site/post-card";
 import { Prose } from "@/components/site/prose";
 import { getPost, getPosts, mediaSrc } from "@/lib/content";
 import { formatDate } from "@/lib/format";
+import { findRedirect } from "@/lib/redirects";
 import { absoluteUrl, pageMetadata } from "@/lib/seo";
 
 /**
@@ -17,6 +17,9 @@ import { absoluteUrl, pageMetadata } from "@/lib/seo";
  * for the fresh page instead of getting the generic fallback shell with the old content.
  */
 export const ensureStatic = "navigation";
+// The address is read before anything streams, so a redirect or a 404 keeps its HTTP status. Every article is
+// prerendered (generateStaticParams), so navigating to one still uses static output.
+export const instant = false;
 
 /** Prerender every published article. New articles render on their first visit, then stay cached. */
 export async function generateStaticParams() {
@@ -39,18 +42,20 @@ export async function generateMetadata({ params }: PageProps<"/post/[slug]">): P
   });
 }
 
-export default function PostPage(props: PageProps<"/post/[slug]">) {
-  return (
-    <Suspense fallback={<ArticleSkeleton />}>
-      <Article params={props.params} />
-    </Suspense>
-  );
-}
-
-async function Article({ params }: Pick<PageProps<"/post/[slug]">, "params">) {
+/**
+ * The whole article is static and rendered in place (no <Suspense>): the cover is the largest element on the page,
+ * and content behind a fallback only appears once the page's scripts run.
+ */
+export default async function PostPage({ params }: PageProps<"/post/[slug]">) {
+  // Decided before anything streams, so a redirect or a 404 keeps its real HTTP status.
   const { slug } = await params;
   const [post, all] = await Promise.all([getPost(slug), getPosts()]);
-  if (!post) notFound();
+  if (!post) {
+    // A redirect from the admin (e.g. the post's address changed).
+    const moved = await findRedirect(`/post/${slug}`);
+    if (moved) permanentRedirect(moved);
+    notFound();
+  }
 
   const related = all.filter((other) => other.slug !== post.slug).slice(0, 3);
 
@@ -119,19 +124,5 @@ async function Article({ params }: Pick<PageProps<"/post/[slug]">, "params">) {
         }}
       />
     </>
-  );
-}
-
-function ArticleSkeleton() {
-  return (
-    <div aria-busy className="animate-pulse">
-      <div className="h-80 bg-denim-900" />
-      <Container className="max-w-3xl space-y-4 py-16">
-        <div className="aspect-[16/9] rounded-[2rem] bg-cotton-200" />
-        <div className="h-5 w-3/4 rounded bg-cotton-200" />
-        <div className="h-5 w-full rounded bg-cotton-200" />
-        <div className="h-5 w-5/6 rounded bg-cotton-200" />
-      </Container>
-    </div>
   );
 }

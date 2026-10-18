@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /*
- * Quick checks before rendering: admin pages need the staff cookie, buyer account pages and
- * checkout need the buyer cookie; without it, go straight to the matching login page.
+ * Quick checks before rendering: admin pages need the staff cookie, buyer account pages, checkout
+ * and the sample order need the buyer cookie; without it, go straight to the matching login page.
  * These are only shortcuts; the real check is the API, which validates the token on every call.
  */
 const PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/session-ended"];
@@ -25,5 +25,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*", "/account", "/account/:path*", "/checkout"],
+  matcher: ["/admin", "/admin/:path*", "/account", "/account/:path*", "/checkout", "/samples/order"],
 };

@@ -54,6 +54,8 @@ export type SizeChart = {
 export type OrderRules = {
   moq_per_color: number;
   set_pcs_per_size: number;
+  /** Every size ordered in a color needs at least this many pieces. */
+  min_pcs_per_size: number;
   lead_time_days: number;
   sample_price_cents: number;
 };
@@ -83,7 +85,20 @@ export type Product = {
   seo_description: string | null;
   updated_at: string;
   related: ProductCard[];
+  /** Approved reviews of orders that included this style. */
+  reviews: ProductReviews;
 };
+
+export type ProductReview = {
+  rating: number;
+  body: string;
+  /** The buyer's company, or their business type ("Brand owner"). */
+  name: string;
+  country_code: string | null;
+  date: string;
+};
+
+export type ProductReviews = { count: number; average: number | null; items: ProductReview[] };
 
 export type ShopCategory = {
   segment: Segment;

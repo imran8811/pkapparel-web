@@ -126,7 +126,7 @@ export function ProductView({ product, whatsapp }: { product: Product; whatsapp:
         <ul className="grid gap-2.5 text-sm">
           <li className="flex items-center gap-3">
             <PackageCheck aria-hidden className="size-4.5 text-denim-600" />
-            Minimum {rules.moq_per_color} pieces per color, mixed sizes
+            Minimum {rules.moq_per_color} pieces per color, at least {rules.min_pcs_per_size} per size
           </li>
           <li className="flex items-center gap-3">
             <Layers aria-hidden className="size-4.5 text-denim-600" />
@@ -143,12 +143,12 @@ export function ProductView({ product, whatsapp }: { product: Product; whatsapp:
         <p className="text-sm text-muted-foreground">
           Want to check the fit and fabric first?{" "}
           <Link
-            href={`/samples?${new URLSearchParams({ styles: `${product.name}, ${color.name} (${color.code})` })}`}
+            href={`/samples?${new URLSearchParams({ style: product.slug, color: color.slug })}`}
             className="font-medium text-denim-600 underline-offset-2 hover:underline"
           >
             Order a sample
           </Link>{" "}
-          for {formatMoney(rules.sample_price_cents)} plus courier.
+          for {formatMoney(rules.sample_price_cents)} plus courier. We deduct it from your first order.
         </p>
       </div>
     </div>

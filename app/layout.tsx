@@ -10,6 +10,8 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  // Small labels and codes only: not preloaded, so it does not compete with the CSS and main fonts on a slow connection.
+  preload: false,
 });
 
 const bricolage = Bricolage_Grotesque({
@@ -27,7 +29,7 @@ export const metadata: Metadata = {
     template: "%s | PK Apparel",
   },
   description:
-    "Made-to-order jeans, denim jackets, shorts, cargo and chino pants for men, women and kids. In-house cutting, stitching and washing in Lahore, shipped worldwide by air or sea.",
+    "Made-to-order jeans, denim jackets and shorts for men, women and kids, and men's cargo and chino pants. In-house cutting, stitching and washing in Lahore, shipped worldwide by air or sea.",
   applicationName: "PK Apparel",
   openGraph: {
     type: "website",
@@ -35,6 +37,11 @@ export const metadata: Metadata = {
     locale: "en_US",
   },
   robots: indexable ? undefined : { index: false, follow: false },
+  // Search Console and Bing Webmaster Tools: the "HTML tag" verification codes (owner decision 2026-10-17).
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    other: process.env.BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION } : undefined,
+  },
 };
 
 export const viewport: Viewport = {

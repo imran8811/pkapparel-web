@@ -18,8 +18,8 @@ type Quantities = Record<string, Record<string, number>>;
 const MAX_PER_SIZE = 100_000;
 
 /**
- * Quantities per size for each color, with an "add a set" shortcut, the minimum per color and a running total.
- * The pieces go into the cart; a prefilled quote request or WhatsApp message stays available.
+ * Quantities per size for each color, with an "add a set" shortcut, the minimums (per color, and per size ordered)
+ * and a running total. The pieces go into the cart; a prefilled quote request or WhatsApp message stays available.
  */
 export function OrderPanel({
   product,
@@ -35,18 +35,21 @@ export function OrderPanel({
   const [quantities, setQuantities] = useState<Quantities>({});
   const [adding, startAdding] = useTransition();
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
-  const { moq_per_color: moq, set_pcs_per_size: perSize } = product.rules;
+  const { moq_per_color: moq, set_pcs_per_size: perSize, min_pcs_per_size: minPerSize } = product.rules;
   const setSize = perSize * product.sizes.length;
 
   const current = quantities[color.slug] ?? {};
   const colorTotal = (slug: string) => Object.values(quantities[slug] ?? {}).reduce((sum, qty) => sum + qty, 0);
+  /** Sizes of a color ordered below the minimum per size. */
+  const smallSizes = (slug: string) => product.sizes.filter((size) => (quantities[slug]?.[size] ?? 0) > 0 && (quantities[slug]?.[size] ?? 0) < minPerSize);
   const chosen = product.colors.filter((c) => colorTotal(c.slug) > 0);
   const totalPieces = chosen.reduce((sum, c) => sum + colorTotal(c.slug), 0);
   const tierPrice = unitPrice(product.price_cents, product.tiers, totalPieces);
   // A volume tier lowers every color's price by the same amount as the style price.
   const priceFor = (c: ProductColor) => c.price_cents - (product.price_cents - tierPrice);
   const totalCents = chosen.reduce((sum, c) => sum + colorTotal(c.slug) * priceFor(c), 0);
-  const belowMinimum = chosen.filter((c) => colorTotal(c.slug) < moq);
+  const belowMinimum = chosen.filter((c) => colorTotal(c.slug) < moq || smallSizes(c.slug).length > 0);
+  const currentSmall = smallSizes(color.slug);
 
   const update = (size: string, qty: number) =>
     setQuantities((all) => ({
@@ -124,11 +127,17 @@ export function OrderPanel({
               placeholder="0"
               onChange={(event) => update(size, Number(event.target.value))}
               aria-label={`Size ${size}, pieces of ${color.name}`}
-              className="h-9 w-full rounded-lg border border-input bg-white text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+              aria-invalid={currentSmall.includes(size) || undefined}
+              className="h-9 w-full rounded-lg border border-input bg-white text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 aria-invalid:border-stitch-500 aria-invalid:bg-orange-50"
             />
           </label>
         ))}
       </div>
+      {currentSmall.length > 0 ? (
+        <p className="mt-2 text-xs text-stitch-700">
+          Each size needs at least {minPerSize} pieces. Raise or clear size {currentSmall.join(", ")}.
+        </p>
+      ) : null}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button type="button" variant="secondary" size="sm" onClick={addSet}>
@@ -147,7 +156,7 @@ export function OrderPanel({
       <div className="mt-5">
         <div className="flex items-center justify-between text-xs">
           <span className={cn(thisColor >= moq ? "text-emerald-700" : "text-muted-foreground")}>
-            {thisColor >= moq ? `Minimum reached for ${color.name.toLowerCase()}` : `Minimum ${moq} pcs per color`}
+            {thisColor >= moq ? `Minimum reached for ${color.name.toLowerCase()}` : `Minimum ${moq} pcs per color, ${minPerSize} per size`}
           </span>
           <span className="font-mono tabular-nums">
             {thisColor} / {moq}
@@ -172,7 +181,11 @@ export function OrderPanel({
                   >
                     <span className="size-3.5 shrink-0 rounded-full ring-1 ring-black/10" style={{ backgroundColor: c.hex ?? "#c8d8f4" }} />
                     <span className="truncate">{c.name}</span>
-                    {pieces < moq ? <span className="shrink-0 text-xs text-stitch-700">needs {moq - pieces} more</span> : null}
+                    {pieces < moq ? (
+                      <span className="shrink-0 text-xs text-stitch-700">needs {moq - pieces} more</span>
+                    ) : smallSizes(c.slug).length > 0 ? (
+                      <span className="shrink-0 text-xs text-stitch-700">size {smallSizes(c.slug).join(", ")} below {minPerSize}</span>
+                    ) : null}
                   </button>
                   <span className="font-mono text-xs tabular-nums text-muted-foreground">{pieces} pcs</span>
                   <span className="w-20 text-right tabular-nums">{formatMoney(pieces * priceFor(c))}</span>
@@ -195,7 +208,8 @@ export function OrderPanel({
           </div>
           {belowMinimum.length > 0 ? (
             <p className="mt-3 rounded-xl bg-orange-50 px-3 py-2 text-xs text-stitch-700">
-              Each color needs at least {moq} pieces before checkout. You can add them now and complete them in the cart, or ask us for a quote.
+              Each color needs at least {moq} pieces, and each size you order at least {minPerSize}, before checkout. You can add them now and
+              complete them in the cart, or ask us for a quote.
             </p>
           ) : null}
         </div>

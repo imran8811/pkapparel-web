@@ -14,15 +14,15 @@ export const productTypes = [
   { slug: "jeans-pant", label: "Jeans pants" },
   { slug: "denim-jacket", label: "Denim jackets" },
   { slug: "jeans-short", label: "Jeans shorts" },
-  { slug: "cargo-trouser", label: "Cargo trousers" },
-  { slug: "chino-pant", label: "Chino pants" },
+  { slug: "cargo-trouser", label: "Cargo trousers", segments: ["men"] },
+  { slug: "chino-pant", label: "Chino pants", segments: ["men"] },
   { slug: "denim-skirt", label: "Denim skirts", segments: ["women", "girls"] },
 ] as const;
 
 export type Segment = (typeof segments)[number]["slug"];
 export type ProductType = (typeof productTypes)[number]["slug"];
 
-/** Product types sold in a segment (skirts are for women and girls only). */
+/** Product types sold in a segment (cargo and chino are men only, skirts women and girls only; owner rules). */
 export function typesFor(segment: Segment) {
   return productTypes.filter((type) => !("segments" in type) || (type.segments as readonly string[]).includes(segment));
 }

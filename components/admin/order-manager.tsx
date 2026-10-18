@@ -33,6 +33,7 @@ import {
   rejectPayment,
   resumeOrder,
   saveCharges,
+  sendPrice,
   shipOrder,
   updateStage,
   uploadDocument,
@@ -62,7 +63,7 @@ export function ConfirmAction({
   description: ReactNode;
   confirmLabel: string;
   action: () => Promise<FormState>;
-  variant?: "default" | "outline" | "secondary";
+  variant?: "default" | "outline" | "secondary" | "ghost";
   icon?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -106,17 +107,35 @@ export function ConfirmAction({
   );
 }
 
-const CANCELLABLE: OrderStatus[] = ["awaiting_deposit", "payment_review", "confirmed", "in_production", "ready_to_ship", "on_hold"];
-const HOLDABLE: OrderStatus[] = ["awaiting_deposit", "payment_review", "confirmed", "in_production", "ready_to_ship"];
+const CANCELLABLE: OrderStatus[] = ["awaiting_price", "awaiting_deposit", "payment_review", "confirmed", "in_production", "ready_to_ship", "on_hold"];
+const HOLDABLE: OrderStatus[] = ["awaiting_price", "awaiting_deposit", "payment_review", "confirmed", "in_production", "ready_to_ship"];
 
-/** The next steps for this order, depending on its status and the staff member's role. */
+/** The next steps for this order, depending on its kind, its status and the staff member's role. */
 export function OrderActions({ order, canManage, canPay, today }: { order: AdminOrder; canManage: boolean; canPay: boolean; today: string }) {
   const unpaid = order.amounts.total_cents - order.amounts.paid_cents;
   const inProduction = order.status === "confirmed" || order.status === "in_production";
+  const sample = order.kind === "sample";
+  // Samples ship once they are made (paid in full); bulk orders after "ready to ship".
+  const canShip = sample ? inProduction : order.status === "ready_to_ship";
+  const priced = order.amounts.freight_cents !== null && !order.amounts.has_quoted_addons;
 
   return (
     <div className="flex flex-wrap gap-2">
-      {canManage && inProduction ? (
+      {canManage && order.status === "awaiting_price" ? (
+        <ConfirmAction
+          label="Send the price"
+          icon={<CheckIcon />}
+          title="Send the price to the buyer?"
+          description={
+            priced
+              ? `The buyer is emailed the sample invoice for ${formatMoney(order.amounts.total_cents)}, with the bank details. The price cannot change afterwards.`
+              : "Enter the courier and the custom-design sample's price under Totals first."
+          }
+          confirmLabel="Send the price"
+          action={sendPrice.bind(null, order.id)}
+        />
+      ) : null}
+      {canManage && inProduction && !sample ? (
         <ConfirmAction
           label="Ready to ship"
           icon={<CheckIcon />}
@@ -126,7 +145,7 @@ export function OrderActions({ order, canManage, canPay, today }: { order: Admin
           action={readyToShip.bind(null, order.id)}
         />
       ) : null}
-      {canManage && order.status === "ready_to_ship" ? (
+      {canManage && canShip ? (
         <ItemDialog title="Mark as shipped" description="The buyer is emailed the tracking details." action={shipOrder.bind(null, order.id)} submitLabel="Mark as shipped" trigger={<Button size="sm">Mark as shipped</Button>}>
           <div className="grid gap-4 sm:grid-cols-2">
             <TextField label="Carrier or forwarder" name="carrier" placeholder="e.g. Maersk, DHL" />
@@ -417,26 +436,34 @@ export function ChargesForm({ order }: { order: AdminOrder }) {
   // Per-piece add-ons keep their checkout price; the others count once per order.
   const onRequest = order.addons.filter((addon) => addon.pricing !== "per_piece");
   const freightCents = order.amounts.freight_status === "final" ? order.amounts.freight_cents : null;
+  const sample = order.kind === "sample";
   return (
     <AdminForm key={JSON.stringify([order.amounts, order.addons])} action={saveCharges.bind(null, order.id)} className="grid grid-cols-1 gap-4">
       {order.shipping_mode !== "forwarder" ? (
         <TextField
-          label="Final freight (USD)"
+          label={sample ? "Courier (USD)" : "Final freight (USD)"}
           name="freight"
           inputMode="decimal"
           defaultValue={freightCents !== null ? (freightCents / 100).toFixed(2) : ""}
-          placeholder={order.amounts.freight_status === "estimate" && order.amounts.freight_cents !== null ? `Estimate: ${(order.amounts.freight_cents / 100).toFixed(2)}` : "Quote from the forwarder"}
-          hint="Empty: the estimate is used when you mark the order ready to ship."
+          placeholder={
+            order.amounts.freight_status === "estimate" && order.amounts.freight_cents !== null
+              ? `Estimate: ${(order.amounts.freight_cents / 100).toFixed(2)}`
+              : sample
+                ? "e.g. 45.00"
+                : "Quote from the forwarder"
+          }
+          hint={sample ? "Express courier for the samples to the buyer's address." : "Empty: the estimate is used when you mark the order ready to ship."}
         />
       ) : null}
       {onRequest.map((addon) => (
         <TextField
           key={addon.id}
-          label={`${addon.name}: total for this order (USD)`}
+          label={`${addon.name}: ${sample ? "price" : "total for this order"} (USD)`}
           name={`addon_${addon.id}`}
           inputMode="decimal"
           defaultValue={addon.line_cents !== null ? (addon.line_cents / 100).toFixed(2) : ""}
           placeholder="Price on request"
+          hint={sample ? `${addon.qty} ${addon.qty === 1 ? "piece" : "pieces"}, all together. See the buyer's notes and design files.` : undefined}
         />
       ))}
       <div className="flex flex-wrap items-center gap-3">

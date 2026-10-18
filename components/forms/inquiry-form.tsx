@@ -1,7 +1,9 @@
 "use client";
 
 import { useActionState, useRef, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { CircleCheck, LoaderCircle, Send } from "lucide-react";
+import { FileAttachments, type AttachedFile } from "@/components/forms/file-attachments";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +33,10 @@ const EXTRA_FIELDS: Record<InquiryType, ExtraField[]> = {
       options: ["Jeans pants", "Denim jackets", "Jeans shorts", "Cargo trousers", "Chino pants", "Denim skirts", "Several products"],
     },
     { name: "details.quantity", label: "Quantity (pieces)", type: "number", placeholder: "e.g. 600" },
+    { name: "details.fit", label: "Fit", type: "select", options: ["Skinny", "Slim", "Straight", "Regular", "Relaxed", "Bootcut", "Wide leg", "Not sure yet"] },
+    { name: "details.fabric", label: "Fabric", placeholder: "e.g. 12 oz stretch denim" },
+    { name: "details.wash", label: "Wash or color", placeholder: "e.g. dark rinse, light stone wash" },
+    { name: "details.sizes", label: "Sizes", placeholder: "e.g. 28 to 38" },
     { name: "details.target_price", label: "Target price per piece (USD)", placeholder: "Optional" },
     { name: "details.needed_by", label: "Needed by", placeholder: "e.g. end of March" },
   ],
@@ -42,9 +48,12 @@ const EXTRA_FIELDS: Record<InquiryType, ExtraField[]> = {
 
 const MESSAGE_PLACEHOLDER: Record<InquiryType, string> = {
   contact: "How can we help?",
-  quote: "Tell us about fabric, wash, fit, sizes, colors and labels. You can also send tech packs to us by email or WhatsApp.",
+  quote: "Tell us about the design, colors, labels and packaging. Attach your tech pack below, or share a link to bigger files.",
   sample: "Sizes and colors you need, and anything else we should know.",
 };
+
+/** Private-label extras a quote request can tick (the same as the add-ons at checkout). */
+const QUOTE_EXTRAS = ["Woven brand labels", "Printed hang tags", "Leather or PU back patch", "Branded buttons and rivets", "Polybags and carton marks"];
 
 const INITIAL: InquiryState = { status: "idle", attempt: 0 };
 
@@ -57,6 +66,16 @@ const PREFILL: Record<InquiryType, Record<string, string>> = {
   quote: { product: "details.product", quantity: "details.quantity", message: "message" },
   sample: { styles: "details.styles", quantity: "details.sample_quantity", message: "message" },
 };
+
+/** The attached files kept in the form's values after an error. */
+function attachedFiles(json: string): AttachedFile[] {
+  try {
+    const files: unknown = JSON.parse(json || "[]");
+    return Array.isArray(files) ? (files as AttachedFile[]) : [];
+  } catch {
+    return [];
+  }
+}
 
 const noSubscription = () => () => {};
 
@@ -197,6 +216,26 @@ export function InquiryForm({
           </Field>
         ))}
 
+        {type === "quote" ? (
+          <fieldset className="grid gap-2 sm:col-span-2">
+            <legend className="text-sm font-medium">Your brand on the garments</legend>
+            <div className="mt-1 grid gap-2 sm:grid-cols-2">
+              {QUOTE_EXTRAS.map((extra) => (
+                <label key={extra} className="flex items-center gap-2.5 text-sm">
+                  <input
+                    type="checkbox"
+                    name="details.extras"
+                    value={extra}
+                    defaultChecked={value("details.extras").split("|").includes(extra)}
+                    className="size-4 accent-denim-600"
+                  />
+                  {extra}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
+
         <Field label="Message" name="message" required error={error("message")} className="sm:col-span-2">
           <textarea
             id="message"
@@ -209,14 +248,35 @@ export function InquiryForm({
             className={cn(fieldClass, "h-auto min-h-32 py-3 leading-relaxed")}
           />
         </Field>
+
+        {type === "quote" ? (
+          <>
+            <div className="sm:col-span-2">
+              <FileAttachments initial={attachedFiles(value("files_meta"))} />
+              {error("files") ? <p className="mt-2 text-sm text-destructive">{error("files")}</p> : null}
+            </div>
+            <Field label="Link to bigger files" name="link" error={error("link")} className="sm:col-span-2">
+              <Input
+                id="link"
+                name="link"
+                type="url"
+                inputMode="url"
+                placeholder="https://… (Google Drive, WeTransfer, Dropbox)"
+                defaultValue={value("link")}
+                aria-invalid={!!error("link")}
+                className={fieldClass}
+              />
+            </Field>
+          </>
+        ) : null}
       </div>
 
       <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted-foreground">
           We only use your details to answer you. See our{" "}
-          <a href="/privacy" className="underline underline-offset-2">
+          <Link href="/privacy" className="underline underline-offset-2">
             privacy policy
-          </a>
+          </Link>
           .
         </p>
         <Button type="submit" size="lg" disabled={pending} className="shrink-0">

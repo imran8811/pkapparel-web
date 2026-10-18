@@ -62,11 +62,12 @@ export default async function RequestQuotePage() {
               ))}
             </ol>
             <p className="mt-6 rounded-3xl bg-denim-900 p-6 text-sm leading-relaxed text-cotton-50/80 twill-texture">
-              <strong className="text-cotton-50">Have a tech pack?</strong> Email it to{" "}
+              <strong className="text-cotton-50">Have a tech pack?</strong> Attach it to the form (PDF, Excel, Word, Illustrator or photos), or share a link
+              to bigger files. You can also email it to{" "}
               <a href={`mailto:${site.contact.email}`} className="text-stitch-300 underline underline-offset-2">
                 {site.contact.email}
               </a>{" "}
-              or send it on WhatsApp and mention your quote reference.
+              with your quote reference.
             </p>
           </aside>
         </Container>

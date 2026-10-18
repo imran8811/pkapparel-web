@@ -105,7 +105,7 @@ function StyleCard({ style, apply }: { style: CartStyle; apply: (result: CartRes
         </p>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Minimum {style.rules.moq_per_color} pcs per color · 1 set = {style.rules.set_pcs_per_size} pcs of every size
+        Minimum {style.rules.moq_per_color} pcs per color and {style.rules.min_pcs_per_size} per size · 1 set = {style.rules.set_pcs_per_size} pcs of every size
       </p>
       <ul className="mt-4 divide-y divide-border">
         {style.colors.map((color) => (
@@ -121,7 +121,10 @@ function ColorLine({ style, color, apply }: { style: CartStyle; color: CartColor
   const [draft, setDraft] = useState<Quantities>(saved);
   const [pending, startTransition] = useTransition();
   const moq = style.rules.moq_per_color;
+  const minPerSize = style.rules.min_pcs_per_size;
   const draftPcs = style.sizes.reduce((sum, size) => sum + (draft[size] ?? 0), 0);
+  /** Sizes below the minimum per size (an empty size is fine). */
+  const smallSizes = style.sizes.filter((size) => (draft[size] ?? 0) > 0 && (draft[size] ?? 0) < minPerSize);
   const changed = style.sizes.some((size) => (draft[size] ?? 0) !== (saved[size] ?? 0));
   const progress = Math.min(100, Math.round((draftPcs / moq) * 100));
 
@@ -174,11 +177,17 @@ function ColorLine({ style, color, apply }: { style: CartStyle; color: CartColor
                   placeholder="0"
                   onChange={(event) => setSize(size, Number(event.target.value))}
                   aria-label={`Size ${size}, pieces of ${color.name}`}
-                  className="h-9 w-full min-w-0 rounded-lg border border-input bg-white text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+                  aria-invalid={smallSizes.includes(size) || undefined}
+                  className="h-9 w-full min-w-0 rounded-lg border border-input bg-white text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 aria-invalid:border-stitch-500 aria-invalid:bg-orange-50"
                 />
               </label>
             ))}
           </div>
+          {smallSizes.length > 0 ? (
+            <p className="-mt-2 text-xs text-stitch-700">
+              Each size needs at least {minPerSize} pcs. Raise or clear size {smallSizes.join(", ")}.
+            </p>
+          ) : null}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <div className="min-w-48 flex-1">
               <div className="flex items-center justify-between text-xs">

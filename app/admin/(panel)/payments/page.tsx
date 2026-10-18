@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Payments" };
 
 type QueueItem = AdminPayment & {
   slip_name: string | null;
-  order: { id: number; order_no: string; status: string; company_name: string; country_code: string; deposit_cents: number; total_cents: number; paid_cents: number; due_now_cents: number };
+  order: { id: number; order_no: string; kind: "bulk" | "sample"; status: string; company_name: string; country_code: string; deposit_cents: number; total_cents: number; paid_cents: number; due_now_cents: number };
 };
 
 const TABS = [
@@ -87,6 +87,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/admin/p
                     <Link href={`/admin/orders/${payment.order.id}`} className="font-mono font-medium text-denim-600 hover:underline">
                       {payment.order.order_no}
                     </Link>
+                    {payment.order.kind === "sample" ? <Pill tone="muted">Sample</Pill> : null}
                     <span className="font-medium">{payment.order.company_name}</span>
                     <span className="text-muted-foreground">{countryName(payment.order.country_code)}</span>
                   </p>
