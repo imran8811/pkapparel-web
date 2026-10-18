@@ -1,5 +1,7 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
+
 // The live API unless API_URL says otherwise (locally: http://127.0.0.1:8080 in .env.local).
 const API_URL = (process.env.API_URL || "https://api.pkapparel.com").replace(/\/+$/, "");
 const CLIENT_KEY = secret(process.env.API_CLIENT_KEY);
@@ -102,12 +104,14 @@ async function send(path: string, { method = "GET", body, query, token, clientIp
 
 function toApiError(response: Response, payload: unknown): ApiError {
   const error = (payload as ErrorPayload | null)?.error;
-  return new ApiError(
-    response.status,
-    error?.code ?? "api_error",
-    error?.message ?? `The API answered with status ${response.status}.`,
-    error?.fields,
-  );
+  let message = error?.message ?? `The API answered with status ${response.status}.`;
+  if (error?.code === "invalid_client") {
+    // Says which key this website sends without revealing it: compare the fingerprint with the API's (see the README).
+    message += CLIENT_KEY
+      ? ` This website sends API_CLIENT_KEY ${CLIENT_KEY.length} characters long, fingerprint ${createHash("sha256").update(CLIENT_KEY).digest("hex").slice(0, 8)}; it must equal CLIENT_KEY in the API's .env (${API_URL}).`
+      : ` API_CLIENT_KEY is empty on this website: set it to the API's CLIENT_KEY (${API_URL}).`;
+  }
+  return new ApiError(response.status, error?.code ?? "api_error", message, error?.fields);
 }
 
 /** Like apiWithMeta, but returns only the `data` part. */
