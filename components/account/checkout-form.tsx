@@ -24,6 +24,8 @@ const MODES: { key: ShippingMode; label: string; icon: typeof Plane; note: strin
 /** Checkout: delivery address, shipping, add-ons, reference, then the totals and the deposit. */
 export function CheckoutForm({ initial, customer, countries }: { initial: Checkout; customer: Customer; countries: Country[] }) {
   const [data, setData] = useState(initial);
+  // Confirmed in another tab: the banner refreshes the page data (initial), and the form follows without losing input.
+  const emailVerified = data.email_verified || initial.email_verified;
   const [address, setAddress] = useState<number | "new">(initial.address_id ?? "new");
   const [mode, setMode] = useState<ShippingMode>(defaultMode(initial.shipping));
   const [addons, setAddons] = useState<ReadonlySet<number>>(() => new Set());
@@ -57,7 +59,7 @@ export function CheckoutForm({ initial, customer, countries }: { initial: Checko
       <input type="hidden" name="expected_total_cents" value={total} />
 
       <div className="grid min-w-0 grid-cols-1 gap-6 lg:col-span-7">
-        {!data.email_verified ? <VerifyEmailBanner email={customer.email} /> : null}
+        {!emailVerified ? <VerifyEmailBanner email={customer.email} /> : null}
 
         <Section number={1} title="Delivery address" hint="The consignee on your documents. Your forwarder's address works too.">
           <AddressChoice
@@ -216,10 +218,10 @@ export function CheckoutForm({ initial, customer, countries }: { initial: Checko
               }
             />
             <FormMessage />
-            <SubmitButton size="lg" className="w-full" disabled={!data.email_verified || quoting} pendingLabel="Placing your order…">
+            <SubmitButton size="lg" className="w-full" disabled={!emailVerified || quoting} pendingLabel="Placing your order…">
               Place order
             </SubmitButton>
-            {!data.email_verified ? <p className="text-center text-xs text-stitch-700">Confirm your email address first (see the top of the page).</p> : null}
+            {!emailVerified ? <p className="text-center text-xs text-stitch-700">Confirm your email address first (see the top of the page).</p> : null}
           </div>
         </div>
       </aside>

@@ -34,6 +34,8 @@ export function SampleOrderForm({
   countries: Country[];
 }) {
   const [data, setData] = useState(initial);
+  // Confirmed in another tab: the banner refreshes the page data (initial), and the form follows without losing input.
+  const emailVerified = data.email_verified || initial.email_verified;
   const [address, setAddress] = useState<number | "new">(initial.address_id ?? "new");
   const [custom, setCustom] = useState(withCustom);
   const [customQty, setCustomQty] = useState(1);
@@ -80,7 +82,7 @@ export function SampleOrderForm({
       {!data.needs_price && data.total_cents !== null ? <input type="hidden" name="expected_total_cents" value={data.total_cents} /> : null}
 
       <div className="grid min-w-0 grid-cols-1 gap-6 lg:col-span-7">
-        {!data.email_verified ? <VerifyEmailBanner email={customer.email} /> : null}
+        {!emailVerified ? <VerifyEmailBanner email={customer.email} /> : null}
 
         <section className={panelClass}>
           <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -252,10 +254,10 @@ export function SampleOrderForm({
               }
             />
             <FormMessage />
-            <SubmitButton size="lg" className="w-full" disabled={!data.email_verified || quoting} pendingLabel="Placing your order…">
+            <SubmitButton size="lg" className="w-full" disabled={!emailVerified || quoting} pendingLabel="Placing your order…">
               Place sample order
             </SubmitButton>
-            {!data.email_verified ? <p className="text-center text-xs text-stitch-700">Confirm your email address first (see the top of the page).</p> : null}
+            {!emailVerified ? <p className="text-center text-xs text-stitch-700">Confirm your email address first (see the top of the page).</p> : null}
           </div>
         </div>
       </aside>

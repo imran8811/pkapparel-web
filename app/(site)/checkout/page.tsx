@@ -52,7 +52,8 @@ async function CheckoutContent() {
   }
 
   // Keyed by the data, so a page kept alive by the router starts from fresh numbers.
-  return <CheckoutForm key={JSON.stringify(checkout)} initial={checkout} customer={customer} countries={countryOptions()} />;
+  // Keyed by the cart and prices, not the email confirmation: confirming in another tab must not reset what the buyer typed.
+  return <CheckoutForm key={JSON.stringify({ ...checkout, email_verified: null })} initial={checkout} customer={customer} countries={countryOptions()} />;
 }
 
 function CheckoutSkeleton() {

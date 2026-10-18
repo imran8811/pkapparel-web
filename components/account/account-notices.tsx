@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { CircleCheck, LoaderCircle, MailWarning } from "lucide-react";
 import { resendVerification } from "@/lib/account/actions/auth";
 import type { FormState } from "@/lib/form-state";
@@ -37,10 +38,31 @@ export function AccountNotice() {
   );
 }
 
-/** Shown until the buyer confirms their email address (needed to place orders). */
+/**
+ * Shown until the buyer confirms their email address (needed to place orders). The link is usually opened in another
+ * tab or on a phone, so whenever the buyer comes back to this tab the page asks the server again: the banner then
+ * disappears and the order button turns on, without a reload.
+ */
 export function VerifyEmailBanner({ email }: { email: string }) {
+  const router = useRouter();
   const [result, setResult] = useState<FormState | null>(null);
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    let last = 0;
+    const recheck = () => {
+      // Focus and visibility often fire together: one check is enough.
+      if (document.visibilityState !== "visible" || Date.now() - last < 2000) return;
+      last = Date.now();
+      router.refresh();
+    };
+    window.addEventListener("focus", recheck);
+    document.addEventListener("visibilitychange", recheck);
+    return () => {
+      window.removeEventListener("focus", recheck);
+      document.removeEventListener("visibilitychange", recheck);
+    };
+  }, [router]);
 
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-orange-200 bg-orange-50 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -48,7 +70,7 @@ export function VerifyEmailBanner({ email }: { email: string }) {
         <MailWarning aria-hidden className="mt-0.5 size-5 shrink-0 text-stitch-600" />
         <div className="min-w-0 text-sm">
           <p className="font-semibold text-stitch-700">Please confirm your email address</p>
-          <p className="mt-1 break-words text-stitch-700/90">
+          <p className="mt-1 break-words text-stitch-700">
             We sent a link to <strong>{email}</strong>. You need a confirmed address to place orders.
           </p>
           {result?.message ? (
