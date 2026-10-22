@@ -38,9 +38,17 @@ function renameFields(state: FormState): FormState {
   if (!state.fields) return state;
   const fields: Record<string, string> = {};
   for (const [name, message] of Object.entries(state.fields)) {
-    fields[name.startsWith("tiers") ? "tiers" : (FIELD_NAMES[name] ?? name)] = message;
+    // The API's "specs.neckline" / "spec_overrides.wash" are the form's "spec_neckline" / "spec_wash".
+    const spec = /^(?:specs|spec_overrides)\.(\w+)$/.exec(name)?.[1];
+    fields[spec ? `spec_${spec}` : name.startsWith("tiers") ? "tiers" : (FIELD_NAMES[name] ?? name)] = message;
   }
   return { ...state, fields };
+}
+
+/** The form's spec_* fields (which ones depends on the product type) as {key: value or null}. */
+function specFields(form: FormData): Record<string, string | null> {
+  const keys = new Set([...form.keys()].filter((key) => key.startsWith("spec_")));
+  return Object.fromEntries([...keys].map((key) => [key.slice("spec_".length), optional(form, key)]));
 }
 
 export async function saveProduct(_previous: FormState, form: FormData): Promise<FormState> {
@@ -67,15 +75,10 @@ export async function saveProduct(_previous: FormState, form: FormData): Promise
     status: text(form, "status") || "draft",
     is_featured: checked(form, "is_featured"),
     sort_order: number(form, "sort_order") ?? 0,
-    fit: optional(form, "fit"),
-    fabric: optional(form, "fabric"),
-    composition: optional(form, "composition"),
-    fabric_weight: optional(form, "fabric_weight"),
-    stretch: optional(form, "stretch"),
-    wash: optional(form, "wash"),
-    closure: optional(form, "closure"),
+    specs: specFields(form),
     description_html: text(form, "description_html"),
     features: text(form, "features").split("\n"),
+    size_system: text(form, "size_system"),
     sizes: text(form, "sizes").split(/[,;\n]/).map((size) => size.trim()).filter(Boolean),
     size_chart_id: number(form, "size_chart_id"),
     price_cents: price,
@@ -135,14 +138,7 @@ export async function saveColor(productId: number, productSlug: string, _previou
     price_cents: price,
     is_active: checked(form, "is_active"),
     sort_order: number(form, "sort_order"),
-    spec_overrides: {
-      fabric: optional(form, "spec_fabric"),
-      composition: optional(form, "spec_composition"),
-      fabric_weight: optional(form, "spec_fabric_weight"),
-      stretch: optional(form, "spec_stretch"),
-      wash: optional(form, "spec_wash"),
-      closure: optional(form, "spec_closure"),
-    },
+    spec_overrides: specFields(form),
     images: jsonList<{ path: string; alt: string }>(form, "images"),
   };
 
@@ -153,7 +149,7 @@ export async function saveColor(productId: number, productSlug: string, _previou
       body,
     });
   } catch (error) {
-    const state = errorState(error);
+    const state = renameFields(errorState(error));
     if (state.fields?.price_cents) state.fields.price = state.fields.price_cents;
     return state;
   }

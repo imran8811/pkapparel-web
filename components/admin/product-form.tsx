@@ -3,14 +3,15 @@
 import { useState } from "react";
 import { PlusIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AdminForm, Field, FormError, SelectField, SubmitButton, SwitchField, TextAreaField, TextField } from "@/components/admin/form";
+import { AdminForm, Field, FormError, SelectField, SubmitButton, SwitchField, TextAreaField, TextField, useAdminForm } from "@/components/admin/form";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { Panel } from "@/components/admin/page-parts";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { inputClass } from "@/components/admin/styles";
 import { deleteProduct, saveProduct } from "@/lib/admin/actions/products";
-import type { AdminProduct, AdminSizeChart } from "@/lib/admin/types";
-import { segments, typesFor, type Segment } from "@/lib/nav";
+import type { AdminProduct, AdminSizeChart, CatalogDefinitions, CatalogSpec } from "@/lib/admin/types";
+import { segments, typesFor, type ProductType, type Segment } from "@/lib/nav";
+import type { SizeSystem } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
 const STATUS_OPTIONS = [
@@ -30,33 +31,48 @@ const dollars = (cents: number | null | undefined) => (cents == null ? "" : (cen
 
 export type ShopDefaults = { moq_per_color: number; set_pcs_per_size: number; min_pcs_per_size: number; lead_time_days: number; sample_price_cents: number };
 
-export function ProductForm({ product, charts, defaults }: { product: AdminProduct | null; charts: AdminSizeChart[]; defaults: ShopDefaults }) {
+type ProductFormProps = { product: AdminProduct | null; charts: AdminSizeChart[]; defaults: ShopDefaults; catalog: CatalogDefinitions };
+
+export function ProductForm(props: ProductFormProps) {
   // A new style opens in its own editor once saved; the "new style" form then starts empty again.
   const [version, setVersion] = useState(0);
-  return (
-    <ProductEditor
-      key={version}
-      product={product}
-      charts={charts}
-      defaults={defaults}
-      onSaved={product ? undefined : () => setVersion((current) => current + 1)}
-    />
-  );
+  return <ProductEditor key={version} {...props} onSaved={props.product ? undefined : () => setVersion((current) => current + 1)} />;
 }
 
-function ProductEditor({
-  product,
-  charts,
-  defaults,
-  onSaved,
-}: {
-  product: AdminProduct | null;
-  charts: AdminSizeChart[];
-  defaults: ShopDefaults;
-  onSaved?: () => void;
-}) {
+/** A saved value of a spec, from the style's specs, columns or attributes (for a type the style had before). */
+function savedSpec(product: AdminProduct | null, key: string): string {
+  if (!product) return "";
+  const column = (product as unknown as Record<string, unknown>)[key];
+  return product.specs[key] ?? product.attributes[key] ?? (typeof column === "string" ? column : "");
+}
+
+function ProductEditor({ product, charts, defaults, catalog, onSaved }: ProductFormProps & { onSaved?: () => void }) {
   const [segment, setSegment] = useState<Segment>((product?.segment as Segment) ?? "men");
+  const [type, setType] = useState<string>(product?.product_type ?? "jeans-pant");
   const types = typesFor(segment);
+  const definition = catalog.types.find((t) => t.slug === type) ?? catalog.types[0];
+
+  const [sizeSystem, setSizeSystem] = useState<SizeSystem>(product?.size_system ?? definition.size_systems[0]);
+  const [sizes, setSizes] = useState<string[]>(product && product.size_system !== "other" ? product.sizes : []);
+  const [otherSizes, setOtherSizes] = useState(product?.size_system === "other" ? product.sizes.join(", ") : "");
+  const systemSizes = catalog.size_systems.find((s) => s.key === sizeSystem)?.sizes ?? null;
+
+  const chooseSystem = (system: SizeSystem) => {
+    const all = catalog.size_systems.find((s) => s.key === system)?.sizes ?? null;
+    // Other sizes start from the sizes ticked so far; a list keeps the ticked sizes it has.
+    if (all === null && otherSizes === "") setOtherSizes(sizes.join(", "));
+    setSizes((current) => (all ? current.filter((size) => all.includes(size)) : current));
+    setSizeSystem(system);
+  };
+  const chooseType = (slug: string) => {
+    setType(slug);
+    const next = catalog.types.find((t) => t.slug === slug);
+    if (next && !next.size_systems.includes(sizeSystem)) chooseSystem(next.size_systems[0]);
+  };
+  const chooseSegment = (value: Segment) => {
+    setSegment(value);
+    if (!typesFor(value).some((t) => t.slug === type)) chooseType(typesFor(value)[0].slug);
+  };
 
   return (
     <AdminForm action={saveProduct} onSuccess={onSaved} className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -75,15 +91,16 @@ function ProductEditor({
               label="For"
               name="segment"
               value={segment}
-              onChange={(event) => setSegment(event.target.value as Segment)}
+              onChange={(event) => chooseSegment(event.target.value as Segment)}
               options={segments.map((s) => ({ value: s.slug, label: s.label }))}
             />
             <SelectField
-              key={segment}
               label="Product type"
               name="product_type"
-              defaultValue={types.some((t) => t.slug === product?.product_type) ? product?.product_type : types[0].slug}
+              value={type}
+              onChange={(event) => chooseType(event.target.value as ProductType)}
               options={types.map((t) => ({ value: t.slug, label: t.label }))}
+              hint="Sets the specifications and sizes below."
             />
             <TextField
               label="Web address"
@@ -96,15 +113,18 @@ function ProductEditor({
           </div>
         </Panel>
 
-        <Panel title="Fabric and fit" description="Shown in the specifications. A color can change these in its own settings.">
+        <Panel
+          title="Specifications"
+          description="The details of this product type, shown on the product page in this order. Pick a suggestion or type your own. A color can change the fabric details."
+        >
           <div className="grid gap-4 sm:grid-cols-2">
-            <TextField label="Fit" name="fit" defaultValue={product?.fit ?? ""} placeholder="e.g. Slim, Relaxed, Wide leg" />
-            <TextField label="Fabric" name="fabric" defaultValue={product?.fabric ?? ""} placeholder="e.g. Stretch denim" />
-            <TextField label="Composition" name="composition" defaultValue={product?.composition ?? ""} placeholder="e.g. 98% cotton, 2% spandex" />
-            <TextField label="Fabric weight" name="fabric_weight" defaultValue={product?.fabric_weight ?? ""} placeholder="e.g. 11 oz or 320 GSM" />
-            <SelectField label="Stretch" name="stretch" defaultValue={product?.stretch ?? ""} options={STRETCH_OPTIONS} />
-            <TextField label="Wash" name="wash" defaultValue={product?.wash ?? ""} placeholder="e.g. Stone wash" />
-            <TextField label="Closure" name="closure" defaultValue={product?.closure ?? ""} placeholder="e.g. Zip fly" />
+            {definition.specs.map((spec) =>
+              spec.key === "stretch" ? (
+                <SelectField key={spec.key} label={spec.label} name="spec_stretch" defaultValue={savedSpec(product, "stretch")} options={STRETCH_OPTIONS} />
+              ) : (
+                <SpecField key={spec.key} spec={spec} defaultValue={savedSpec(product, spec.key)} />
+              ),
+            )}
           </div>
         </Panel>
 
@@ -122,20 +142,50 @@ function ProductEditor({
         </Panel>
 
         <Panel title="Sizes">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TextField
-              label="Sizes"
-              name="sizes"
-              defaultValue={product?.sizes.join(", ") ?? ""}
-              placeholder="30, 32, 34, 36, 38, 40"
-              hint="In order, separated by commas."
-            />
+          <div className="grid gap-4">
+            {definition.size_systems.length > 1 ? (
+              <SelectField
+                label="Size system"
+                name="size_system"
+                value={sizeSystem}
+                onChange={(event) => chooseSystem(event.target.value as SizeSystem)}
+                options={definition.size_systems.map((key) => ({ value: key, label: catalog.size_systems.find((s) => s.key === key)?.label ?? key }))}
+                fieldClassName="sm:max-w-xs"
+              />
+            ) : (
+              <input type="hidden" name="size_system" value={sizeSystem} />
+            )}
+            {systemSizes ? (
+              <>
+                <input type="hidden" name="sizes" value={systemSizes.filter((size) => sizes.includes(size)).join(", ")} />
+                <SizeChips
+                  all={systemSizes}
+                  selected={sizes}
+                  onToggle={(size) => setSizes((current) => (current.includes(size) ? current.filter((s) => s !== size) : [...current, size]))}
+                  hint={sizeSystem === "waist" ? "Waist in inches. Tick every size this style comes in." : "Tick every size this style comes in."}
+                />
+              </>
+            ) : (
+              <TextField
+                label="Sizes"
+                name="sizes"
+                value={otherSizes}
+                onChange={(event) => setOtherSizes(event.target.value)}
+                placeholder="e.g. US 0, 2, 4, 6 or One size"
+                hint="In order, separated by commas."
+              />
+            )}
             <SelectField
+              key={sizeSystem}
               label="Size chart"
               name="size_chart_id"
-              defaultValue={product?.size_chart_id ? String(product.size_chart_id) : ""}
-              options={[{ value: "", label: "None (sent with the quote)" }, ...charts.map((chart) => ({ value: String(chart.id), label: chart.name }))]}
-              hint="Charts are managed under Size charts."
+              defaultValue={charts.some((chart) => chart.id === product?.size_chart_id && chart.size_system === sizeSystem) ? String(product?.size_chart_id) : ""}
+              options={[
+                { value: "", label: "None (sent with the quote)" },
+                ...charts.filter((chart) => chart.size_system === sizeSystem).map((chart) => ({ value: String(chart.id), label: chart.name })),
+              ]}
+              hint="Charts for these sizes, managed under Size charts."
+              fieldClassName="sm:max-w-sm"
             />
           </div>
         </Panel>
@@ -209,6 +259,55 @@ function ProductEditor({
         ) : null}
       </div>
     </AdminForm>
+  );
+}
+
+/** A spec with the type's suggested values (a text field with a list, so other text is allowed too). */
+function SpecField({ spec, defaultValue }: { spec: CatalogSpec; defaultValue: string }) {
+  const listId = `suggestions-${spec.key}`;
+  return (
+    <>
+      <TextField
+        label={spec.label}
+        name={`spec_${spec.key}`}
+        defaultValue={defaultValue}
+        list={spec.suggestions.length > 0 ? listId : undefined}
+        placeholder={spec.suggestions.length > 0 ? `e.g. ${spec.suggestions.slice(0, 2).join(", ")}` : undefined}
+        maxLength={spec.max}
+        autoComplete="off"
+      />
+      {spec.suggestions.length > 0 ? (
+        <datalist id={listId}>
+          {spec.suggestions.map((value) => (
+            <option key={value} value={value} />
+          ))}
+        </datalist>
+      ) : null}
+    </>
+  );
+}
+
+/** Tick boxes for the sizes of a waist or letter system; the hidden "sizes" field carries the choice. */
+function SizeChips({ all, selected, onToggle, hint }: { all: string[]; selected: string[]; onToggle: (size: string) => void; hint: string }) {
+  const { state } = useAdminForm();
+  const error = state.fields?.sizes;
+  return (
+    <fieldset className="grid gap-1.5" aria-describedby="sizes-note">
+      <legend className="mb-1.5 text-sm font-medium">Sizes</legend>
+      <div className="flex flex-wrap gap-1.5">
+        {all.map((size) => (
+          <label key={size} className="cursor-pointer">
+            <input type="checkbox" className="peer sr-only" checked={selected.includes(size)} onChange={() => onToggle(size)} />
+            <span className="inline-flex h-9 min-w-11 items-center justify-center rounded-lg border border-input bg-white px-2.5 font-mono text-sm transition-colors peer-checked:border-denim-900 peer-checked:bg-denim-900 peer-checked:text-white peer-focus-visible:ring-3 peer-focus-visible:ring-ring/40 hover:border-denim-300">
+              {size}
+            </span>
+          </label>
+        ))}
+      </div>
+      <p id="sizes-note" className={cn("leading-relaxed", error ? "text-sm text-destructive" : "text-xs text-muted-foreground")}>
+        {error ?? (selected.length > 0 ? `${hint} ${selected.length} chosen.` : hint)}
+      </p>
+    </fieldset>
   );
 }
 

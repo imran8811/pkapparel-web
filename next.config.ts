@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { typesFor, type Segment } from "./lib/nav";
 
 // The live addresses unless the environment says otherwise (locally: .env.local).
 const apiUrl = new URL(process.env.API_URL || "https://api.pkapparel.com");
@@ -18,6 +19,27 @@ const OLD_POSTS = [
   "wholesale-jeans-suppliers",
   "wholesale-women-jeans",
 ].join("|");
+
+/**
+ * The shop had boys' and girls' pages until 2026-10-20; they now lead to Men and Women (owner decision).
+ * A category the new segment does not sell (e.g. girls' cargo trousers) goes to the segment page.
+ */
+const formerSegments = (
+  [
+    ["boys", "men"],
+    ["girls", "women"],
+  ] as const
+).flatMap(([old, segment]: readonly [string, Segment]) => [
+  { source: `/wholesale-shop/${old}`, destination: `/wholesale-shop/${segment}`, permanent: true },
+  {
+    source: `/wholesale-shop/${old}/:type(${typesFor(segment)
+      .map((type) => type.slug)
+      .join("|")})`,
+    destination: `/wholesale-shop/${segment}/:type`,
+    permanent: true,
+  },
+  { source: `/wholesale-shop/${old}/:type`, destination: `/wholesale-shop/${segment}`, permanent: true },
+]);
 
 /** The live site runs on HTTPS; local copies (http://localhost) must not be pushed to HTTPS. */
 const https = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.pkapparel.com").startsWith("https://");
@@ -81,6 +103,8 @@ const nextConfig: NextConfig = {
       { source: `/jeans-pants/:slug(${OLD_POSTS})`, destination: "/post/:slug", permanent: true },
       { source: "/posts/:slug", destination: "/post/:slug", permanent: true },
       { source: "/denim-manufacturers", destination: "/post/jeans-manufacturers", permanent: true },
+      // Old product URLs below these (…/girls/jeans-pant/{slug}) are answered by the product page, which finds the style.
+      ...formerSegments,
     ];
   },
 

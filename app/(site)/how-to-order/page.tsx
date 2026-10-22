@@ -11,7 +11,7 @@ import { pageMetadata } from "@/lib/seo";
 import { getSite } from "@/lib/site";
 
 export const metadata = pageMetadata({
-  title: "How to order wholesale denim",
+  title: "How to order wholesale apparel",
   description:
     "How ordering works at PK Apparel: MOQ, sizes and sets, prices, bank transfer payment, 30-day production and air or sea shipping.",
   path: "/how-to-order",

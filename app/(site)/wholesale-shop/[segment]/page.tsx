@@ -75,7 +75,7 @@ export default async function SegmentPage({ params }: PageProps<"/wholesale-shop
 
       <section className="py-12 sm:py-16">
         <Container>
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {typesFor(segment).map((type) => {
               const styles = categories.find((c) => c.product_type === type.slug)?.style_count ?? 0;
               return (
@@ -103,7 +103,7 @@ export default async function SegmentPage({ params }: PageProps<"/wholesale-shop
               </>
             ) : (
               <MadeToOrderPanel
-                title={`${info.possessive} denim, made to your design`}
+                title={`${info.possessive} clothing, made to your design`}
                 body="There are no styles online yet for this group. Send us a design, a photo or a sample and we will quote it, from the fabric to the labels."
               />
             )}
@@ -113,7 +113,7 @@ export default async function SegmentPage({ params }: PageProps<"/wholesale-shop
 
       <CtaPanel
         title="Want your own design?"
-        body="We make jeans, jackets, shorts, cargos and chinos to your specification, with your labels and packaging."
+        body="We make your own designs, from jeans and jackets to T-shirts, hoodies and polo shirts, with your labels and packaging."
         primary={{ href: "/request-quote", label: "Request a quote" }}
         secondary={{ href: "/samples", label: "Order a sample" }}
       />

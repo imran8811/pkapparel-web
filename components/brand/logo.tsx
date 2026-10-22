@@ -38,7 +38,12 @@ export function Logo({ tone = "dark", showTagline = true, className, markClassNa
   const light = tone === "light";
 
   return (
-    <Link href="/" aria-label="PK Apparel, home" className={cn("flex shrink-0 items-center gap-3.5", className)}>
+    // The name includes the visible tagline (WCAG 2.5.3, label in name).
+    <Link
+      href="/"
+      aria-label={showTagline ? "PK Apparel, apparel manufacturer, made to order, home" : "PK Apparel, home"}
+      className={cn("flex shrink-0 items-center gap-3.5", className)}
+    >
       <LogoMark className={cn("h-11 w-auto", light ? "text-white" : "text-brand", markClassName)} />
       {showTagline && (
         <span
@@ -47,7 +52,7 @@ export function Logo({ tone = "dark", showTagline = true, className, markClassNa
             light ? "border-white/20 text-cotton-50/60" : "border-border text-muted-foreground",
           )}
         >
-          Denim manufacturer
+          Apparel manufacturer
           <br />
           Made to order
         </span>

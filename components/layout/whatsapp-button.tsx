@@ -15,7 +15,7 @@ export function WhatsAppButton({ number }: { number: string }) {
       href={fallback}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Chat with PK Apparel on WhatsApp"
+      aria-label="Chat with us on WhatsApp"
       onClick={(event) => {
         event.currentTarget.href = whatsappUrl(
           number,

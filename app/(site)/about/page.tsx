@@ -13,7 +13,7 @@ import { getSite } from "@/lib/site";
 export const metadata = pageMetadata({
   title: "About PK Apparel",
   description:
-    "PK Apparel is a denim manufacturer and exporter in Lahore, Pakistan, making jeans, jackets, shorts, cargo and chino pants to order since 2015.",
+    "PK Apparel is an apparel manufacturer and exporter in Lahore, Pakistan, making jeans, jackets, shorts, cargo and chino pants, T-shirts, hoodies and polo shirts to order since 2015.",
   path: "/about",
 });
 
@@ -50,10 +50,10 @@ export default async function AboutPage() {
         eyebrow="About us"
         title={
           <>
-            Denim made in {company.city}, for brands <span className="stitch-underline">worldwide.</span>
+            Apparel made in {company.city}, for brands <span className="stitch-underline">worldwide.</span>
           </>
         }
-        intro={`PK Apparel is a denim manufacturer and exporter founded in ${company.founded_year}. From our factory on Ferozepur Road we make jeans, jackets, shorts, cargo and chino pants for brands, wholesalers and online sellers in the USA, the UK and Europe.`}
+        intro={`PK Apparel is an apparel manufacturer and exporter founded in ${company.founded_year}. From our factory on Ferozepur Road we make jeans, jackets, shorts, cargo and chino pants, T-shirts, hoodies and polo shirts for brands, wholesalers and online sellers in the USA, the UK and Europe.`}
         crumbs={[{ label: "About us", href: "/about" }]}
       >
         <Button asChild variant="accent" size="lg">

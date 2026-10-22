@@ -3,7 +3,7 @@ import { Container } from "@/components/layout/container";
 import { CtaPanel } from "@/components/site/cta-panel";
 import { PageHero } from "@/components/site/page-hero";
 import { ProductGrid } from "@/components/shop/product-grid";
-import { ShopFilterBar, shopHref } from "@/components/shop/shop-filters";
+import { hasStretch, ShopFilterBar, shopHref } from "@/components/shop/shop-filters";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { getProducts, getShopCategories } from "@/lib/catalog";
@@ -13,9 +13,9 @@ import { SORTS, type ShopFilters } from "@/lib/shop";
 import { getSite } from "@/lib/site";
 
 export const metadata = pageMetadata({
-  title: "Wholesale shop: made-to-order denim",
+  title: "Wholesale shop: made-to-order apparel",
   description:
-    "Wholesale jeans for men, women and kids, men's chinos and cargo trousers, and denim skirts, made to order in Lahore. Prices per piece, from 100 pieces per color, shipped by air or sea.",
+    "Wholesale jeans, denim jackets, shorts, T-shirts, hoodies and polo shirts for men and women, men's chinos and cargo trousers, and denim skirts, made to order in Lahore. Prices per piece, from 100 pieces per color, shipped by air or sea.",
   path: "/wholesale-shop",
 });
 
@@ -29,7 +29,7 @@ export default async function ShopPage({ searchParams }: PageProps<"/wholesale-s
         eyebrow="Wholesale shop"
         title={
           <>
-            Made-to-order denim, <span className="stitch-underline">priced per piece.</span>
+            Made-to-order apparel, <span className="stitch-underline">priced per piece.</span>
           </>
         }
         intro={`Pick a style, then the colors and sizes you need, from ${moq} pieces per color. Production takes about ${leadTime} days after your deposit; then we ship by air or sea.`}
@@ -67,7 +67,8 @@ function filtersFrom(params: Record<string, string | string[] | undefined>): Sho
   return {
     segment: segment && isSegment(segment) ? segment : undefined,
     type: type && isProductType(type) ? type : undefined,
-    stretch: stretch === "stretch" || stretch === "non-stretch" ? stretch : undefined,
+    // Only for denim and twill types (knit tops have no stretch setting).
+    stretch: hasStretch(type) && (stretch === "stretch" || stretch === "non-stretch") ? stretch : undefined,
     q: one("q")?.slice(0, 80),
     sort: SORTS.find((option) => option.value === sort)?.value,
   };

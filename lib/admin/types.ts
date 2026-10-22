@@ -1,6 +1,7 @@
 /* Shapes returned by the admin API (/v1/admin/…). */
 
 import type { Address as BuyerAddress, AddonPricing, BankDetails, Customer, Order, OrderSummary, Payment } from "@/lib/account/types";
+import type { SizeSystem } from "@/lib/shop";
 import type { Address, Site } from "@/lib/site";
 
 export type Role = "admin" | "editor" | "sales" | "production";
@@ -237,7 +238,8 @@ export type AdminProductSummary = {
   updated_at: string;
 };
 
-export type ColorSpecs = Partial<Record<"fabric" | "composition" | "fabric_weight" | "stretch" | "wash" | "closure", string>>;
+/** Fabric details a color changes (which ones its type has: CatalogSpec.per_color). */
+export type ColorSpecs = Record<string, string | undefined>;
 
 export type AdminProductImage = { path: string; alt: string; width: number; height: number };
 
@@ -270,8 +272,13 @@ export type AdminProduct = {
   stretch: "stretch" | "non-stretch" | null;
   wash: string | null;
   closure: string | null;
+  /** Specs beyond the shared columns (rise, inseam, neckline…). */
+  attributes: Record<string, string>;
+  /** The values of the specs this style's type shows, by key. */
+  specs: Record<string, string | null>;
   description_html: string;
   features: string[];
+  size_system: SizeSystem;
   sizes: string[];
   size_chart_id: number | null;
   price_cents: number;
@@ -297,9 +304,29 @@ export type AdminProduct = {
   tiers: { min_qty: number; price_cents: number }[];
 };
 
+/** GET /v1/admin/product-types: what each product type shows and which sizes it uses (App\Models\ProductTypes). */
+export type CatalogDefinitions = {
+  segments: string[];
+  size_systems: { key: SizeSystem; label: string; sizes: string[] | null }[];
+  types: CatalogType[];
+};
+
+export type CatalogType = {
+  slug: string;
+  label: string;
+  segments: string[];
+  /** The usual one first. */
+  size_systems: SizeSystem[];
+  specs: CatalogSpec[];
+};
+
+/** A detail of a product type, e.g. "neckline" for T-shirts; `per_color`: a color may change it (fabric details). */
+export type CatalogSpec = { key: string; label: string; max: number; suggestions: string[]; per_color: boolean };
+
 export type AdminSizeChart = {
   id: number;
   name: string;
+  size_system: SizeSystem;
   unit: "in" | "cm";
   measurements: string[];
   size_rows: { size: string; values: string[] }[];
@@ -380,6 +407,8 @@ export type AdminAddon = {
   description: string | null;
   pricing: AddonPricing;
   price_cents: number | null;
+  /** Offered with these product types only; empty: every type. */
+  product_types: string[];
   is_active: boolean;
   sort_order: number;
 };

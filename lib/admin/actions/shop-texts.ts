@@ -1,6 +1,6 @@
 "use server";
 
-import { updateTag } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { adminApi } from "@/lib/admin/session";
 import { errorState, failure, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
 
@@ -10,6 +10,7 @@ export async function saveSizeChart(_previous: FormState, form: FormData): Promi
   const id = number(form, "id");
   const body = {
     name: text(form, "name"),
+    size_system: text(form, "size_system"),
     unit: text(form, "unit"),
     note: optional(form, "note"),
     measurements: jsonList<string>(form, "measurements"),
@@ -22,6 +23,7 @@ export async function saveSizeChart(_previous: FormState, form: FormData): Promi
     return errorState(error);
   }
   updateTag("products");
+  refresh(); // the list of charts is admin data
   return success(id ? "Size chart saved." : "Size chart added.");
 }
 
@@ -33,6 +35,7 @@ export async function deleteSizeChart(id: number): Promise<FormState> {
     return errorState(error);
   }
   updateTag("products");
+  refresh();
   return success("Size chart deleted.");
 }
 

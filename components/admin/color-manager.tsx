@@ -11,12 +11,12 @@ import { Panel, Pill } from "@/components/admin/page-parts";
 import { PhotoList } from "@/components/admin/photo-list";
 import { inputClass } from "@/components/admin/styles";
 import { deleteColor, saveColor } from "@/lib/admin/actions/products";
-import type { AdminColor, AdminProduct } from "@/lib/admin/types";
+import type { AdminColor, AdminProduct, CatalogSpec } from "@/lib/admin/types";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-/** The colors of a style: each with a code, swatch, optional own price and fabric details, and photos. */
-export function ColorManager({ product }: { product: AdminProduct }) {
+/** The colors of a style: each with a code, swatch, optional own price and fabric details (those its type has), and photos. */
+export function ColorManager({ product, fabricSpecs }: { product: AdminProduct; fabricSpecs: CatalogSpec[] }) {
   const action = saveColor.bind(null, product.id, product.slug);
 
   return (
@@ -59,7 +59,7 @@ export function ColorManager({ product }: { product: AdminProduct }) {
                 }
               >
                 <input type="hidden" name="id" value={color.id} />
-                <ColorFields color={color} product={product} />
+                <ColorFields color={color} product={product} fabricSpecs={fabricSpecs} />
               </ItemDialog>
               <DeleteButton
                 iconOnly
@@ -83,14 +83,14 @@ export function ColorManager({ product }: { product: AdminProduct }) {
             </Button>
           }
         >
-          <ColorFields color={null} product={product} />
+          <ColorFields color={null} product={product} fabricSpecs={fabricSpecs} />
         </ItemDialog>
       </div>
     </Panel>
   );
 }
 
-function ColorFields({ color, product }: { color: AdminColor | null; product: AdminProduct }) {
+function ColorFields({ color, product, fabricSpecs }: { color: AdminColor | null; product: AdminProduct; fabricSpecs: CatalogSpec[] }) {
   const [hex, setHex] = useState(color?.hex ?? "#4a6fa5");
   const [showSpecs, setShowSpecs] = useState(Object.keys(color?.spec_overrides ?? {}).length > 0);
   const specs = color?.spec_overrides ?? {};
@@ -126,21 +126,30 @@ function ColorFields({ color, product }: { color: AdminColor | null; product: Ad
       {showSpecs ? (
         <div className="grid gap-4 rounded-xl border bg-cotton-50/60 p-4 sm:grid-cols-2">
           <p className="text-sm text-muted-foreground sm:col-span-2">Only fill in what differs from the style. Empty fields use the style&apos;s details.</p>
-          <TextField label="Fabric" name="spec_fabric" defaultValue={specs.fabric ?? ""} placeholder={product.fabric ?? ""} />
-          <TextField label="Composition" name="spec_composition" defaultValue={specs.composition ?? ""} placeholder={product.composition ?? ""} />
-          <TextField label="Fabric weight" name="spec_fabric_weight" defaultValue={specs.fabric_weight ?? ""} placeholder={product.fabric_weight ?? ""} />
-          <SelectField
-            label="Stretch"
-            name="spec_stretch"
-            defaultValue={specs.stretch ?? ""}
-            options={[
-              { value: "", label: "Same as the style" },
-              { value: "stretch", label: "Stretch" },
-              { value: "non-stretch", label: "Rigid (no stretch)" },
-            ]}
-          />
-          <TextField label="Wash" name="spec_wash" defaultValue={specs.wash ?? ""} placeholder={product.wash ?? ""} />
-          <TextField label="Closure" name="spec_closure" defaultValue={specs.closure ?? ""} placeholder={product.closure ?? ""} />
+          {fabricSpecs.map((spec) =>
+            spec.key === "stretch" ? (
+              <SelectField
+                key={spec.key}
+                label={spec.label}
+                name="spec_stretch"
+                defaultValue={specs.stretch ?? ""}
+                options={[
+                  { value: "", label: "Same as the style" },
+                  { value: "stretch", label: "Stretch" },
+                  { value: "non-stretch", label: "Rigid (no stretch)" },
+                ]}
+              />
+            ) : (
+              <TextField
+                key={spec.key}
+                label={spec.label}
+                name={`spec_${spec.key}`}
+                defaultValue={specs[spec.key] ?? ""}
+                placeholder={product.specs[spec.key] ?? spec.suggestions[0] ?? ""}
+                maxLength={spec.max}
+              />
+            ),
+          )}
         </div>
       ) : (
         <div>

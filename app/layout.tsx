@@ -25,11 +25,11 @@ const indexable = process.env.SITE_INDEXABLE === "true";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "PK Apparel | Denim manufacturer in Lahore, Pakistan",
+    default: "PK Apparel | Garment manufacturer in Lahore, Pakistan",
     template: "%s | PK Apparel",
   },
   description:
-    "Made-to-order jeans, denim jackets and shorts for men, women and kids, and men's cargo and chino pants. In-house cutting, stitching and washing in Lahore, shipped worldwide by air or sea.",
+    "Made-to-order jeans, denim jackets, shorts, T-shirts, hoodies and polo shirts for men and women, and men's cargo and chino pants. Made in our own factory in Lahore, shipped worldwide by air or sea.",
   applicationName: "PK Apparel",
   openGraph: {
     type: "website",

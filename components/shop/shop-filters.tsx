@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SearchIcon } from "lucide-react";
 import { SortSelect } from "@/components/shop/sort-select";
-import { isSegment, productTypes, segments, typesFor } from "@/lib/nav";
+import { isKnit, isProductType, isSegment, productTypes, segments, typesFor } from "@/lib/nav";
 import type { ShopCategory, ShopFilters } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +11,7 @@ export function shopHref(current: ShopFilters, changes: Partial<Record<keyof Sho
   if (changes.segment !== undefined && next.type && next.segment && isSegment(next.segment) && !typesFor(next.segment).some((t) => t.slug === next.type)) {
     delete next.type; // e.g. skirts for men don't exist
   }
+  if (!hasStretch(next.type)) delete next.stretch; // the stretch filter is for denim and twill types only
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(next)) {
     if (value && !(key === "sort" && value === "featured")) params.set(key, String(value));
@@ -18,7 +19,12 @@ export function shopHref(current: ShopFilters, changes: Partial<Record<keyof Sho
   return `/wholesale-shop${params.size ? `?${params}` : ""}`;
 }
 
-/** Segment and type chips with style counts, a stretch toggle, search and sort. All of it works without JavaScript except sorting. */
+/** The stretch filter shows once a denim or twill type is chosen. Without a type, "Rigid" would hide every T-shirt. */
+export function hasStretch(type: string | undefined): boolean {
+  return Boolean(type && isProductType(type) && !isKnit(type));
+}
+
+/** Segment and type chips with style counts, a stretch toggle (denim and twill types), search and sort. All of it works without JavaScript except sorting. */
 export function ShopFilterBar({ filters, categories }: { filters: ShopFilters; categories: ShopCategory[] }) {
   const count = (segment: string | undefined, type: string | undefined) =>
     categories
@@ -69,25 +75,27 @@ export function ShopFilterBar({ filters, categories }: { filters: ShopFilters; c
             className="h-11 w-full rounded-full border border-input bg-white pr-4 pl-10 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
           />
         </form>
-        <div className="flex items-center gap-1 rounded-full bg-secondary p-1 text-sm">
-          {[
-            { value: undefined, label: "Any fabric" },
-            { value: "stretch", label: "Stretch" },
-            { value: "non-stretch", label: "Rigid" },
-          ].map((option) => (
-            <Link
-              key={option.label}
-              href={shopHref(filters, { stretch: option.value })}
-              aria-current={filters.stretch === option.value ? "true" : undefined}
-              className={cn(
-                "rounded-full px-3 py-1.5 transition-colors",
-                filters.stretch === option.value ? "bg-white font-medium shadow-sm" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {option.label}
-            </Link>
-          ))}
-        </div>
+        {hasStretch(filters.type) ? (
+          <div className="flex items-center gap-1 rounded-full bg-secondary p-1 text-sm">
+            {[
+              { value: undefined, label: "Any fabric" },
+              { value: "stretch", label: "Stretch" },
+              { value: "non-stretch", label: "Rigid" },
+            ].map((option) => (
+              <Link
+                key={option.label}
+                href={shopHref(filters, { stretch: option.value })}
+                aria-current={filters.stretch === option.value ? "true" : undefined}
+                className={cn(
+                  "rounded-full px-3 py-1.5 transition-colors",
+                  filters.stretch === option.value ? "bg-white font-medium shadow-sm" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {option.label}
+              </Link>
+            ))}
+          </div>
+        ) : null}
         <SortSelect value={filters.sort ?? "featured"} className="ml-auto" />
       </div>
     </div>

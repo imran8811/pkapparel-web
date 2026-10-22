@@ -80,6 +80,8 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
   - **Orders:** the order page (`app/admin/(panel)/orders/[id]`) offers the next steps for its status: payments, production stages and photos, charges, documents, ready to ship, shipped, delivered, hold, cancel and notes. *Payments* is the queue of reported transfers.
   - **Dashboard:** admins see a launch checklist (what is still missing before the shop takes orders) until every item is done.
 - **Wholesale shop (`app/(site)/wholesale-shop`):** URLs keep the old site's pattern, `/wholesale-shop/{segment}/{type}/{style}`.
+  - Segments are `men` and `women`; the product types are listed in `lib/nav.ts`, mirroring the API's `App\Models\ProductTypes`. The former `/wholesale-shop/boys/…` and `/girls/…` pages redirect to Men and Women (`next.config.ts`).
+  - Each product type has its own specs and size system (waist, letter or other). The API sends them labeled (`spec_fields`, `size_system`), and the admin style form gets them from `GET /v1/admin/product-types`, so the website keeps no copy.
   - Old product URLs ending in an article number (`…-1051`) redirect permanently to the style with that color selected.
   - The product page's order panel adds pieces to the cart; a prefilled quote request and WhatsApp stay available.
 - **Buyer accounts, cart and checkout** (`/login`, `/signup`, `/cart`, `/checkout`, `/account/*`):

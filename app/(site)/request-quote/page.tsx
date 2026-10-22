@@ -9,7 +9,7 @@ import { getSite } from "@/lib/site";
 export const metadata = pageMetadata({
   title: "Request a quote",
   description:
-    "Get a price for custom or private label jeans, jackets, shorts, cargo and chino pants. Tell us the product, quantity and destination.",
+    "Get a price for custom or private label jeans, jackets, shorts, cargo and chino pants, T-shirts, hoodies and polo shirts, or kids' styles. Tell us the product, quantity and destination.",
   path: "/request-quote",
 });
 

@@ -3,16 +3,17 @@ import { Ruler } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Prose } from "@/components/site/prose";
 import { shippingModes } from "@/lib/shipping";
-import { SPEC_LABELS, specValue, type Product } from "@/lib/shop";
+import { sizesText, specValue, type Product } from "@/lib/shop";
 
 /** Description, specifications, sizes and shipping of a style (the parts that don't change with the color). */
 export function ProductDetails({ product }: { product: Product }) {
-  const specs = SPEC_LABELS.map(({ key, label }) => ({ label, value: specValue(key, product.specs[key]) })).filter(
+  // The specs of this product type, labeled by the API (e.g. "Inseam" for jeans, "Neckline" for T-shirts).
+  const specs = product.spec_fields.map(({ key, label }) => ({ label, value: specValue(key, product.specs[key]) })).filter(
     (row): row is { label: string; value: string } => row.value !== null,
   );
   // Colors whose fabric details differ from the style's, e.g. "Olive green: stretch cotton twill".
   const differences = product.colors.flatMap((color) =>
-    SPEC_LABELS.filter(({ key }) => color.specs[key] && color.specs[key] !== product.specs[key]).map(
+    product.spec_fields.filter(({ key }) => color.specs[key] && color.specs[key] !== product.specs[key]).map(
       ({ key, label }) => `${color.name}: ${label.toLowerCase()} ${specValue(key, color.specs[key])?.toLowerCase()}`,
     ),
   );
@@ -40,7 +41,8 @@ export function ProductDetails({ product }: { product: Product }) {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Sizes and measurements</h2>
             <p className="mt-3 text-muted-foreground">
-              Sizes {product.sizes.join(", ")}. Every size can be ordered in any quantity, as long as each color reaches the minimum.
+              {sizesText(product.size_system, product.sizes)}. Each size you order needs at least {product.rules.min_pcs_per_size} pieces, and each
+              color at least {product.rules.moq_per_color}.
             </p>
             {product.size_chart ? (
               <div className="mt-5 overflow-x-auto rounded-2xl border border-border">

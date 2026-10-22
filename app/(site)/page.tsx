@@ -51,7 +51,7 @@ export default async function HomePage() {
           },
           sameAs: Object.values(site.social),
           description:
-            "Denim manufacturer and exporter in Lahore, Pakistan. Made-to-order jeans, denim jackets and shorts for men, women and kids, and men's cargo and chino pants.",
+            "Apparel manufacturer and exporter in Lahore, Pakistan. Made-to-order jeans, denim jackets, shorts, T-shirts, hoodies and polo shirts for men and women, and men's cargo and chino pants.",
         }}
       />
     </>

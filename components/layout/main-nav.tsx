@@ -9,7 +9,7 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import { mainLinks, manufacturingLinks, segments, shopUrl, typesFor } from "@/lib/nav";
+import { isKnit, mainLinks, manufacturingLinks, segments, shopUrl, typesFor } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 const triggerClass = "bg-transparent text-[15px] text-foreground/80 hover:text-foreground data-open:text-foreground";
@@ -22,24 +22,28 @@ export function MainNav({ moq, className }: { moq: number; className?: string })
         <NavigationMenuItem>
           <NavigationMenuTrigger className={triggerClass}>Products</NavigationMenuTrigger>
           <NavigationMenuContent>
-            <div className="grid w-[900px] grid-cols-[repeat(4,minmax(0,1fr))_1.2fr] gap-1 p-2">
+            <div className="grid w-[900px] grid-cols-[repeat(2,minmax(0,1fr))_15rem] gap-1 p-2">
               {segments.map((segment) => (
                 <div key={segment.slug} className="p-2">
                   <NavigationMenuLink asChild className="px-2 font-heading text-base font-semibold">
                     <Link href={shopUrl(segment.slug)}>{segment.label}</Link>
                   </NavigationMenuLink>
-                  <ul className="mt-1">
-                    {typesFor(segment.slug).map((type) => (
-                      <li key={type.slug}>
-                        <NavigationMenuLink
-                          asChild
-                          className="px-2 py-1.5 text-muted-foreground hover:text-foreground"
-                        >
-                          <Link href={shopUrl(segment.slug, type.slug)}>{type.label}</Link>
-                        </NavigationMenuLink>
-                      </li>
+                  {/* Denim and twill on the left, knit tops on the right. */}
+                  <div className="mt-1 grid grid-cols-2 gap-1">
+                    {[false, true].map((knit) => (
+                      <ul key={String(knit)}>
+                        {typesFor(segment.slug)
+                          .filter((type) => isKnit(type.slug) === knit)
+                          .map((type) => (
+                            <li key={type.slug}>
+                              <NavigationMenuLink asChild className="px-2 py-1.5 text-muted-foreground hover:text-foreground">
+                                <Link href={shopUrl(segment.slug, type.slug)}>{type.label}</Link>
+                              </NavigationMenuLink>
+                            </li>
+                          ))}
+                      </ul>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               ))}
 
@@ -59,7 +63,7 @@ export function MainNav({ moq, className }: { moq: number; className?: string })
                 </Link>
               </NavigationMenuLink>
 
-              <div className="col-span-5 mt-1 flex items-center justify-between rounded-xl bg-secondary px-4 py-3 text-sm">
+              <div className="col-span-3 mt-1 flex items-center justify-between rounded-xl bg-secondary px-4 py-3 text-sm">
                 <span className="text-muted-foreground">
                   MOQ {moq} pcs per style &amp; color · Made to order · Air or sea shipping
                 </span>

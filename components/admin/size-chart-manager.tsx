@@ -9,12 +9,21 @@ import { ItemDialog } from "@/components/admin/item-dialog";
 import { EmptyState } from "@/components/admin/page-parts";
 import { inputClass } from "@/components/admin/styles";
 import { deleteSizeChart, saveSizeChart } from "@/lib/admin/actions/shop-texts";
-import type { AdminSizeChart } from "@/lib/admin/types";
+import type { AdminSizeChart, CatalogDefinitions } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
 
-export function SizeChartManager({ charts }: { charts: AdminSizeChart[] }) {
+type Systems = CatalogDefinitions["size_systems"];
+
+/** Measurements a new chart can start from. */
+const PRESETS = [
+  { label: "Bottoms", measurements: ["Waist", "Hip", "Thigh", "Front rise", "Back rise", "Knee", "Leg opening", "Inseam"] },
+  { label: "Tops", measurements: ["Chest (½)", "Body length", "Shoulder", "Sleeve length", "Hem (½)"] },
+];
+
+export function SizeChartManager({ charts, systems }: { charts: AdminSizeChart[]; systems: Systems }) {
+  const systemLabel = (key: string) => systems.find((system) => system.key === key)?.label ?? key;
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <div>
         <ItemDialog
           title="Add a size chart"
@@ -26,7 +35,7 @@ export function SizeChartManager({ charts }: { charts: AdminSizeChart[] }) {
             </Button>
           }
         >
-          <ChartFields chart={null} />
+          <ChartFields chart={null} systems={systems} />
         </ItemDialog>
       </div>
 
@@ -38,7 +47,7 @@ export function SizeChartManager({ charts }: { charts: AdminSizeChart[] }) {
             <div>
               <h2 className="font-heading text-lg font-semibold">{chart.name}</h2>
               <p className="text-sm text-muted-foreground">
-                {chart.unit === "in" ? "Inches" : "Centimeters"} · {chart.size_rows.length} sizes · used by {chart.product_count} style
+                {systemLabel(chart.size_system)} · {chart.unit === "in" ? "inches" : "centimeters"} · {chart.size_rows.length} sizes · used by {chart.product_count} style
                 {chart.product_count === 1 ? "" : "s"}
               </p>
             </div>
@@ -53,7 +62,7 @@ export function SizeChartManager({ charts }: { charts: AdminSizeChart[] }) {
                 }
               >
                 <input type="hidden" name="id" value={chart.id} />
-                <ChartFields chart={chart} />
+                <ChartFields chart={chart} systems={systems} />
               </ItemDialog>
               <DeleteButton
                 iconOnly
@@ -96,10 +105,16 @@ export function SizeChartManager({ charts }: { charts: AdminSizeChart[] }) {
   );
 }
 
-/** Name, unit and a grid of sizes × measurements. */
-function ChartFields({ chart }: { chart: AdminSizeChart | null }) {
+/** Name, size system, unit and a grid of sizes × measurements. */
+function ChartFields({ chart, systems }: { chart: AdminSizeChart | null; systems: Systems }) {
   const [measurements, setMeasurements] = useState<string[]>(chart?.measurements ?? ["Waist", "Hip", "Inseam"]);
   const [rows, setRows] = useState(chart?.size_rows ?? [{ size: "", values: ["", "", ""] }]);
+  const [system, setSystem] = useState<string>(chart?.size_system ?? "waist");
+  const sizes = systems.find((s) => s.key === system)?.sizes ?? null;
+  const applyPreset = (names: string[]) => {
+    setMeasurements(names);
+    setRows((current) => current.map((row) => ({ ...row, values: names.map(() => "") })));
+  };
   const { state } = useAdminForm();
   const gridError = Object.entries(state.fields ?? {}).find(([key]) => key.startsWith("size_rows") || key.startsWith("measurements"))?.[1];
 
@@ -119,7 +134,15 @@ function ChartFields({ chart }: { chart: AdminSizeChart | null }) {
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-[1fr_160px]">
-        <TextField label="Name" name="name" defaultValue={chart?.name} placeholder="e.g. Women's jeans" maxLength={120} />
+        <TextField label="Name" name="name" defaultValue={chart?.name} placeholder="e.g. Women's jeans or Men's T-shirts" maxLength={120} fieldClassName="sm:col-span-2" />
+        <SelectField
+          label="Sizes"
+          name="size_system"
+          value={system}
+          onChange={(event) => setSystem(event.target.value)}
+          options={systems.map((s) => ({ value: s.key, label: s.label }))}
+          hint={sizes ? `Rows use these sizes: ${sizes[0]} to ${sizes[sizes.length - 1]}. Styles with the same sizes can use this chart.` : "Rows can use any size name."}
+        />
         <SelectField
           label="Unit"
           name="unit"
@@ -130,8 +153,25 @@ function ChartFields({ chart }: { chart: AdminSizeChart | null }) {
           ]}
         />
       </div>
+      {chart === null ? (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Start with the measurements for</span>
+          {PRESETS.map((preset) => (
+            <Button key={preset.label} type="button" variant="outline" size="xs" onClick={() => applyPreset(preset.measurements)}>
+              {preset.label}
+            </Button>
+          ))}
+        </div>
+      ) : null}
       <input type="hidden" name="measurements" value={JSON.stringify(measurements)} />
       <input type="hidden" name="size_rows" value={JSON.stringify(rows)} />
+      {sizes ? (
+        <datalist id="chart-sizes">
+          {sizes.map((size) => (
+            <option key={size} value={size} />
+          ))}
+        </datalist>
+      ) : null}
       <div className="overflow-x-auto rounded-xl border">
         <table className="text-sm">
           <thead className="bg-cotton-50">
@@ -167,7 +207,8 @@ function ChartFields({ chart }: { chart: AdminSizeChart | null }) {
                   <input
                     value={row.size}
                     onChange={(event) => setRows((current) => current.map((r, i) => (i === rowIndex ? { ...r, size: event.target.value } : r)))}
-                    placeholder="e.g. 30"
+                    placeholder={system === "letter" ? "e.g. M" : system === "waist" ? "e.g. 30" : "e.g. 4Y"}
+                    list={sizes ? "chart-sizes" : undefined}
                     aria-label={`Row ${rowIndex + 1} size`}
                     className={cn(inputClass, "h-8 w-20 font-mono")}
                   />

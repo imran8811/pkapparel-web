@@ -121,7 +121,7 @@ export default function StyleguidePage() {
           <p className="text-5xl font-bold tracking-[-0.03em] font-heading">Heading 2 · Bricolage Grotesque</p>
           <p className="text-2xl font-semibold font-heading">Heading 3 · for cards and steps</p>
           <p className="max-w-2xl text-lg leading-relaxed">
-            Body large · Geist Sans. Jeans, jackets, shorts, cargo and chino pants for men, women and kids.
+            Body large · Geist Sans. Jeans, jackets, T-shirts, hoodies and polo shirts for men and women.
           </p>
           <p className="max-w-2xl text-sm text-muted-foreground">Body small · secondary information and captions.</p>
           <Eyebrow>Eyebrow · Geist Mono</Eyebrow>

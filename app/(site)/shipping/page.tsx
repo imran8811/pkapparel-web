@@ -13,7 +13,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "Shipping by air or sea",
   description:
-    "PK Apparel ships wholesale denim orders worldwide by air or sea, or hands them to your own forwarder. Transit times, Incoterms and documents explained.",
+    "PK Apparel ships wholesale orders worldwide by air or sea, or hands them to your own forwarder. Transit times, Incoterms and documents explained.",
   path: "/shipping",
 });
 

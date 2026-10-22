@@ -9,7 +9,7 @@ import { ProductForm } from "@/components/admin/product-form";
 import { ApiError } from "@/lib/api";
 import { can } from "@/lib/admin/permissions";
 import { adminApi, getStaff } from "@/lib/admin/session";
-import type { AdminProduct, AdminSizeChart } from "@/lib/admin/types";
+import type { AdminProduct, AdminSizeChart, CatalogDefinitions } from "@/lib/admin/types";
 import { productUrl } from "@/lib/shop";
 import { getSite } from "@/lib/site";
 
@@ -21,14 +21,17 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
 
   const { id } = await params;
   if (!/^\d+$/.test(id)) notFound();
-  const [product, charts, site] = await Promise.all([
+  const [product, charts, catalog, site] = await Promise.all([
     adminApi<AdminProduct>(`/v1/admin/products/${id}`).catch((error: unknown) => {
       if (error instanceof ApiError && error.status === 404) notFound();
       throw error;
     }),
     adminApi<AdminSizeChart[]>("/v1/admin/size-charts"),
+    adminApi<CatalogDefinitions>("/v1/admin/product-types"),
     getSite(),
   ]);
+  // The fabric details a color may change, among those of the style's type.
+  const fabricSpecs = catalog.types.find((type) => type.slug === product.product_type)?.specs.filter((spec) => spec.per_color) ?? [];
 
   return (
     <>
@@ -46,8 +49,8 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
         }
       />
       <div className="grid gap-6">
-        <ColorManager product={product} />
-        <ProductForm key={product.updated_at} product={product} charts={charts} defaults={site.commerce} />
+        <ColorManager product={product} fabricSpecs={fabricSpecs} />
+        <ProductForm key={product.updated_at} product={product} charts={charts} catalog={catalog} defaults={site.commerce} />
       </div>
     </>
   );

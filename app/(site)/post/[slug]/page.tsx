@@ -90,8 +90,8 @@ export default async function PostPage({ params }: PageProps<"/post/[slug]">) {
       </article>
 
       <CtaPanel
-        title="Looking for a denim manufacturer?"
-        body="PK Apparel makes jeans, jackets, shorts, cargo and chino pants to order in Lahore, from 100 pieces per color."
+        title="Looking for a garment manufacturer?"
+        body="PK Apparel makes jeans, trousers, jackets, T-shirts, hoodies and polo shirts to order in Lahore, from 100 pieces per color."
       />
 
       {related.length > 0 && (

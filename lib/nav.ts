@@ -6,25 +6,36 @@
 export const segments = [
   { slug: "men", label: "Men", possessive: "Men's" },
   { slug: "women", label: "Women", possessive: "Women's" },
-  { slug: "boys", label: "Boys", possessive: "Boys'" },
-  { slug: "girls", label: "Girls", possessive: "Girls'" },
 ] as const;
 
+/**
+ * Mirrors the API's App\Models\ProductTypes (slugs, labels, segments). The specs and sizes of each type come from the API.
+ * Knit tops have no stretch setting, and menus list them after the denim and twill types.
+ */
 export const productTypes = [
   { slug: "jeans-pant", label: "Jeans pants" },
   { slug: "denim-jacket", label: "Denim jackets" },
   { slug: "jeans-short", label: "Jeans shorts" },
   { slug: "cargo-trouser", label: "Cargo trousers", segments: ["men"] },
   { slug: "chino-pant", label: "Chino pants", segments: ["men"] },
-  { slug: "denim-skirt", label: "Denim skirts", segments: ["women", "girls"] },
+  { slug: "denim-skirt", label: "Denim skirts", segments: ["women"] },
+  { slug: "t-shirt", label: "T-shirts", knit: true },
+  { slug: "hoodie", label: "Hoodies", knit: true },
+  { slug: "polo-shirt", label: "Polo shirts", knit: true },
 ] as const;
 
 export type Segment = (typeof segments)[number]["slug"];
 export type ProductType = (typeof productTypes)[number]["slug"];
 
-/** Product types sold in a segment (cargo and chino are men only, skirts women and girls only; owner rules). */
+/** Product types sold in a segment (cargo and chino are men only, skirts women only; owner rules). */
 export function typesFor(segment: Segment) {
   return productTypes.filter((type) => !("segments" in type) || (type.segments as readonly string[]).includes(segment));
+}
+
+/** T-shirts, hoodies and polo shirts are knits: no stretch setting. */
+export function isKnit(type: ProductType): boolean {
+  const info = productTypes.find((t) => t.slug === type);
+  return Boolean(info && "knit" in info && info.knit);
 }
 
 export function isSegment(value: string): value is Segment {

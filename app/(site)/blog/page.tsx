@@ -6,9 +6,9 @@ import { getPosts } from "@/lib/content";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
-  title: "Denim sourcing blog",
+  title: "Apparel sourcing blog",
   description:
-    "Guides for buyers sourcing denim: jeans manufacturing costs, choosing a wholesale supplier, private label and buying jeans in bulk from Pakistan.",
+    "Guides for buyers sourcing jeans and apparel: manufacturing costs, choosing a wholesale supplier, private label and buying in bulk from Pakistan.",
   path: "/blog",
 });
 
@@ -21,10 +21,10 @@ export default async function BlogPage() {
         eyebrow="Blog"
         title={
           <>
-            Guides for denim <span className="stitch-underline">buyers.</span>
+            Guides for apparel <span className="stitch-underline">buyers.</span>
           </>
         }
-        intro="Practical articles about sourcing jeans and denim wholesale: costs, suppliers, private label and buying in bulk."
+        intro="Practical articles about sourcing jeans and apparel wholesale: costs, suppliers, private label and buying in bulk."
         crumbs={[{ label: "Blog", href: "/blog" }]}
       />
 
@@ -45,7 +45,7 @@ export default async function BlogPage() {
       </section>
 
       <CtaPanel
-        title="Sourcing denim right now?"
+        title="Sourcing apparel right now?"
         body="Browse our styles and order online, or send us your design for a quote."
       />
     </>

@@ -11,7 +11,7 @@ import { getSite } from "@/lib/site";
 export const metadata = pageMetadata({
   title: "Contact PK Apparel",
   description:
-    "Contact PK Apparel, denim manufacturer in Lahore, Pakistan, by WhatsApp, phone or email, or send us a message.",
+    "Contact PK Apparel, garment manufacturer in Lahore, Pakistan, by WhatsApp, phone or email, or send us a message.",
   path: "/contact",
 });
 
@@ -38,7 +38,7 @@ export default async function ContactPage() {
         eyebrow="Contact"
         title={
           <>
-            Let&apos;s talk <span className="stitch-underline">denim.</span>
+            Let&apos;s talk <span className="stitch-underline">production.</span>
           </>
         }
         intro="Questions about styles, prices, samples or shipping? Message us on WhatsApp, call, email or use the form below."

@@ -62,6 +62,8 @@ export async function saveAddon(_previous: FormState, form: FormData): Promise<F
     description: optional(form, "description"),
     pricing,
     price_cents: pricing === "on_request" ? null : dollarsToCents(text(form, "price")),
+    // None ticked: offered with every product type.
+    product_types: form.getAll("product_types").map(String),
     is_active: checked(form, "is_active"),
     sort_order: number(form, "sort_order"),
   };

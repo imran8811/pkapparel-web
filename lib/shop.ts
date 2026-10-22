@@ -29,7 +29,14 @@ export type ProductCard = {
   colors: ColorCard[];
 };
 
-export type Specs = Partial<Record<"fit" | "fabric" | "composition" | "fabric_weight" | "stretch" | "wash" | "closure", string | null>>;
+/** A style's details by key (fit, rise, neckline…): which keys a type has comes from the API (`spec_fields`). */
+export type Specs = Record<string, string | null | undefined>;
+
+/** A spec of the style's type, labeled for that type (e.g. "Inseam" for jeans, "Finish" for T-shirts), in display order. */
+export type SpecField = { key: string; label: string };
+
+/** Waist sizes in inches, letter sizes (S, M, L…), or the style's own list. */
+export type SizeSystem = "waist" | "letter" | "other";
 
 export type ProductColor = {
   /** Used to add this color to the cart. */
@@ -69,8 +76,10 @@ export type Product = {
   segment: Segment;
   product_type: ProductType;
   specs: Specs;
+  spec_fields: SpecField[];
   description_html: string;
   features: string[];
+  size_system: SizeSystem;
   sizes: string[];
   size_chart: SizeChart | null;
   price_cents: number;
@@ -146,21 +155,16 @@ export function categoryLabel(segment: Segment, type: ProductType): string {
   return `${segmentInfo(segment).possessive} ${typeInfo(type).label.toLowerCase()}`;
 }
 
-/** Labels for the spec table, in display order. */
-export const SPEC_LABELS: { key: keyof Specs; label: string }[] = [
-  { key: "fit", label: "Fit" },
-  { key: "fabric", label: "Fabric" },
-  { key: "composition", label: "Composition" },
-  { key: "fabric_weight", label: "Fabric weight" },
-  { key: "stretch", label: "Stretch" },
-  { key: "wash", label: "Wash" },
-  { key: "closure", label: "Closure" },
-];
-
-export function specValue(key: keyof Specs, value: string | null | undefined): string | null {
+export function specValue(key: string, value: string | null | undefined): string | null {
   if (!value) return null;
   if (key === "stretch") return value === "stretch" ? "Stretch" : "No stretch (rigid)";
   return value;
+}
+
+/** "Waist sizes 30, 32, 33 and 34 (inches)" or "Sizes S, M, L and XL" */
+export function sizesText(system: SizeSystem, sizes: string[]): string {
+  const list = sizes.length > 1 ? `${sizes.slice(0, -1).join(", ")} and ${sizes[sizes.length - 1]}` : (sizes[0] ?? "");
+  return system === "waist" ? `Waist sizes ${list} (inches)` : `${sizes.length === 1 ? "Size" : "Sizes"} ${list}`;
 }
 
 /** Price per piece for a total quantity of the style, using volume tiers when there are any. */

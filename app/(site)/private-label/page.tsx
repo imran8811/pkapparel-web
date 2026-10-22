@@ -13,15 +13,15 @@ import { getSite } from "@/lib/site";
 import flatlay from "@/assets/images/private-label-flatlay.jpg";
 
 export const metadata = pageMetadata({
-  title: "Private label denim manufacturing",
+  title: "Private label clothing manufacturing",
   description:
-    "Private label jeans, jackets, shorts, cargo and chino pants with your labels, trims, washes and packaging. From 100 pieces per style and color.",
+    "Private label jeans, jackets, shorts, cargo and chino pants, T-shirts, hoodies and polo shirts with your labels, trims, washes and packaging. From 100 pieces per style and color.",
   path: "/private-label",
 });
 
 const options = [
   { icon: Ruler, title: "Fit & pattern", body: "Use one of our fits or send your own measurements and graded size chart." },
-  { icon: Layers, title: "Fabric", body: "Denim, twill or canvas, stretch or rigid, in the weight and color you need." },
+  { icon: Layers, title: "Fabric", body: "Denim, twill or canvas, stretch or rigid, or jersey, pique and fleece for tops, in the weight and color you need." },
   { icon: Droplets, title: "Wash & finish", body: "From rinse to heavy washes, matched to your approved standard." },
   { icon: Scissors, title: "Trims", body: "Branded buttons, rivets, zips and thread colors to match your style." },
   { icon: Tag, title: "Labels & tags", body: "Woven brand labels, care labels, hang tags and leather or PU patches." },
@@ -55,10 +55,10 @@ export default async function PrivateLabelPage() {
         eyebrow="Private label & custom"
         title={
           <>
-            Your denim brand, <span className="stitch-underline">made by us.</span>
+            Your brand, <span className="stitch-underline">made by us.</span>
           </>
         }
-        intro={`Start from one of our styles or bring your own design. We make it with your labels, trims and packaging, from ${moq} pieces per style and color.`}
+        intro={`Start from one of our styles or bring your own design. We make it with your labels, trims and packaging, from ${moq} pieces per style and color. Kids' styles are made on request.`}
         crumbs={[{ label: "Private label", href: "/private-label" }]}
         aside={
           <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] shadow-2xl shadow-black/40 ring-1 ring-white/10">

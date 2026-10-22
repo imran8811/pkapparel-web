@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import washingUnit from "@/assets/images/factory-washing-unit.jpg";
 
 export const metadata = pageMetadata({
-  title: "Our denim factory in Lahore",
+  title: "Our garment factory in Lahore",
   description:
     "Inside the PK Apparel factory in Lahore: fabric store, cutting, stitching, washing, quality control and packing, all under one roof.",
   path: "/factory",
@@ -32,10 +32,10 @@ export default async function FactoryPage() {
         eyebrow="Our factory"
         title={
           <>
-            Fabric in, finished denim <span className="stitch-underline">out.</span>
+            Fabric in, finished garments <span className="stitch-underline">out.</span>
           </>
         }
-        intro="Every PK Apparel order is cut, stitched, washed, checked and packed in our own factory on Ferozepur Road, Lahore. That is how we keep quality consistent and delivery dates realistic."
+        intro="Every PK Apparel order, from jeans to T-shirts, hoodies and polo shirts, is cut, stitched, finished, checked and packed in our own factory on Ferozepur Road, Lahore. Denim is washed in our own laundry. That is how we keep quality consistent and delivery dates realistic."
         crumbs={[{ label: "Our factory", href: "/factory" }]}
         aside={
           <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] shadow-2xl shadow-black/40 ring-1 ring-white/10">

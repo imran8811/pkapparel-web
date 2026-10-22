@@ -13,7 +13,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "Quality control & compliance",
   description:
-    "How PK Apparel checks every order: fabric inspection, inline checks, wash approval, measurement and trim checks, and a final inspection before packing.",
+    "How PK Apparel checks every order, from jeans to T-shirts, hoodies and polo shirts: fabric inspection, inline checks, wash approval, measurement and trim checks, and a final inspection before packing.",
   path: "/quality",
 });
 
@@ -40,7 +40,7 @@ export default async function QualityPage() {
             Quality you can <span className="stitch-underline">check.</span>
           </>
         }
-        intro="Quality is checked at every step, not only at the end. Our QA team inspects fabric, stitching, washing, measurements and trims before your order is packed."
+        intro="Quality is checked at every step, not only at the end, for denim and tops alike. Our QA team inspects fabric, stitching, washing, measurements and trims before your order is packed."
         crumbs={[{ label: "Quality", href: "/quality" }]}
       >
         <Button asChild variant="accent" size="lg">

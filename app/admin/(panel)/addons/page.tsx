@@ -11,6 +11,7 @@ import { can } from "@/lib/admin/permissions";
 import { adminApi, getStaff } from "@/lib/admin/session";
 import type { AdminAddon } from "@/lib/admin/types";
 import { formatMoney } from "@/lib/format";
+import { isKnit, isProductType, productTypes, typeInfo } from "@/lib/nav";
 
 export const metadata: Metadata = { title: "Add-ons" };
 
@@ -52,6 +53,7 @@ export default async function AddonsPage() {
                 <p className="font-medium">{addon.name}</p>
                 {addon.description ? <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{addon.description}</p> : null}
               </div>
+              {addon.product_types.length > 0 ? <Pill tone="neutral">{typesLabel(addon.product_types)}</Pill> : null}
               <Pill tone={addon.pricing === "on_request" ? "neutral" : "blue"}>{priceLabel(addon)}</Pill>
               {addon.is_active ? null : <Pill tone="muted">Hidden</Pill>}
               <div className="flex shrink-0 items-center">
@@ -88,6 +90,16 @@ function priceLabel(addon: AdminAddon): string {
   return addon.pricing === "per_piece" ? `${formatMoney(addon.price_cents)} per piece` : `${formatMoney(addon.price_cents)} per order`;
 }
 
+/** "Denim and twill" / "Tops" for the usual groups, otherwise the type names. */
+function typesLabel(types: string[]): string {
+  const knit = productTypes.filter((type) => isKnit(type.slug)).map((type) => type.slug as string);
+  const woven = productTypes.filter((type) => !isKnit(type.slug)).map((type) => type.slug as string);
+  const same = (group: string[]) => group.length === types.length && group.every((slug) => types.includes(slug));
+  if (same(woven)) return "Denim and twill only";
+  if (same(knit)) return "Tops only";
+  return `${types.map((slug) => (isProductType(slug) ? typeInfo(slug).label : slug)).join(", ")} only`;
+}
+
 function AddonFields({ addon }: { addon?: AdminAddon }) {
   return (
     <>
@@ -105,6 +117,24 @@ function AddonFields({ addon }: { addon?: AdminAddon }) {
           hint="Leave empty for “price on request”."
         />
       </div>
+      <fieldset className="grid gap-2 border-t pt-4">
+        <legend className="text-sm font-medium">Offer with</legend>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+          {productTypes.map((type) => (
+            <label key={type.slug} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="product_types"
+                value={type.slug}
+                defaultChecked={addon?.product_types.includes(type.slug) ?? false}
+                className="size-4 accent-denim-700"
+              />
+              {type.label}
+            </label>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">Checkout offers it when the cart has one of these. Tick none to offer it with every product.</p>
+      </fieldset>
       <div className="grid items-start gap-4 border-t pt-4 sm:grid-cols-2">
         <TextField label="Order" name="sort_order" type="number" min={0} defaultValue={addon?.sort_order} placeholder="At the end" hint="Lower numbers come first." />
         <div className="sm:pt-9">

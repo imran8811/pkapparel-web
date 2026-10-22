@@ -29,16 +29,16 @@ export function Hero({ site }: { site: Site }) {
       <Container className="relative grid gap-14 pt-14 pb-20 sm:pt-20 lg:grid-cols-12 lg:items-center lg:gap-10 lg:pt-24 lg:pb-28">
         <div className="lg:col-span-7">
           <Eyebrow tone="light">
-            Denim manufacturer · {company.city}, {company.country} · Since {company.founded_year}
+            Apparel manufacturer · {company.city}, {company.country} · Since {company.founded_year}
           </Eyebrow>
 
           <h1 className="mt-7 text-[3.25rem] leading-[0.92] font-bold tracking-[-0.035em] sm:text-7xl xl:text-[5.75rem]">
-            Denim, made to <span className="stitch-underline text-stitch-400">your&nbsp;order.</span>
+            Apparel, made to <span className="stitch-underline text-stitch-400">your&nbsp;order.</span>
           </h1>
 
           <p className="mt-7 max-w-xl text-lg leading-relaxed text-cotton-50/75 sm:text-xl">
-            Jeans, jackets and shorts for men, women and kids, and men&apos;s cargo and chino pants. Cut, sewn and washed in our own{" "}
-            {company.city} factory, then shipped worldwide by air or sea.
+            Jeans, jackets, shorts, T-shirts, hoodies and polo shirts for men and women, and men&apos;s cargo and chino pants. Made in
+            our own {company.city} factory, then shipped worldwide by air or sea.
           </p>
 
           <div className="mt-9 flex flex-wrap gap-3">

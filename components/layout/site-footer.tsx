@@ -44,7 +44,7 @@ function FooterColumn({ title, links }: { title: string; links: readonly { href:
 export function SiteFooter({ site }: { site: Site }) {
   const { company, contact, addresses, social } = site;
   const productLinks = [
-    ...segments.map((segment) => ({ href: shopUrl(segment.slug), label: `${segment.possessive} denim` })),
+    ...segments.map((segment) => ({ href: shopUrl(segment.slug), label: `${segment.possessive} clothing` })),
     { href: "/wholesale-shop", label: "All products" },
   ];
 
@@ -56,7 +56,7 @@ export function SiteFooter({ site }: { site: Site }) {
           <div className="max-w-2xl">
             <Eyebrow tone="light">Start an order</Eyebrow>
             <h2 className="mt-5 text-4xl leading-[1.02] font-bold tracking-[-0.03em] sm:text-5xl">
-              Ready to make your next denim collection?
+              Ready to make your next collection?
             </h2>
             <p className="mt-5 max-w-xl text-cotton-50/70">
               Tell us the styles, quantities and destination. We&apos;ll come back with prices, production dates and
@@ -79,8 +79,8 @@ export function SiteFooter({ site }: { site: Site }) {
           <div className="col-span-2 max-w-xs lg:col-span-1">
             <Logo tone="light" markClassName="h-14" />
             <p className="mt-5 text-sm leading-relaxed text-cotton-50/65">
-              Denim manufacturer and exporter in {company.city}, {company.country}, since {company.founded_year}.
-              Made-to-order jeans, jackets, shorts, cargo and chino pants for brands and wholesalers.
+              Apparel manufacturer and exporter in {company.city}, {company.country}, since {company.founded_year}.
+              Made-to-order jeans, trousers, jackets, T-shirts, hoodies and polo shirts for brands and wholesalers.
             </p>
             <ul className="mt-6 flex flex-wrap gap-2">
               {(Object.entries(social) as [SocialNetwork, string][]).map(([network, url]) => (
