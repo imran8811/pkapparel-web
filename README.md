@@ -47,6 +47,7 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
 | `REVALIDATE_SECRET` | Must equal `REVALIDATE_SECRET` in the API's `.env` |
 | `NEXT_PUBLIC_SITE_URL` | The public address of the site, used for canonical URLs, the sitemap and Open Graph |
 | `SITE_INDEXABLE` | `true` only on the live site. Otherwise every page is `noindex` and `robots.txt` blocks crawlers. |
+| `BLOCKED_COUNTRIES` | Countries that see "not available in your region", as ISO codes, e.g. `PK,IN,CN,BD`. Empty means the default list in `proxy.ts`. Redeploy after changing it. |
 | `GOOGLE_SITE_VERIFICATION`, `BING_SITE_VERIFICATION` | Optional: the codes from Google Search Console and Bing Webmaster Tools ("HTML tag" verification, the `content` value only) |
 
 ## How it works
@@ -71,6 +72,9 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
 - **Security headers** (`next.config.ts`):
   - A Content-Security-Policy without per-request nonces, so pages stay static. Everything loads from this domain; adding a third-party script, font or frame means adding it to the policy.
   - On an `https://` site URL, also HSTS (one year) and `upgrade-insecure-requests`.
+- **Blocked countries** (`proxy.ts`): visitors from a country in `BLOCKED_COUNTRIES` (from Vercel's `x-vercel-ip-country` header) get a 403 "not available in your region" page that is never cached.
+  - Search engine crawlers, the admin panel, `/api/`, `/uploads/`, `robots.txt` and `sitemap.xml` are never blocked, so rankings and the staff's work are unaffected.
+  - Locally there is no country header, so nothing is blocked.
 - **Admin panel (`app/admin`):**
   - Staff log in with their API account. The login token is kept in the HttpOnly cookie `pk_admin` (path `/admin`).
   - `proxy.ts` sends visitors without that cookie to the login page.
