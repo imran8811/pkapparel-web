@@ -54,7 +54,7 @@ const BLOCKED_PAGE = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Not available in your region | PK Apparel</title>
+<title>Not available</title>
 <style>
   body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; box-sizing: border-box;
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #fafafa; color: #18181b; text-align: center; }
@@ -64,8 +64,7 @@ const BLOCKED_PAGE = `<!doctype html>
 </head>
 <body>
 <main>
-<h1>Not available in your region</h1>
-<p>Sorry, the PK Apparel website is not available in your country.</p>
+<h1>Not available</h1>
 </main>
 </body>
 </html>`;
