@@ -47,15 +47,16 @@ const https = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.pkapparel.com").
 /*
  * Content-Security-Policy without per-request nonces, so pages stay static (see the Next.js CSP guide).
  * Everything the site loads comes from its own domain: fonts are self-hosted, images and files go through
- * /uploads and the route handlers, and there are no third-party scripts or frames.
+ * /uploads and the route handlers. The only third party is Google Analytics (components/site/google-analytics.tsx),
+ * with the domains Google lists for GA4; there are no third-party frames.
  */
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' https://*.googletagmanager.com${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' blob: data:",
+  "img-src 'self' blob: data: https://*.google-analytics.com https://*.googletagmanager.com",
   "font-src 'self'",
-  "connect-src 'self'",
+  "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
   "media-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

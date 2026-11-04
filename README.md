@@ -70,7 +70,7 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
   - Uploaded images (whose size the API adds) are served by the image optimizer at the reader's width and load lazily.
   - Wide tables scroll sideways and can be reached with the keyboard.
 - **Security headers** (`next.config.ts`):
-  - A Content-Security-Policy without per-request nonces, so pages stay static. Everything loads from this domain; adding a third-party script, font or frame means adding it to the policy.
+  - A Content-Security-Policy without per-request nonces, so pages stay static. Everything loads from this domain except Google Analytics (public pages only, with `NEXT_PUBLIC_GA_ID`); adding another third-party script, font or frame means adding it to the policy.
   - On an `https://` site URL, also HSTS (one year) and `upgrade-insecure-requests`.
 - **Blocked countries** (`proxy.ts`): visitors from a country in `BLOCKED_COUNTRIES` (from Vercel's `x-vercel-ip-country` header) get a 403 "not available in your region" page that is never cached.
   - Search engine crawlers, the admin panel, `/api/`, `/uploads/`, `robots.txt` and `sitemap.xml` are never blocked, so rankings and the staff's work are unaffected.
