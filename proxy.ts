@@ -27,7 +27,15 @@ const blockedCountries = new Set(
  * and the files search engines read.
  */
 const UNBLOCKED_PREFIXES = ["/admin", "/api/", "/uploads/"];
-const UNBLOCKED_PATHS = ["/robots.txt", "/sitemap.xml", "/icon.svg", "/apple-icon.png", "/favicon.ico"];
+const UNBLOCKED_PATHS = [
+  "/robots.txt",
+  "/sitemap.xml",
+  "/icon.svg",
+  "/apple-icon.png",
+  "/favicon.ico",
+  // Search Console ownership file: Google re-checks it, and its verifier is not in CRAWLERS below.
+  "/googleb7b78cc690a74553.html",
+];
 
 /*
  * Search engine crawlers are let through wherever they crawl from, so rankings are untouched.
