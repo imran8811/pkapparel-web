@@ -20,12 +20,12 @@ export function SettingsForms({ settings }: { settings: AdminSettings }) {
       <Section id="contact" title="Contact" description="Shown in the header, footer, contact page and emails.">
         <AdminForm key={JSON.stringify(contact)} action={saveSettings.bind(null, "contact")} className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-3">
-            <TextField label="Phone" name="phone" defaultValue={contact.phone} placeholder="+92 310 4489288" />
+            <TextField label="Phone" name="phone" defaultValue={contact.phone} placeholder="+92 3 000-911-000" />
             <TextField
               label="WhatsApp number"
               name="whatsapp"
               defaultValue={contact.whatsapp}
-              placeholder="923104489288"
+              placeholder="923000911000"
               hint="Country code and number, digits only."
             />
             <TextField label="Email" name="email" type="email" defaultValue={contact.email} />
