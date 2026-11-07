@@ -30,7 +30,7 @@ export function PrivateLabelTeaser() {
           </div>
           <div className="absolute -bottom-6 left-6 rounded-2xl bg-denim-900 px-5 py-4 text-cotton-50 shadow-xl sm:left-10">
             <p className="font-mono text-[10px] tracking-[0.2em] text-stitch-400 uppercase">Private label &amp; custom</p>
-            <p className="mt-1 font-heading text-xl font-semibold">MOQ 500 pcs or pairs per order</p>
+            <p className="mt-1 font-heading text-xl font-semibold">MOQ 500 pcs per order</p>
           </div>
         </div>
 
