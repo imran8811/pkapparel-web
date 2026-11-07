@@ -13,7 +13,7 @@ export function Hero({ site }: { site: Site }) {
   const { company, commerce } = site;
 
   const promises = [
-    { icon: Package, text: `MOQ ${commerce.moq_per_color} pcs per color` },
+    { icon: Package, text: `MOQ ${commerce.min_pcs_per_size}pcs per size per color` },
     { icon: Timer, text: `${commerce.lead_time_days}-day production` },
     { icon: Tag, text: "Private label available" },
   ];

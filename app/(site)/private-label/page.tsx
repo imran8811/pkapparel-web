@@ -15,7 +15,7 @@ import flatlay from "@/assets/images/private-label-flatlay.jpg";
 export const metadata = pageMetadata({
   title: "Private label clothing manufacturing",
   description:
-    "Private label jeans, jackets, shorts, cargo and chino pants, T-shirts, hoodies and polo shirts with your labels, trims, washes and packaging. From 100 pieces per style and color.",
+    "Private label jeans, jackets, shorts, cargo and chino pants, T-shirts, hoodies and polo shirts with your labels, trims, washes and packaging. From 500 pieces or pairs per order.",
   path: "/private-label",
 });
 
@@ -30,7 +30,7 @@ const options = [
 
 export default async function PrivateLabelPage() {
   const [site, faqs] = await Promise.all([getSite(), getFaqs()]);
-  const { moq_per_color: moq, lead_time_days: leadTime, deposit_percent: deposit } = site.commerce;
+  const { lead_time_days: leadTime, deposit_percent: deposit } = site.commerce;
 
   const steps = [
     { title: "Share your idea", body: "Send a tech pack, a reference sample or photos, plus quantities and your destination." },
@@ -58,7 +58,7 @@ export default async function PrivateLabelPage() {
             Your brand, <span className="stitch-underline">made by us.</span>
           </>
         }
-        intro={`Start from one of our styles or bring your own design. We make it with your labels, trims and packaging, from ${moq} pieces per style and color. Kids' styles are made on request.`}
+        intro="Start from one of our styles or bring your own design. We make it with your labels, trims and packaging, from 500 pieces or pairs per order. Kids' styles are made on request."
         crumbs={[{ label: "Private label", href: "/private-label" }]}
         aside={
           <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] shadow-2xl shadow-black/40 ring-1 ring-white/10">
@@ -134,6 +134,10 @@ export default async function PrivateLabelPage() {
                 </li>
               ))}
             </ul>
+            <p className="mt-8 rounded-3xl bg-denim-900 p-6 text-sm leading-relaxed text-cotton-50/80 twill-texture">
+              <strong className="text-cotton-50">Minimum for custom orders:</strong> 500 pieces or pairs per order. That means at least 5 articles with 100
+              pieces each, in up to 5 sizes (20 pieces per size and color).
+            </p>
           </div>
           <FaqList faqs={faqs.filter((faq) => faq.category === "ordering")} className="lg:col-span-7" />
         </Container>

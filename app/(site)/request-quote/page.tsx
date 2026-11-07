@@ -15,11 +15,14 @@ export const metadata = pageMetadata({
 
 export default async function RequestQuotePage() {
   const site = await getSite();
-  const { moq_per_color: moq, lead_time_days: leadTime } = site.commerce;
+  const { lead_time_days: leadTime } = site.commerce;
 
   const next = [
     { title: "We review your request", body: "We check fabric, wash and trims, and ask questions if anything is unclear." },
-    { title: "You get a quote", body: `Price per piece, minimums (from ${moq} pcs per color), sample plan and shipping options.` },
+    {
+      title: "You get a quote",
+      body: "Price per piece, sample plan and shipping options. Custom orders start at 500 pieces or pairs: at least 5 articles with 100 pieces each, in up to 5 sizes (20 pieces per size and color).",
+    },
     { title: "Sample, then production", body: `After you approve the sample and pay the deposit, production takes about ${leadTime} days.` },
   ];
 

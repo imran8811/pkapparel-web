@@ -8,7 +8,7 @@ export function FactsStrip({ site }: { site: Site }) {
 
   const facts = [
     { value: String(company.founded_year), label: "Making garments since" },
-    { value: `${commerce.moq_per_color} pcs`, label: "Minimum per style & color" },
+    { value: `${commerce.moq_per_color} pcs`, label: `${commerce.min_pcs_per_size}pcs per size per color` },
     { value: `${commerce.lead_time_days} days`, label: "Production after deposit" },
     { value: "Air & sea", label: "Shipping to your door or port" },
   ];
