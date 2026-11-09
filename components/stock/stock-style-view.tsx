@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useSyncExternalStore, useTransition } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Banknote, CircleCheck, LoaderCircle, Minus, PackageCheck, Plus, ShoppingBag, Truck } from "lucide-react";
+import { StockGallery } from "@/components/stock/stock-gallery";
 import { Button } from "@/components/ui/button";
 import { addToStockCart } from "@/lib/account/actions/stock";
 import { notifyUiChange } from "@/lib/account/use-ui-state";
-import { mediaSrc } from "@/lib/media";
 import { formatPiecePrice, formatRupees, RETURN_DAYS, setsInStock, stockSegmentInfo, type StockStyle } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +30,6 @@ export function StockStyleView({ style }: { style: StockStyle }) {
   const color =
     style.colors.find((c) => c.slug === slug) ?? style.colors.find((c) => c.sets_in_stock > 0) ?? style.colors[0];
   const images = color.images;
-  const image = images[Math.min(photo, images.length - 1)];
   const available = color.sets_in_stock;
   const quantity = Math.max(1, Math.min(sets, Math.max(available, 1)));
   const total = quantity * style.set_price_cents;
@@ -65,33 +63,7 @@ export function StockStyleView({ style }: { style: StockStyle }) {
   return (
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
       <div className="min-w-0 lg:col-span-7">
-        <div className="lg:sticky lg:top-28">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-white ring-1 ring-border">
-            {image ? (
-              <Image key={image.path} src={mediaSrc(image.path)} alt={image.alt} fill preload sizes="(min-width: 1024px) 55vw, 100vw" className="object-contain" />
-            ) : null}
-          </div>
-          {images.length > 1 ? (
-            <ul className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Photos">
-              {images.map((thumb, index) => (
-                <li key={thumb.path} className="shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setPhoto(index)}
-                    aria-label={`Show photo ${index + 1}: ${thumb.alt}`}
-                    aria-current={index === photo ? "true" : undefined}
-                    className={cn(
-                      "relative block h-24 w-18 overflow-hidden rounded-xl bg-white ring-1 ring-border transition",
-                      index === photo ? "ring-2 ring-denim-600" : "opacity-80 hover:opacity-100",
-                    )}
-                  >
-                    <Image src={mediaSrc(thumb.path)} alt="" fill sizes="72px" className="object-cover" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
+        <StockGallery images={images} photo={photo} onPhoto={setPhoto} title={`${style.name} in ${color.name.toLowerCase()}`} />
       </div>
 
       <div className="grid min-w-0 grid-cols-1 content-start gap-7 lg:col-span-5">
