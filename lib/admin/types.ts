@@ -414,3 +414,77 @@ export type AdminAddon = {
 };
 
 export type BankSettings = BankDetails;
+
+/* ----- Stock: ready jeans sold by set (amounts in paisa, rupees × 100) ----- */
+
+export type AdminStockStyleSummary = {
+  id: number;
+  slug: string;
+  name: string;
+  style_no: string | null;
+  segment: string;
+  set_price_cents: number;
+  set_pieces: number;
+  status: ProductStatus;
+  is_featured: boolean;
+  color_count: number;
+  /** Sets of the active colors. */
+  sets_in_stock: number;
+  thumbnail: string | null;
+  updated_at: string;
+};
+
+export type AdminStockColor = {
+  id: number;
+  style_id: number;
+  code: string;
+  name: string;
+  slug: string;
+  hex: string | null;
+  sets_in_stock: number;
+  is_active: boolean;
+  sort_order: number;
+  images: { path: string; alt: string; width: number; height: number }[];
+};
+
+export type AdminStockStyle = {
+  id: number;
+  slug: string;
+  name: string;
+  style_no: string | null;
+  segment: string;
+  /** The jeans specs by key; null when not set. */
+  specs: Record<string, string | null>;
+  description_html: string;
+  set_sizes: { size: string; pcs: number }[];
+  set_pieces: number;
+  set_price_cents: number;
+  seo_title: string | null;
+  seo_description: string | null;
+  status: ProductStatus;
+  is_featured: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  colors: AdminStockColor[];
+  sets_in_stock: number;
+};
+
+export type StockReason = "received" | "returned" | "sold" | "damaged" | "correction";
+
+export type AdminStockMovement = {
+  id: number;
+  style_id: number;
+  style_name: string;
+  color_id: number;
+  color_code: string;
+  color_name: string;
+  /** Positive for sets added, negative for sets taken out. */
+  change_sets: number;
+  sets_after: number;
+  reason: StockReason;
+  note: string | null;
+  order_id: number | null;
+  staff_name: string | null;
+  created_at: string;
+};

@@ -9,6 +9,7 @@ export function PageHero({
   title,
   intro,
   crumbs,
+  crumbRoot,
   children,
   aside,
   className,
@@ -17,6 +18,8 @@ export function PageHero({
   title: React.ReactNode;
   intro?: React.ReactNode;
   crumbs: Crumb[];
+  /** The first crumb, "Home" by default (the stock pages start at "Stock"). */
+  crumbRoot?: Crumb;
   /** Buttons under the intro. */
   children?: React.ReactNode;
   /** Optional right-hand column (image, facts…). */
@@ -32,7 +35,7 @@ export function PageHero({
       />
       <Container className={cn("relative py-14 sm:py-20", aside && "grid gap-12 lg:grid-cols-12 lg:items-center")}>
         <div className={cn(aside ? "lg:col-span-7" : "max-w-3xl")}>
-          <Breadcrumbs items={crumbs} />
+          <Breadcrumbs items={crumbs} root={crumbRoot} />
           <Eyebrow tone="light" className="mt-8">
             {eyebrow}
           </Eyebrow>

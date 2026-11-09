@@ -7,8 +7,15 @@ import { whatsappUrl } from "@/lib/links";
  * Floating "chat on WhatsApp" button. When clicked, the message is pre-filled
  * with the page the visitor is looking at, so sales knows which product they mean.
  */
-export function WhatsAppButton({ number }: { number: string }) {
-  const fallback = whatsappUrl(number, "Hello PK Apparel, I'd like to discuss a wholesale order.");
+export function WhatsAppButton({
+  number,
+  message = "Hello PK Apparel, I'd like to discuss a wholesale order.",
+}: {
+  number: string;
+  /** The message when the page can't be added (before the page has loaded). */
+  message?: string;
+}) {
+  const fallback = whatsappUrl(number, message);
 
   return (
     <a

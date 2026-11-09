@@ -31,7 +31,8 @@ export default async function EditPagePage({ params }: PageProps<"/admin/pages/[
         actions={
           page.is_published ? (
             <Button asChild variant="outline" size="sm">
-              <Link href={`/${page.slug}`} target="_blank">
+              {/* The stock pages' terms and privacy (stock-terms, stock-privacy) live under /stock. */}
+              <Link href={page.slug.startsWith("stock-") ? `/stock/${page.slug.slice("stock-".length)}` : `/${page.slug}`} target="_blank">
                 <ExternalLinkIcon />
                 View on website
               </Link>

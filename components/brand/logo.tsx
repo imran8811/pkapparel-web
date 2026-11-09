@@ -32,16 +32,22 @@ type LogoProps = {
   className?: string;
   /** Size of the mark, e.g. "h-14". Defaults to h-11 (44px). */
   markClassName?: string;
+  /** Where the logo leads: the home page, or e.g. the stock pages' home. */
+  href?: string;
+  /** The two lines next to the mark. */
+  tagline?: readonly [string, string];
 };
 
-export function Logo({ tone = "dark", showTagline = true, className, markClassName }: LogoProps) {
+const DEFAULT_TAGLINE = ["Apparel manufacturer", "Made to order"] as const;
+
+export function Logo({ tone = "dark", showTagline = true, className, markClassName, href = "/", tagline = DEFAULT_TAGLINE }: LogoProps) {
   const light = tone === "light";
 
   return (
     // The name includes the visible tagline (WCAG 2.5.3, label in name).
     <Link
-      href="/"
-      aria-label={showTagline ? "PK Apparel, apparel manufacturer, made to order, home" : "PK Apparel, home"}
+      href={href}
+      aria-label={showTagline ? `PK Apparel, ${tagline[0].toLowerCase()}, ${tagline[1].toLowerCase()}, home` : "PK Apparel, home"}
       className={cn("flex shrink-0 items-center gap-3.5", className)}
     >
       <LogoMark className={cn("h-11 w-auto", light ? "text-white" : "text-brand", markClassName)} />
@@ -52,9 +58,9 @@ export function Logo({ tone = "dark", showTagline = true, className, markClassNa
             light ? "border-white/20 text-cotton-50/60" : "border-border text-muted-foreground",
           )}
         >
-          Apparel manufacturer
+          {tagline[0]}
           <br />
-          Made to order
+          {tagline[1]}
         </span>
       )}
     </Link>

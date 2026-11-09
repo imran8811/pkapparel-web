@@ -11,20 +11,31 @@ const ACCOUNT_PATHS = ["/account", "/checkout", "/samples/order"];
 
 /*
  * Countries whose visitors get "not available in your region" instead of the site (owner decision, 2026-10-29).
- * BLOCKED_COUNTRIES (comma-separated ISO codes, e.g. "PK,IN,CN,BD,NP") replaces this list without a code change.
+ * BLOCKED_COUNTRIES (comma-separated ISO codes, e.g. "IN,CN,BD,NP") replaces this list without a code change.
  * The country comes from the host: Vercel's x-vercel-ip-country, or Cloudflare's cf-ipcountry if it sits in front.
- * Locally there is no such header, so nothing is blocked.
+ * Locally there is no such header, so nothing is blocked (see DEV_VISITOR_COUNTRY below).
  */
-const DEFAULT_BLOCKED_COUNTRIES = ["PK", "IN", "CN", "BD"];
-const blockedCountries = new Set(
-  (process.env.BLOCKED_COUNTRIES?.trim() ? process.env.BLOCKED_COUNTRIES.split(",") : DEFAULT_BLOCKED_COUNTRIES)
-    .map((code) => code.trim().toUpperCase())
-    .filter(Boolean),
-);
+const DEFAULT_BLOCKED_COUNTRIES = ["IN", "CN", "BD"];
 
 /*
- * Never blocked: the admin panel (staff work from the factory), the API's cache refresh, the /uploads proxy
- * and the files search engines read.
+ * Countries whose visitors see only the stock pages (owner decision, 2026-11-09): every other address sends them to
+ * /stock, and everyone else is sent from /stock to the wholesale shop. STOCK_COUNTRIES (comma-separated ISO codes)
+ * replaces this list. A stock country is never blocked, even when BLOCKED_COUNTRIES lists it too.
+ */
+const DEFAULT_STOCK_COUNTRIES = ["PK"];
+
+function countryList(value: string | undefined, fallback: string[]): Set<string> {
+  return new Set(
+    (value?.trim() ? value.split(",") : fallback).map((code) => code.trim().toUpperCase()).filter(Boolean),
+  );
+}
+
+const blockedCountries = countryList(process.env.BLOCKED_COUNTRIES, DEFAULT_BLOCKED_COUNTRIES);
+const stockCountries = countryList(process.env.STOCK_COUNTRIES, DEFAULT_STOCK_COUNTRIES);
+
+/*
+ * Never blocked or sent elsewhere: the admin panel (staff work from the factory), the API's cache refresh, the
+ * /uploads proxy and the files search engines read.
  */
 const UNBLOCKED_PREFIXES = ["/admin", "/api/", "/uploads/"];
 const UNBLOCKED_PATHS = [
@@ -45,11 +56,36 @@ const UNBLOCKED_PATHS = [
 const CRAWLERS =
   /googlebot|google-inspectiontool|googleother|storebot-google|adsbot-google|mediapartners-google|apis-google|bingbot|adidxbot|bingpreview|msnbot|duckduckbot|yandex(bot|images)|baiduspider|applebot|slurp|petalbot|facebookexternalhit|linkedinbot|twitterbot|whatsapp/i;
 
-function isBlocked(request: NextRequest, pathname: string) {
-  if (UNBLOCKED_PATHS.includes(pathname) || UNBLOCKED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return false;
-  const country = (request.headers.get("x-vercel-ip-country") ?? request.headers.get("cf-ipcountry"))?.toUpperCase();
-  if (!country || !blockedCountries.has(country)) return false;
-  return !CRAWLERS.test(request.headers.get("user-agent") ?? "");
+/**
+ * The visitor's country. In development only, DEV_VISITOR_COUNTRY (e.g. in .env.local) stands in for the host's
+ * header, to try the stock pages or the block locally.
+ */
+function visitorCountry(request: NextRequest): string | undefined {
+  const header = request.headers.get("x-vercel-ip-country") ?? request.headers.get("cf-ipcountry");
+  const country = header ?? (process.env.NODE_ENV === "development" ? process.env.DEV_VISITOR_COUNTRY : undefined);
+  return country?.trim().toUpperCase() || undefined;
+}
+
+/**
+ * Blocks or redirects a visitor by country: stock countries stay within /stock, blocked countries get the 403 page,
+ * and everyone else is kept out of /stock. Returns null when the visitor may see the page they asked for.
+ */
+function routeByCountry(request: NextRequest, pathname: string): NextResponse | null {
+  if (UNBLOCKED_PATHS.includes(pathname) || UNBLOCKED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return null;
+  const country = visitorCountry(request);
+  if (!country || CRAWLERS.test(request.headers.get("user-agent") ?? "")) return null;
+
+  const inStock = matches(pathname, "/stock");
+  if (stockCountries.has(country)) return inStock ? null : countryRedirect(request, "/stock");
+  if (blockedCountries.has(country)) return blockedResponse();
+  return inStock ? countryRedirect(request, "/wholesale-shop") : null;
+}
+
+/** Temporary and never cached: the next visitor to the same address may be in another country. */
+function countryRedirect(request: NextRequest, path: string) {
+  const response = NextResponse.redirect(new URL(path, request.url), 307);
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
 }
 
 /*
@@ -93,7 +129,8 @@ const matches = (pathname: string, base: string) => pathname === base || pathnam
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
-  if (isBlocked(request, pathname)) return blockedResponse();
+  const routed = routeByCountry(request, pathname);
+  if (routed) return routed;
 
   if (matches(pathname, "/admin")) {
     if (PUBLIC_ADMIN_PATHS.includes(pathname) || request.cookies.has("pk_admin")) return NextResponse.next();

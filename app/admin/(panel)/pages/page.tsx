@@ -27,7 +27,7 @@ export default async function PagesPage() {
               <Link href={`/admin/pages/${page.slug}`} className="font-medium hover:text-denim-600">
                 {page.title}
               </Link>
-              <p className="mt-0.5 font-mono text-xs text-muted-foreground">/{page.slug}</p>
+              <p className="mt-0.5 font-mono text-xs text-muted-foreground">{page.slug.startsWith("stock-") ? `/stock/${page.slug.slice("stock-".length)}` : `/${page.slug}`}</p>
             </div>
             <span className="hidden text-xs text-muted-foreground sm:block">Edited {formatDay(page.updated_at)}</span>
             {page.is_published ? <Pill tone="green">Published</Pill> : <Pill tone="neutral">Hidden</Pill>}

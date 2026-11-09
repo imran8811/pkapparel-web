@@ -17,6 +17,7 @@ import {
   LayoutDashboardIcon,
   MessageSquareQuoteIcon,
   NewspaperIcon,
+  PackageIcon,
   ReceiptTextIcon,
   BanknoteIcon,
   ShieldCheckIcon,
@@ -51,6 +52,10 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
       { href: "/admin/shipping", label: "Shipping rates", icon: TruckIcon, area: "commerce" },
       { href: "/admin/addons", label: "Add-ons", icon: BadgePlusIcon, area: "commerce" },
     ],
+  },
+  {
+    title: "Stock",
+    items: [{ href: "/admin/stock", label: "Stock styles", icon: PackageIcon, area: "content" }],
   },
   {
     title: "Website",

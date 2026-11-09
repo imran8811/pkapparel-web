@@ -47,7 +47,9 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
 | `REVALIDATE_SECRET` | Must equal `REVALIDATE_SECRET` in the API's `.env` |
 | `NEXT_PUBLIC_SITE_URL` | The public address of the site, used for canonical URLs, the sitemap and Open Graph |
 | `SITE_INDEXABLE` | `true` only on the live site. Otherwise every page is `noindex` and `robots.txt` blocks crawlers. |
-| `BLOCKED_COUNTRIES` | Countries that see "not available in your region", as ISO codes, e.g. `PK,IN,CN,BD`. Empty means the default list in `proxy.ts`. Redeploy after changing it. |
+| `BLOCKED_COUNTRIES` | Countries that see "not available in your region", as ISO codes, e.g. `IN,CN,BD`. Empty means the default list in `proxy.ts`. Redeploy after changing it. |
+| `STOCK_COUNTRIES` | Countries whose visitors see only the stock pages (`/stock`), as ISO codes. Empty means the default in `proxy.ts`. A stock country is never blocked, even when `BLOCKED_COUNTRIES` lists it. Redeploy after changing it. |
+| `DEV_VISITOR_COUNTRY` | Development only: the country to pretend to visit from, e.g. a stock country to try `/stock`. Ignored in production. |
 | `GOOGLE_SITE_VERIFICATION`, `BING_SITE_VERIFICATION` | Optional: the codes from Google Search Console and Bing Webmaster Tools ("HTML tag" verification, the `content` value only) |
 
 ## How it works
@@ -72,9 +74,16 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
 - **Security headers** (`next.config.ts`):
   - A Content-Security-Policy without per-request nonces, so pages stay static. Everything loads from this domain except Google Analytics through Tag Manager (public pages only, with `NEXT_PUBLIC_GTM_ID`); adding another third-party script, font or frame means adding it to the policy.
   - On an `https://` site URL, also HSTS (one year) and `upgrade-insecure-requests`.
-- **Blocked countries** (`proxy.ts`): visitors from a country in `BLOCKED_COUNTRIES` (from Vercel's `x-vercel-ip-country` header) get a 403 "not available in your region" page that is never cached.
-  - Search engine crawlers, the admin panel, `/api/`, `/uploads/`, `robots.txt` and `sitemap.xml` are never blocked, so rankings and the staff's work are unaffected.
-  - Locally there is no country header, so nothing is blocked.
+- **Countries** (`proxy.ts`, from Vercel's `x-vercel-ip-country` header):
+  - Visitors from a country in `BLOCKED_COUNTRIES` get a 403 "not available in your region" page that is never cached.
+  - Visitors from a country in `STOCK_COUNTRIES` see only the stock pages: every other address redirects them to `/stock` (307, never cached). Everyone else is redirected from `/stock` to `/wholesale-shop`.
+  - Search engine crawlers, the admin panel, `/api/`, `/uploads/`, `robots.txt` and `sitemap.xml` are never blocked or redirected, so rankings and the staff's work are unaffected. Crawlers may index the stock pages.
+  - Locally there is no country header, so nothing is blocked or redirected. Set `DEV_VISITOR_COUNTRY` in `.env.local` to try it.
+- **Stock (`app/stock`):** ready men's and boys' jeans, sold by set (one set per style: waist sizes with pieces per size), priced per set in rupees. Separate from the wholesale shop: its own styles, header and footer, linking only to stock pages, and no page names the country.
+  - Pages: `/stock`, `/stock/men`, `/stock/boys` (filters by size, fit and stretch), `/stock/{segment}/{style}`, `/stock/how-to-order`, `/stock/contact`, `/stock/terms` and `/stock/privacy` (the API's `stock-terms` and `stock-privacy` pages, edited under *Legal pages*).
+  - Data: `lib/stock-catalog.ts` (cache tags `stock` and `stock:<slug>`); types and helpers in `lib/stock.ts`. Amounts are in paisa, shown as "Rs 6,000".
+  - Ordering is by WhatsApp or phone for now: the style page fills in the WhatsApp message with the color, sets and total. Sets are held once payment is confirmed.
+  - Admin: *Stock styles* (`app/admin/(panel)/stock`): styles, colors with photos, the sets in stock per color, and every change logged with its reason (*Stock history*).
 - **Admin panel (`app/admin`):**
   - Staff log in with their API account. The login token is kept in the HttpOnly cookie `pk_admin` (path `/admin`).
   - `proxy.ts` sends visitors without that cookie to the login page.
@@ -116,6 +125,7 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
 | Folder | What it contains |
 |---|---|
 | `app/(site)/` | public pages, blog, shop, cart, checkout and the buyer account |
+| `app/stock/` | the stock pages, with their own header and footer (`components/stock/`) |
 | `app/admin/` | admin panel (`(panel)/` is everything behind the login) |
 | `app/api/revalidate/` | cache refresh endpoint for the API |
 | `components/` | `ui/` (shadcn), `layout/`, `site/`, `home/`, `shop/`, `forms/`, `account/`, `admin/`, `brand/` |

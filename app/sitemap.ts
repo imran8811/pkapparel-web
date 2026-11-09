@@ -3,6 +3,8 @@ import { getProducts, getShopCategories } from "@/lib/catalog";
 import { getPosts } from "@/lib/content";
 import { absoluteUrl } from "@/lib/seo";
 import { productUrl } from "@/lib/shop";
+import { stockSegments, stockUrl } from "@/lib/stock";
+import { getStockStyles } from "@/lib/stock-catalog";
 
 const PAGES: { path: string; priority: number }[] = [
   { path: "/", priority: 1 },
@@ -23,11 +25,23 @@ const PAGES: { path: string; priority: number }[] = [
   { path: "/cookies", priority: 0.2 },
 ];
 
+const STOCK_PAGES: { path: string; priority: number }[] = [
+  { path: "/stock", priority: 0.9 },
+  { path: "/stock/how-to-order", priority: 0.6 },
+  { path: "/stock/contact", priority: 0.5 },
+  { path: "/stock/terms", priority: 0.2 },
+  { path: "/stock/privacy", priority: 0.2 },
+];
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [posts, categories, { items: products }] = await Promise.all([getPosts(100), getShopCategories(), getProducts()]);
+  const [posts, categories, { items: products }, stock] = await Promise.all([getPosts(100), getShopCategories(), getProducts(), getStockStyles()]);
 
   return [
     ...PAGES.map((page) => ({ url: absoluteUrl(page.path), priority: page.priority })),
+    // The stock pages (only reachable from the stock countries, but crawlers may index them: owner decision 2026-11-09).
+    ...STOCK_PAGES.map((page) => ({ url: absoluteUrl(page.path), priority: page.priority })),
+    ...stockSegments.map((segment) => ({ url: absoluteUrl(stockUrl(segment.slug)), priority: 0.8 })),
+    ...stock.map((style) => ({ url: absoluteUrl(stockUrl(style.segment, style.slug)), priority: 0.7 })),
     // Shop pages without styles online are "made to order" pages, kept out of search results.
     ...categories
       .filter((category) => category.style_count > 0)

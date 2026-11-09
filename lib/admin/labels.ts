@@ -1,5 +1,5 @@
 import type { AddonPricing, OrderKind, OrderStatus } from "@/lib/account/types";
-import type { InquiryStatus, InquiryType } from "@/lib/admin/types";
+import type { InquiryStatus, InquiryType, StockReason } from "@/lib/admin/types";
 
 /* Wording used across the admin. */
 
@@ -77,3 +77,12 @@ export const ADDON_PRICING: { value: AddonPricing; label: string }[] = [
   { value: "per_order", label: "Once per order" },
   { value: "on_request", label: "Price on request (quoted later)" },
 ];
+
+/** Why a stock color's sets changed (stock history). */
+export const STOCK_REASONS: Record<StockReason, string> = {
+  received: "Received",
+  returned: "Returned",
+  sold: "Sold",
+  damaged: "Damaged or lost",
+  correction: "Count correction",
+};

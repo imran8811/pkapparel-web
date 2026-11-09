@@ -6,9 +6,11 @@ import { cn } from "@/lib/utils";
 
 export type Crumb = { label: string; href: string };
 
-/** Visible breadcrumb trail plus BreadcrumbList structured data. "Home" is added automatically. */
-export function Breadcrumbs({ items, tone = "light", className }: { items: Crumb[]; tone?: "light" | "dark"; className?: string }) {
-  const trail = [{ label: "Home", href: "/" }, ...items];
+const HOME: Crumb = { label: "Home", href: "/" };
+
+/** Visible breadcrumb trail plus BreadcrumbList structured data. "Home" (or another `root`, e.g. "Stock") is added automatically. */
+export function Breadcrumbs({ items, root = HOME, tone = "light", className }: { items: Crumb[]; root?: Crumb; tone?: "light" | "dark"; className?: string }) {
+  const trail = [root, ...items];
 
   return (
     <>
