@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Banknote, Minus, PackageCheck, Phone, Plus, Truck } from "lucide-react";
+import { ArrowRight, Banknote, CircleCheck, LoaderCircle, Minus, PackageCheck, Phone, Plus, ShoppingBag, Truck } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Button } from "@/components/ui/button";
+import { addToStockCart } from "@/lib/account/actions/stock";
+import { notifyUiChange } from "@/lib/account/use-ui-state";
 import { telUrl, whatsappUrl } from "@/lib/links";
 import { mediaSrc } from "@/lib/media";
 import { formatRupees, RETURN_DAYS, setsInStock, stockSegmentInfo, type StockStyle } from "@/lib/stock";
@@ -18,12 +20,14 @@ function useColorParam(): string | null {
   return useSyncExternalStore(noSubscription, () => new URLSearchParams(window.location.search).get("color"), () => null);
 }
 
-/** Gallery, colors, the set, sets in stock and ordering by WhatsApp or phone. */
+/** Gallery, colors, the set, sets in stock, and adding sets to the cart (or ordering by WhatsApp or phone). */
 export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; whatsapp: string; phone: string }) {
   const requested = useColorParam();
   const [chosen, setChosen] = useState<string | null>(null);
   const [photo, setPhoto] = useState(0);
   const [sets, setSets] = useState(1);
+  const [adding, startAdding] = useTransition();
+  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   const slug = chosen ?? requested;
   const color =
@@ -34,10 +38,25 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
   const quantity = Math.max(1, Math.min(sets, Math.max(available, 1)));
   const total = quantity * style.set_price_cents;
 
+  const add = () =>
+    startAdding(async () => {
+      const response = await addToStockCart(color.id, quantity);
+      if (response.ok) {
+        notifyUiChange();
+        setSets(1);
+        setResult({ ok: true, message: `${quantity} ${quantity === 1 ? "set" : "sets"} of ${color.name.toLowerCase()} added to your cart.` });
+      } else if (response.sessionEnded) {
+        window.location.replace("/stock/account/session-ended");
+      } else {
+        setResult({ ok: false, message: response.message });
+      }
+    });
+
   const selectColor = (next: string) => {
     setChosen(next);
     setPhoto(0);
     setSets(1);
+    setResult(null);
     const url = new URL(window.location.href);
     url.searchParams.set("color", next);
     window.history.replaceState(window.history.state, "", url);
@@ -168,24 +187,54 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
                 <p className="text-sm text-muted-foreground">{quantity * style.set.pieces} pieces</p>
                 <p className="font-heading text-2xl font-semibold tabular-nums">{formatRupees(total)}</p>
               </div>
+              {result ? (
+                result.ok ? (
+                  <div role="status" className="mt-5 rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-800">
+                    <p className="flex items-start gap-2">
+                      <CircleCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
+                      {result.message}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2 pl-6">
+                      <Button asChild size="sm">
+                        <Link href="/stock/cart">
+                          View cart <ArrowRight />
+                        </Link>
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setResult(null)}>
+                        Add another color
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p role="alert" className="mt-5 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                    {result.message}
+                  </p>
+                )
+              ) : null}
               <div className="mt-5 grid gap-2">
-                <Button asChild size="lg">
-                  <a
-                    href={whatsappUrl(whatsapp)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(event) => {
-                      event.currentTarget.href = whatsappUrl(whatsapp, orderMessage());
-                    }}
-                  >
-                    <WhatsAppIcon className="size-4" /> Order on WhatsApp
-                  </a>
+                <Button type="button" size="lg" onClick={add} disabled={adding}>
+                  {adding ? <LoaderCircle className="animate-spin" /> : <ShoppingBag />}
+                  {adding ? "Adding…" : "Add to cart"}
                 </Button>
-                <Button asChild variant="outline">
-                  <a href={telUrl(phone)}>
-                    <Phone /> Call {phone}
-                  </a>
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button asChild variant="outline">
+                    <a
+                      href={whatsappUrl(whatsapp)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(event) => {
+                        event.currentTarget.href = whatsappUrl(whatsapp, orderMessage());
+                      }}
+                    >
+                      <WhatsAppIcon className="size-4" /> WhatsApp
+                    </a>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <a href={telUrl(phone)}>
+                      <Phone /> Call us
+                    </a>
+                  </Button>
+                </div>
               </div>
             </>
           ) : (

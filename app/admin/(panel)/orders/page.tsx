@@ -22,13 +22,13 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
 
   const search = (await searchParams) as Search;
   const status = search.status === "late" || (search.status && search.status in ORDER_STATUSES) ? (search.status as OrderStatus | "late") : undefined;
-  const kind = search.kind === "bulk" || search.kind === "sample" ? search.kind : undefined;
+  const kind = search.kind === "bulk" || search.kind === "sample" || search.kind === "stock" ? search.kind : undefined;
   const q = search.q?.trim() || undefined;
   const page = Math.max(1, Number(search.page) || 1);
 
   const { data: orders, meta } = await adminApiWithMeta<
     AdminOrderSummary[],
-    { pagination: Pagination; counts: Partial<Record<OrderStatus | "late", number>>; samples: number; payments_to_check: number }
+    { pagination: Pagination; counts: Partial<Record<OrderStatus | "late", number>>; samples: number; stock: number; payments_to_check: number }
   >("/v1/admin/orders", { query: { status, kind, q, page } });
   const { late: lateCount = 0, ...statusCounts } = meta.counts;
   const total = Object.values(statusCounts).reduce((sum, count) => sum + (count ?? 0), 0);
@@ -55,7 +55,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
     <>
       <PageHeader
         title="Orders"
-        description="Orders placed in the wholesale shop, and sample orders. Each has an invoice; buyers report their bank transfers on the order."
+        description="Orders placed in the wholesale shop, sample orders and stock orders. Buyers report their payments on the order."
       />
 
       {meta.payments_to_check > 0 ? (
@@ -69,6 +69,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
           { value: undefined, label: "All orders" },
           { value: "bulk", label: "Bulk orders" },
           { value: "sample", label: `Samples (${meta.samples})` },
+          { value: "stock", label: `Stock (${meta.stock ?? 0})` },
         ].map((option) => (
           <Link
             key={option.label}
@@ -126,7 +127,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
                   <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
                     <span className="font-mono font-medium">{order.order_no}</span>
                     <span className="font-medium">{order.company_name}</span>
-                    <span className="text-muted-foreground">{countryName(order.country_code)}</span>
+                    {order.kind === "stock" ? null : <span className="text-muted-foreground">{countryName(order.country_code)}</span>}
                   </p>
                   <p className="mt-1 truncate text-sm text-muted-foreground">
                     {order.total_pcs} pcs · {order.styles.length > 0 ? order.styles.join(", ") : "Custom-design sample"} · {order.shipping_mode_label}
@@ -144,7 +145,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
                           : `Due in ${order.production_days_left} ${order.production_days_left === 1 ? "day" : "days"}`}
                     </span>
                   ) : null}
-                  <span className="text-sm font-medium tabular-nums">{order.status === "awaiting_price" ? "To price" : formatMoney(order.total_cents)}</span>
+                  <span className="text-sm font-medium tabular-nums">{order.status === "awaiting_price" ? "To price" : formatMoney(order.total_cents, order.currency)}</span>
                   <span className="text-xs text-muted-foreground">{formatRelative(order.placed_at)}</span>
                 </div>
               </Link>

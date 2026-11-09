@@ -53,8 +53,11 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
   const due = dueText(order);
   const late = order.production_days_left !== null && order.production_days_left < 0;
   const sample = order.kind === "sample";
+  // Stock orders: in rupees, by set, paid in full, sent by cargo or collected; no charges, production or proforma.
+  const stock = order.kind === "stock";
+  const money = (cents: number) => formatMoney(cents, order.currency);
   // A sample order is priced once (before the buyer pays); a bulk order's charges can change until it ships.
-  const editableCharges = canManage && (sample ? order.status === "awaiting_price" : !["shipped", "delivered", "cancelled"].includes(order.status));
+  const editableCharges = canManage && !stock && (sample ? order.status === "awaiting_price" : !["shipped", "delivered", "cancelled"].includes(order.status));
 
   const documentHref = (document: OrderDocumentItem): string => {
     switch (document.kind) {
@@ -79,9 +82,9 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
             <OrderStatusPill status={order.status} dueNowCents={amounts.due_now_cents} kind={order.kind} />
           </span>
         }
-        description={`Placed ${formatDateTime(order.placed_at)} · ${order.total_pcs} pcs · ${formatMoney(amounts.total_cents)}${order.buyer_reference ? ` · Buyer's reference ${order.buyer_reference}` : ""}`}
+        description={`Placed ${formatDateTime(order.placed_at)} · ${order.total_pcs} pcs · ${money(amounts.total_cents)}${order.buyer_reference ? ` · Buyer's reference ${order.buyer_reference}` : ""}`}
         actions={
-          canManage ? (
+          canManage && !stock ? (
             <Button asChild variant="outline" size="sm">
               <a href={`/admin/orders/${order.id}/proforma-invoice`} download>
                 <DownloadIcon /> {sample ? "Sample invoice" : "Proforma invoice"}
@@ -93,7 +96,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
 
       {due ? (
         <p className={late ? "mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive" : "mb-4 rounded-xl bg-denim-50 px-4 py-3 text-sm text-denim-800"}>
-          {sample ? "Samples" : "Production"}: {due}
+          {sample ? "Samples" : stock ? (order.shipping_mode === "pickup" ? "Ready for collection" : "To send") : "Production"}: {due}
         </p>
       ) : null}
 
@@ -113,9 +116,9 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
                   <li key={payment.id} className="rounded-xl border p-4 text-sm">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-medium">
-                        {payment.kind_label}: {formatMoney(payment.amount_cents)}
+                        {payment.kind_label}: {money(payment.amount_cents)}
                         {payment.received_cents !== null && payment.received_cents !== payment.amount_cents ? (
-                          <span className="font-normal text-muted-foreground"> · {formatMoney(payment.received_cents)} arrived</span>
+                          <span className="font-normal text-muted-foreground"> · {money(payment.received_cents)} arrived</span>
                         ) : null}
                       </p>
                       <Pill tone={payment.status === "confirmed" ? "green" : payment.status === "rejected" ? "red" : "orange"}>{payment.status_label}</Pill>
@@ -141,14 +144,14 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
                         </a>
                       ) : null}
                     </div>
-                    {payment.status === "submitted" && canPay ? <PaymentReview payment={payment} dueCents={amounts.due_now_cents} today={today} /> : null}
+                    {payment.status === "submitted" && canPay ? <PaymentReview payment={payment} dueCents={amounts.due_now_cents} today={today} currency={order.currency} /> : null}
                   </li>
                 ))}
               </ul>
             </Panel>
           ) : null}
 
-          {!sample && PRODUCTION.includes(order.status) ? (
+          {!sample && !stock && PRODUCTION.includes(order.status) ? (
             <Panel title="Production" description="Mark each stage as it starts and finishes, and add photos. The buyer sees them on their order page.">
               <ProductionManager
                 orderId={order.id}
@@ -189,7 +192,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
             </Panel>
           ) : null}
 
-          {sample ? null : (
+          {sample || stock ? null : (
             <Panel title="Packing estimate">
               <p className="text-sm">
                 {order.packing.cartons} cartons · {(order.packing.gross_g / 1000).toFixed(1)} kg gross · {order.packing.cbm.toFixed(2)} CBM
@@ -211,7 +214,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
             <p className="font-medium">{customer.company_name}</p>
             <p className="text-sm text-muted-foreground">
               {customer.contact_name}
-              {business ? ` · ${business}` : ""} · {countryName(customer.country_code)}
+              {business ? ` · ${business}` : ""} · {stock ? (customer.city ?? "") : countryName(customer.country_code)}
             </p>
             <div className="mt-3 grid gap-1 text-sm">
               <a href={`mailto:${customer.email}?subject=${encodeURIComponent(`Your order ${order.order_no}`)}`} className="inline-flex items-center gap-1.5 break-all text-denim-600 hover:underline">
@@ -245,30 +248,34 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
             ) : null}
           </Panel>
 
-          <Panel title="Delivery">
-            <p className="text-sm font-medium">
-              {shippingSummary(order)} · {order.incoterm}
-            </p>
-            {order.forwarder ? <p className="mt-1 text-sm text-muted-foreground">Forwarder: {[order.forwarder.name, order.forwarder.contact].filter(Boolean).join(", ")}</p> : null}
-            <address className="mt-3 text-sm leading-relaxed not-italic text-muted-foreground">
-              <span className="font-medium text-foreground">{address.company}</span>
-              <br />
-              {address.contact_name}, {address.phone}
-              {address.email ? `, ${address.email}` : ""}
-              <br />
-              {address.line1}
-              {address.line2 ? `, ${address.line2}` : ""}
-              <br />
-              {[address.postal_code, address.city].filter(Boolean).join(" ")}
-              {address.state ? `, ${address.state}` : ""}, {countryName(address.country_code)}
-              {address.tax_id ? (
-                <>
-                  <br />
-                  Tax / import ID: {address.tax_id}
-                </>
-              ) : null}
-            </address>
-          </Panel>
+          {stock ? (
+            <StockDelivery order={order} />
+          ) : (
+            <Panel title="Delivery">
+              <p className="text-sm font-medium">
+                {shippingSummary(order)} · {order.incoterm}
+              </p>
+              {order.forwarder ? <p className="mt-1 text-sm text-muted-foreground">Forwarder: {[order.forwarder.name, order.forwarder.contact].filter(Boolean).join(", ")}</p> : null}
+              <address className="mt-3 text-sm leading-relaxed not-italic text-muted-foreground">
+                <span className="font-medium text-foreground">{address.company}</span>
+                <br />
+                {address.contact_name}, {address.phone}
+                {address.email ? `, ${address.email}` : ""}
+                <br />
+                {address.line1}
+                {address.line2 ? `, ${address.line2}` : ""}
+                <br />
+                {[address.postal_code, address.city].filter(Boolean).join(" ")}
+                {address.state ? `, ${address.state}` : ""}, {countryName(address.country_code)}
+                {address.tax_id ? (
+                  <>
+                    <br />
+                    Tax / import ID: {address.tax_id}
+                  </>
+                ) : null}
+              </address>
+            </Panel>
+          )}
 
           <Panel title="History">
             <OrderTimeline events={order.events} kind={order.kind} />
@@ -279,6 +286,35 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
         </aside>
       </div>
     </>
+  );
+}
+
+/** How a stock order goes: by cargo to the buyer's address (cargo paid on arrival), or collected; no country. */
+function StockDelivery({ order }: { order: AdminOrder }) {
+  const { address } = order;
+  return (
+    <Panel title="Delivery">
+      <p className="text-sm font-medium">{order.shipping_mode === "pickup" ? "The buyer collects the order" : "Cargo to the buyer's city, paid by the buyer on arrival"}</p>
+      {order.forwarder?.name ? <p className="mt-1 text-sm text-muted-foreground">Cargo company the buyer wants: {order.forwarder.name}</p> : null}
+      <address className="mt-3 text-sm leading-relaxed not-italic text-muted-foreground">
+        <span className="font-medium text-foreground">{address.company}</span>
+        <br />
+        {address.contact_name}, {address.phone}
+        {address.line1 ? (
+          <>
+            <br />
+            {address.line1}
+            {address.line2 ? `, ${address.line2}` : ""}
+          </>
+        ) : null}
+        {address.city ? (
+          <>
+            <br />
+            {address.city}
+          </>
+        ) : null}
+      </address>
+    </Panel>
   );
 }
 

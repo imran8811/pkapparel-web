@@ -9,32 +9,53 @@ import { cn } from "@/lib/utils";
 
 const MAX_SLIP_BYTES = 4 * 1024 * 1024;
 
-/** The Confirm payment form: transaction ID, amount, date, sender, optional slip and notes. */
-export function PaymentForm({ orderNo, dueCents, payerName, today }: { orderNo: string; dueCents: number; payerName: string; today: string }) {
+/**
+ * The Confirm payment form: transaction ID, amount, date, sender, optional slip and notes.
+ * For a stock order (stock): the amount in rupees, paid by bank, JazzCash or Easypaisa, back to the stock pages.
+ */
+export function PaymentForm({
+  orderNo,
+  dueCents,
+  payerName,
+  today,
+  stock = false,
+}: {
+  orderNo: string;
+  dueCents: number;
+  payerName: string;
+  today: string;
+  stock?: boolean;
+}) {
   const [slipNote, setSlipNote] = useState<string | null>(null);
 
   return (
     <ActionForm action={submitPayment.bind(null, orderNo)} className="grid grid-cols-1 gap-5">
+      {stock ? <input type="hidden" name="area" value="stock" /> : null}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <TextInput
           label="Transaction ID / reference"
           name="transaction_id"
           required
           autoComplete="off"
-          hint="As shown on your bank's confirmation or transfer slip."
+          hint={stock ? "As shown on the confirmation from your bank, JazzCash or Easypaisa." : "As shown on your bank's confirmation or transfer slip."}
           fieldClassName="sm:col-span-2"
         />
         <TextInput
-          label="Amount sent (USD)"
+          label={stock ? "Amount sent (Rs)" : "Amount sent (USD)"}
           name="amount"
           inputMode="decimal"
           required
-          defaultValue={(dueCents / 100).toFixed(2)}
-          hint="The amount in US dollars, before your bank's charges."
+          defaultValue={stock ? String(Math.round(dueCents / 100)) : (dueCents / 100).toFixed(2)}
+          hint={stock ? "The amount in rupees." : "The amount in US dollars, before your bank's charges."}
         />
         <TextInput label="Transfer date" name="transferred_on" type="date" required defaultValue={today} />
         <TextInput label="Sent by (account name)" name="payer_name" required defaultValue={payerName} autoComplete="organization" />
-        <TextInput label="From bank" name="payer_bank" required placeholder="e.g. Barclays, London" />
+        <TextInput
+          label={stock ? "Paid from" : "From bank"}
+          name="payer_bank"
+          required
+          placeholder={stock ? "e.g. JazzCash, or your bank's name" : "e.g. Barclays, London"}
+        />
       </div>
 
       <FormField
@@ -78,7 +99,9 @@ export function PaymentForm({ orderNo, dueCents, payerName, today }: { orderNo: 
       <TextAreaInput label="Notes" name="notes" rows={3} placeholder="Anything we should know, e.g. the transfer was split in two." />
       <FormMessage />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-muted-foreground">We check every transfer against our bank statement before confirming it.</p>
+        <p className="text-xs text-muted-foreground">
+          {stock ? "We check every payment against our accounts before confirming it." : "We check every transfer against our bank statement before confirming it."}
+        </p>
         <SubmitButton size="lg" pendingLabel="Sending…">
           Send payment details
         </SubmitButton>

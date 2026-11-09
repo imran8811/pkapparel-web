@@ -4,7 +4,7 @@ import { refresh, updateTag } from "next/cache";
 import { adminApi } from "@/lib/admin/session";
 import { errorState, failure, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
 
-const GROUPS = ["company", "contact", "addresses", "social", "commerce", "factory_facts", "bank"] as const;
+const GROUPS = ["company", "contact", "addresses", "social", "commerce", "factory_facts", "bank", "stock", "stock_payment"] as const;
 type Group = (typeof GROUPS)[number];
 
 function bodyFor(group: Group, form: FormData): Record<string, unknown> {
@@ -62,6 +62,21 @@ function bodyFor(group: Group, form: FormData): Record<string, unknown> {
       return Object.fromEntries(
         ["beneficiary", "bank_name", "branch", "bank_address", "account_number", "iban", "swift", "notes"].map((key) => [key, optional(form, key)]),
       );
+    case "stock":
+      return {
+        min_sets_per_order: number(form, "min_sets_per_order"),
+        dispatch_days: number(form, "dispatch_days"),
+        payment_days: number(form, "payment_days"),
+        pickup_address: optional(form, "pickup_address"),
+        pickup_hours: optional(form, "pickup_hours"),
+      };
+    case "stock_payment":
+      return Object.fromEntries(
+        ["bank_name", "account_title", "account_number", "iban", "jazzcash_name", "jazzcash_number", "easypaisa_name", "easypaisa_number", "notes"].map((key) => [
+          key,
+          optional(form, key),
+        ]),
+      );
   }
 }
 
@@ -96,6 +111,11 @@ export async function saveSettings(group: string, _previous: FormState, form: Fo
     // Private: not on the public website. Only this admin page shows it again, with the stored values.
     refresh();
     return success("Bank details saved. Buyers see them on orders with an amount due.");
+  }
+  if (settingsGroup === "stock" || settingsGroup === "stock_payment") {
+    // Private too: read by the stock checkout and order pages, which are never cached.
+    refresh();
+    return success(settingsGroup === "stock" ? "Stock settings saved." : "Payment details saved. Stock buyers see them on orders with an amount due.");
   }
   updateTag(settingsGroup === "factory_facts" ? "factory" : "site");
   return success("Settings saved. The website shows the change now.");

@@ -3,8 +3,9 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { apiWithMeta, ApiError } from "@/lib/api";
-import { UI_COOKIE, writeUiState } from "@/lib/account/ui-state";
+import { readUiState, UI_COOKIE, writeUiState, type UiState } from "@/lib/account/ui-state";
 import type { Cart, Customer } from "@/lib/account/types";
+import type { StockCart } from "@/lib/stock";
 
 /*
  * Buyer sessions. The API token lives in the HttpOnly cookie pk_session; a guest's cart is found by
@@ -92,6 +93,46 @@ export async function getCart(): Promise<Cart> {
   return (await cartApiWithMeta<Cart>("/v1/cart")).data;
 }
 
+/*
+ * The stock pages' versions: their login page and "session ended" route are under /stock.
+ */
+
+export const STOCK_LOGIN = "/stock/login";
+export const STOCK_SESSION_ENDED = "/stock/account/session-ended";
+
+/** Calls a buyer account endpoint from a stock page. Without a session it goes to the stock login page. */
+export async function stockCustomerApi<T>(path: string, request: BuyerRequest = {}): Promise<T> {
+  const token = await sessionToken();
+  if (!token) redirect(STOCK_LOGIN);
+  try {
+    return (await apiWithMeta<T>(path, { ...request, token })).data;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) redirect(STOCK_SESSION_ENDED);
+    throw error;
+  }
+}
+
+/** The logged-in buyer on a stock page; everyone else goes to the stock login page. */
+export async function requireStockCustomer(): Promise<Customer> {
+  const token = await sessionToken();
+  if (!token) redirect(STOCK_LOGIN);
+  const customer = await getCustomer();
+  if (!customer) redirect(STOCK_SESSION_ENDED);
+  return customer;
+}
+
+/** The current stock cart (an empty one for visitors without a cart). */
+export async function getStockCart(): Promise<StockCart> {
+  const token = await sessionToken();
+  const cartToken = token ? undefined : await guestCartToken();
+  try {
+    return (await apiWithMeta<StockCart>("/v1/stock/cart", { token, headers: cartToken ? { "X-Cart-Token": cartToken } : undefined })).data;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) redirect(STOCK_SESSION_ENDED);
+    throw error;
+  }
+}
+
 /* Cookie writers: only usable in server actions and route handlers. */
 
 export async function startSession(token: string, expiresAt: string): Promise<void> {
@@ -111,10 +152,13 @@ export async function rememberGuestCart(token: string): Promise<void> {
   (await cookies()).set(CART_COOKIE, token, { httpOnly: true, secure, sameSite: "lax", path: "/", maxAge: 90 * 24 * 3600 });
 }
 
-/** Updates the header's display cookie (logged in, number of colors in the cart). */
-export async function setUiState(state: { signedIn: boolean; cartCount: number }): Promise<void> {
+/**
+ * Updates the header's display cookie (logged in, colors in the wholesale and stock carts). Values not given keep
+ * what the cookie had, so the two carts never overwrite each other's count.
+ */
+export async function setUiState(state: Partial<UiState>): Promise<void> {
   const store = await cookies();
-  const value = writeUiState(state);
+  const value = writeUiState({ ...readUiState(store.get(UI_COOKIE)?.value), ...state });
   if (value === "") {
     store.delete(UI_COOKIE);
   } else {

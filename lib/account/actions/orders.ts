@@ -77,7 +77,7 @@ export async function cancelOrder(orderNo: string, _previous: FormState, form: F
 
 /** Reports a bank transfer, with an optional slip (photo or PDF). */
 export async function submitPayment(orderNo: string, _previous: FormState, form: FormData): Promise<FormState> {
-  const amount = Number(text(form, "amount").replace(/[,\s$]/g, ""));
+  const amount = Number(text(form, "amount").replace(/^rs\.?/i, "").replace(/[,\s$]/g, ""));
   if (!Number.isFinite(amount) || amount <= 0) {
     return failure("Please check the highlighted fields.", { amount: "Enter the amount you sent, e.g. 1250.00" });
   }
@@ -100,11 +100,13 @@ export async function submitPayment(orderNo: string, _previous: FormState, form:
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) return failure(error.message);
     if (error instanceof ApiError && error.status === 422) {
-      // The form's field is "amount" (in dollars); the API checks "amount_cents".
+      // The form's field is "amount" (in dollars, or rupees for a stock order); the API checks "amount_cents".
       const { amount_cents: amountError, ...fields } = error.fields;
       return failure("Please check the highlighted fields.", amountError ? { ...fields, amount: amountError } : fields);
     }
     return errorState(error);
   }
-  return { status: "success", redirectTo: `/account/orders/${orderNo}?payment=sent` };
+  // The stock pages' form sends area "stock": back to the stock order page.
+  const account = text(form, "area") === "stock" ? "/stock/account" : "/account";
+  return { status: "success", redirectTo: `${account}/orders/${orderNo}?payment=sent` };
 }

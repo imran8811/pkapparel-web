@@ -1,6 +1,6 @@
 /* Shapes returned by the admin API (/v1/admin/…). */
 
-import type { Address as BuyerAddress, AddonPricing, BankDetails, Customer, Order, OrderSummary, Payment } from "@/lib/account/types";
+import type { Address as BuyerAddress, AddonPricing, BankDetails, Customer, Order, OrderSummary, Payment, StockPaymentDetails } from "@/lib/account/types";
 import type { SizeSystem } from "@/lib/shop";
 import type { Address, Site } from "@/lib/site";
 
@@ -215,6 +215,18 @@ export type AdminSettings = {
   factory_facts: FactoryFacts;
   /** Private: only admins see it, and buyers only on orders with an amount due. */
   bank: BankSettings;
+  /** Stock orders (private; empty until saved once: the API's defaults apply). */
+  stock: Partial<StockSettings>;
+  /** Where stock buyers pay (private: shown only on stock orders with an amount due). */
+  stock_payment: Partial<StockPaymentDetails>;
+};
+
+export type StockSettings = {
+  min_sets_per_order: number;
+  dispatch_days: number;
+  payment_days: number;
+  pickup_address: string | null;
+  pickup_hours: string | null;
 };
 
 export type Upload = { path: string; width: number; height: number; size: number };
@@ -470,7 +482,8 @@ export type AdminStockStyle = {
   sets_in_stock: number;
 };
 
-export type StockReason = "received" | "returned" | "sold" | "damaged" | "correction";
+/** "cancelled": a paid order was cancelled and its sets went back (recorded by the API, not chosen by staff). */
+export type StockReason = "received" | "returned" | "sold" | "damaged" | "correction" | "cancelled";
 
 export type AdminStockMovement = {
   id: number;

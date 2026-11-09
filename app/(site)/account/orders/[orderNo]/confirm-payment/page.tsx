@@ -8,7 +8,7 @@ import { panelClass } from "@/components/forms/styles";
 import { ApiError } from "@/lib/api";
 import { formatMoney } from "@/lib/format";
 import { customerApi } from "@/lib/account/session";
-import type { Order } from "@/lib/account/types";
+import type { BankDetails, Order } from "@/lib/account/types";
 import { privatePageMetadata } from "@/lib/seo";
 
 export async function generateMetadata({ params }: PageProps<"/account/orders/[orderNo]/confirm-payment">) {
@@ -60,7 +60,7 @@ export default async function ConfirmPaymentPage({ params }: PageProps<"/account
               <div className={panelClass}>
                 <h2 className="text-lg font-semibold">Our bank account</h2>
                 <div className="mt-4">
-                  <BankDetailsCard bank={order.bank} reference={order.order_no} />
+                  <BankDetailsCard bank={order.bank as BankDetails} reference={order.order_no} />
                 </div>
               </div>
             ) : null}

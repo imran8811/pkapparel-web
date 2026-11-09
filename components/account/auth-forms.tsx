@@ -9,6 +9,14 @@ import { useHydrated, useSearchParam } from "@/lib/use-search-param";
 
 type Country = { code: string; name: string };
 
+/** "" for the wholesale site, "/stock" for the stock pages: the forms' links and the account area. */
+type Base = "" | "/stock";
+
+/** The stock pages' forms tell the server actions to keep everything under /stock. */
+function AreaField({ base }: { base: Base }) {
+  return base === "/stock" ? <input type="hidden" name="area" value="stock" /> : null;
+}
+
 /** Messages for links that open the login page (?ended=1 etc.). */
 function LoginNotice() {
   const ended = useSearchParam("ended");
@@ -22,7 +30,7 @@ function LoginNotice() {
       ? { tone: "success", text: "Thank you, your email address is confirmed. Log in to continue." }
       : verify === "failed"
         ? { tone: "info", text: "That confirmation link is not valid any more. Log in and we can send you a new one." }
-        : next?.startsWith("/checkout")
+        : next?.startsWith("/checkout") || next?.startsWith("/stock/checkout")
           ? { tone: "info", text: "Log in or create a buyer account to check out. Your cart is kept." }
           : next?.startsWith("/samples/order")
             ? { tone: "info", text: "Log in or create a buyer account to order your samples. Your choice is kept." }
@@ -43,7 +51,7 @@ function LoginNotice() {
   );
 }
 
-export function LoginForm() {
+export function LoginForm({ base = "" }: { base?: Base }) {
   const next = useSearchParam("next") ?? "";
   return (
     <>
@@ -51,6 +59,7 @@ export function LoginForm() {
       {/* Keyed by the return path, which is only known after hydration. */}
       <ActionForm key={next} action={login} fullReload className="grid grid-cols-1 gap-5">
         <input type="hidden" name="next" value={next} />
+        <AreaField base={base} />
         <TextInput label="Email" name="email" type="email" autoComplete="email" required autoFocus />
         <TextInput
           label="Password"
@@ -59,7 +68,7 @@ export function LoginForm() {
           autoComplete="current-password"
           required
           hint={
-            <Link href="/forgot-password" className="font-medium text-denim-600 hover:underline">
+            <Link href={`${base}/forgot-password`} className="font-medium text-denim-600 hover:underline">
               Forgot your password?
             </Link>
           }
@@ -70,7 +79,7 @@ export function LoginForm() {
         </SubmitButton>
         <p className="text-sm text-muted-foreground">
           New to PK Apparel?{" "}
-          <Link href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"} className="font-medium text-denim-600 hover:underline">
+          <Link href={next ? `${base}/signup?next=${encodeURIComponent(next)}` : `${base}/signup`} className="font-medium text-denim-600 hover:underline">
             Create a buyer account
           </Link>
         </p>
@@ -144,9 +153,10 @@ export function SignupForm({ countries }: { countries: Country[] }) {
   );
 }
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({ base = "" }: { base?: Base }) {
   return (
     <ActionForm action={forgotPassword} className="grid grid-cols-1 gap-5">
+      <AreaField base={base} />
       <TextInput label="Email" name="email" type="email" autoComplete="email" required autoFocus hint="The address you use to log in." />
       <FormMessage />
       <SubmitButton size="lg" pendingLabel="Sending…">
@@ -154,7 +164,7 @@ export function ForgotPasswordForm() {
       </SubmitButton>
       <p className="text-sm text-muted-foreground">
         Remembered it?{" "}
-        <Link href="/login" className="font-medium text-denim-600 hover:underline">
+        <Link href={`${base}/login`} className="font-medium text-denim-600 hover:underline">
           Log in
         </Link>
       </p>
@@ -162,7 +172,7 @@ export function ForgotPasswordForm() {
   );
 }
 
-export function ResetPasswordForm() {
+export function ResetPasswordForm({ base = "" }: { base?: Base }) {
   const token = useSearchParam("token");
   const hydrated = useHydrated();
   if (!hydrated) return <div className="h-64" aria-hidden />;
@@ -170,7 +180,7 @@ export function ResetPasswordForm() {
     return (
       <p className="text-muted-foreground">
         This page opens from the link in our email. Need a new link?{" "}
-        <Link href="/forgot-password" className="font-medium text-denim-600 hover:underline">
+        <Link href={`${base}/forgot-password`} className="font-medium text-denim-600 hover:underline">
           Ask for one here
         </Link>
         .
@@ -181,12 +191,83 @@ export function ResetPasswordForm() {
   return (
     <ActionForm action={resetPassword} fullReload className="grid grid-cols-1 gap-5">
       <input type="hidden" name="token" value={token} />
+      <AreaField base={base} />
       <TextInput label="New password" name="password" type="password" autoComplete="new-password" required autoFocus hint="At least 8 characters." />
       <TextInput label="Repeat the new password" name="password_confirmation" type="password" autoComplete="new-password" required />
       <FormMessage />
       <SubmitButton size="lg" pendingLabel="Saving…">
         Save and log in
       </SubmitButton>
+    </ActionForm>
+  );
+}
+
+const STOCK_BUSINESS = [
+  { value: "retailer", label: "Shopkeeper" },
+  { value: "wholesaler", label: "Wholesaler" },
+];
+
+/** The stock pages' signup: the shop, its city and phone (owner decision 2026-11-09). */
+export function StockSignupForm() {
+  const next = useSearchParam("next") ?? "";
+  const startedAt = useRef<HTMLInputElement>(null);
+  // Record when the visitor starts filling in the form; the server rejects forms sent in under 3 seconds.
+  const markStarted = () => {
+    if (startedAt.current && !startedAt.current.value) startedAt.current.value = String(Date.now());
+  };
+
+  return (
+    <ActionForm key={next} action={signup} fullReload onFocus={markStarted} onKeyDown={markStarted} className="relative grid grid-cols-1 gap-5">
+      <input type="hidden" name="next" value={next} />
+      <input type="hidden" name="area" value="stock" />
+      <input ref={startedAt} type="hidden" name="started_at" defaultValue="" />
+      {/* Honeypot: hidden from people, filled in by bots */}
+      <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
+        <label>
+          Fax number
+          <input type="text" name="fax_number" tabIndex={-1} autoComplete="off" />
+        </label>
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <TextInput label="Shop or business name" name="company_name" autoComplete="organization" required />
+        <TextInput label="Your name" name="contact_name" autoComplete="name" required />
+        <TextInput label="City" name="city" autoComplete="address-level2" required />
+        <SelectInput label="You are a" name="business_type" options={STOCK_BUSINESS} placeholder="Choose…" defaultValue="" required />
+        <TextInput label="Phone / WhatsApp" name="phone" type="tel" autoComplete="tel" placeholder="0300 1234567" required />
+        <TextInput label="Email" name="email" type="email" autoComplete="email" required />
+        <TextInput label="Password" name="password" type="password" autoComplete="new-password" required hint="At least 8 characters." />
+        <TextInput label="Repeat the password" name="password_confirmation" type="password" autoComplete="new-password" required />
+      </div>
+
+      <CheckboxInput
+        name="accept_terms"
+        label={
+          <>
+            I agree to the{" "}
+            <Link href="/stock/terms" target="_blank" className="font-medium text-denim-600 underline-offset-2 hover:underline">
+              terms and returns
+            </Link>{" "}
+            and the{" "}
+            <Link href="/stock/privacy" target="_blank" className="font-medium text-denim-600 underline-offset-2 hover:underline">
+              privacy policy
+            </Link>
+            .
+          </>
+        }
+      />
+      <FormMessage />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link href={next ? `/stock/login?next=${encodeURIComponent(next)}` : "/stock/login"} className="font-medium text-denim-600 hover:underline">
+            Log in
+          </Link>
+        </p>
+        <SubmitButton size="lg" pendingLabel="Creating your account…">
+          Create account
+        </SubmitButton>
+      </div>
     </ActionForm>
   );
 }

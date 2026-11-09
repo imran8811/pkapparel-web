@@ -18,7 +18,11 @@ export function formatDate(iso: string | null | undefined): string {
   );
 }
 
+const rupees = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+
+/** "$1,234.50"; in rupees (stock orders) "Rs 6,900". Amounts are in cents (paisa for rupees). */
 export function formatMoney(cents: number, currency = "USD"): string {
+  if (currency === "PKR") return `${cents < 0 ? "-" : ""}Rs ${rupees.format(Math.abs(cents) / 100)}`;
   return new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: 2 }).format(cents / 100);
 }
 

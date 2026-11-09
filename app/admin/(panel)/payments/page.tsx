@@ -92,14 +92,14 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/admin/p
                     <span className="text-muted-foreground">{countryName(payment.order.country_code)}</span>
                   </p>
                   <p className="mt-1 text-lg font-semibold tabular-nums">
-                    {payment.kind_label}: {formatMoney(payment.amount_cents)}
+                    {payment.kind_label}: {formatMoney(payment.amount_cents, payment.currency)}
                     {payment.received_cents !== null && payment.received_cents !== payment.amount_cents ? (
-                      <span className="ml-2 text-sm font-normal text-muted-foreground">{formatMoney(payment.received_cents)} arrived</span>
+                      <span className="ml-2 text-sm font-normal text-muted-foreground">{formatMoney(payment.received_cents, payment.currency)} arrived</span>
                     ) : null}
                   </p>
                   <p className="mt-0.5 text-sm text-muted-foreground">
                     {status === "submitted"
-                      ? `Due on the order: ${formatMoney(payment.order.due_now_cents)} · paid so far ${formatMoney(payment.order.paid_cents)}`
+                      ? `Due on the order: ${formatMoney(payment.order.due_now_cents, payment.currency)} · paid so far ${formatMoney(payment.order.paid_cents, payment.currency)}`
                       : payment.reviewed_at
                         ? `Reviewed ${formatDateTime(payment.reviewed_at)}`
                         : null}

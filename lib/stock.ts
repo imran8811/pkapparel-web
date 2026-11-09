@@ -4,6 +4,7 @@
  * from the API.
  */
 
+import type { Address } from "@/lib/account/types";
 import type { ProductImage, SpecField, Specs } from "@/lib/shop";
 
 export const stockSegments = [
@@ -155,3 +156,52 @@ export function stockFacets(styles: StockCard[]): { sizes: string[]; fits: strin
   const fits = [...new Set(styles.map((style) => style.fit).filter((fit): fit is string => Boolean(fit)))].sort();
   return { sizes, fits };
 }
+
+/* ----- The stock cart and checkout (from /v1/stock/cart and /v1/account/stock-checkout) ----- */
+
+export type StockCartLine = {
+  color_id: number;
+  code: string;
+  name: string;
+  slug: string;
+  hex: string | null;
+  image: ProductImage | null;
+  style: { slug: string; name: string; style_no: string | null; segment: StockSegment };
+  set: { sizes: StockSetSize[]; pieces: number };
+  set_price_cents: number;
+  sets: number;
+  pieces: number;
+  line_cents: number;
+  sets_in_stock: number;
+  /** False when the style or color is no longer shown, or sold out. */
+  available: boolean;
+  /** More sets in the cart than in stock. */
+  short: boolean;
+};
+
+export type StockCart = {
+  lines: StockCartLine[];
+  line_count: number;
+  total_sets: number;
+  total_pieces: number;
+  total_cents: number;
+  currency: "PKR";
+  min_sets_per_order: number;
+  /** What blocks the checkout, in words. */
+  issues: string[];
+  can_checkout: boolean;
+};
+
+export type StockCheckout = {
+  cart: StockCart;
+  addresses: Address[];
+  pickup: { address: string | null; hours: string | null };
+  dispatch_days: number;
+  payment_days: number;
+  /** "Bank transfer", "JazzCash", "Easypaisa": the ways to pay that are set up. */
+  payment_methods: string[];
+  email_verified: boolean;
+};
+
+/** The stock order pages under the buyer's account. */
+export const stockOrderUrl = (orderNo: string, page?: "confirm-payment") => `/stock/account/orders/${orderNo}${page ? `/${page}` : ""}`;

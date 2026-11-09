@@ -18,7 +18,7 @@ import { panelClass } from "@/components/forms/styles";
 import { ApiError } from "@/lib/api";
 import { countryName, formatMoney } from "@/lib/format";
 import { customerApi } from "@/lib/account/session";
-import type { Order, OrderDocumentItem } from "@/lib/account/types";
+import type { BankDetails, Order, OrderDocumentItem } from "@/lib/account/types";
 import { privatePageMetadata } from "@/lib/seo";
 
 /** Statuses in which the buyer sees the production timeline. */
@@ -112,7 +112,7 @@ export default async function OrderPage({ params }: PageProps<"/account/orders/[
               </div>
               <div className="mt-6 rounded-2xl bg-white p-5">
                 {order.bank ? (
-                  <BankDetailsCard bank={order.bank} reference={order.order_no} />
+                  <BankDetailsCard bank={order.bank as BankDetails} reference={order.order_no} />
                 ) : (
                   <p className="text-sm">Our team will email you the bank details for the transfer shortly. They are also on your proforma invoice once ready.</p>
                 )}

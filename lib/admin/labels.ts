@@ -69,6 +69,9 @@ export function orderStatus(status: OrderStatus, dueNowCents: number, kind: Orde
   if (status === "ready_to_ship") return dueNowCents > 0 ? { label: "Ready, balance due", tone: "orange" } : { label: "Ready to ship, paid", tone: "green" };
   if (kind === "sample" && status === "awaiting_deposit") return { label: "Awaiting payment", tone: "orange" };
   if (kind === "sample" && status === "confirmed") return { label: "Preparing samples", tone: "blue" };
+  if (kind === "stock" && status === "awaiting_deposit") return { label: "Awaiting payment", tone: "orange" };
+  if (kind === "stock" && status === "confirmed") return { label: "Paid, to send", tone: "blue" };
+  if (kind === "stock" && status === "shipped") return { label: "Sent by cargo", tone: "green" };
   return ORDER_STATUSES[status];
 }
 
@@ -85,4 +88,5 @@ export const STOCK_REASONS: Record<StockReason, string> = {
   sold: "Sold",
   damaged: "Damaged or lost",
   correction: "Count correction",
+  cancelled: "Order cancelled",
 };

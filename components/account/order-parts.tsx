@@ -41,7 +41,16 @@ export function sizesText(sizeQty: Record<string, number>): string {
     .join("  ");
 }
 
-export function OrderLines({ order, linkStyles = true }: { order: Pick<Order, "lines" | "addons">; linkStyles?: boolean }) {
+export function OrderLines({
+  order,
+  linkStyles = true,
+}: {
+  order: Pick<Order, "lines" | "addons"> & Partial<Pick<Order, "kind" | "currency">>;
+  linkStyles?: boolean;
+}) {
+  const money = (cents: number) => formatMoney(cents, order.currency ?? "USD");
+  // Stock orders: sets of stock styles, whose pages are on the stock pages.
+  const stock = order.kind === "stock";
   return (
     <ul className="divide-y divide-border">
       {order.lines.map((line, index) => (
@@ -52,7 +61,10 @@ export function OrderLines({ order, linkStyles = true }: { order: Pick<Order, "l
           <div className="min-w-0">
             <p className="font-medium">
               {linkStyles ? (
-                <Link href={productUrl({ segment: line.segment, product_type: line.product_type, slug: line.style_slug })} className="hover:text-denim-600">
+                <Link
+                  href={stock ? `/stock/${line.segment}/${line.style_slug}` : productUrl({ segment: line.segment, product_type: line.product_type, slug: line.style_slug })}
+                  className="hover:text-denim-600"
+                >
                   {line.style_name}
                 </Link>
               ) : (
@@ -68,9 +80,9 @@ export function OrderLines({ order, linkStyles = true }: { order: Pick<Order, "l
           </div>
           <div className="col-start-2 text-sm sm:col-start-3 sm:text-right">
             <p className="tabular-nums">
-              {line.qty} pcs × {formatMoney(line.unit_price_cents)}
+              {stock ? `${line.sets ?? 0} ${line.sets === 1 ? "set" : "sets"} (${line.qty} pcs)` : `${line.qty} pcs`} × {money(line.unit_price_cents)}
             </p>
-            <p className="font-semibold tabular-nums">{formatMoney(line.line_cents)}</p>
+            <p className="font-semibold tabular-nums">{money(line.line_cents)}</p>
           </div>
         </li>
       ))}
@@ -81,11 +93,11 @@ export function OrderLines({ order, linkStyles = true }: { order: Pick<Order, "l
             {addon.pricing === "per_piece" && addon.unit_price_cents !== null ? (
               <span className="text-muted-foreground">
                 {" "}
-                · {addon.qty} pcs × {formatMoney(addon.unit_price_cents)}
+                · {addon.qty} pcs × {money(addon.unit_price_cents)}
               </span>
             ) : null}
           </span>
-          <span className="shrink-0 tabular-nums">{addon.line_cents === null ? <span className="text-muted-foreground">Price on request</span> : formatMoney(addon.line_cents)}</span>
+          <span className="shrink-0 tabular-nums">{addon.line_cents === null ? <span className="text-muted-foreground">Price on request</span> : money(addon.line_cents)}</span>
         </li>
       ))}
     </ul>
@@ -105,8 +117,13 @@ export function freightText(amounts: Pick<OrderAmounts, "freight_status" | "frei
   }
 }
 
-export function OrderTotals({ order }: { order: Pick<Order, "kind" | "status" | "amounts" | "total_pcs" | "addons" | "credits" | "pending_credit_cents"> }) {
+export function OrderTotals({
+  order,
+}: {
+  order: Pick<Order, "kind" | "status" | "amounts" | "total_pcs" | "addons" | "credits" | "pending_credit_cents"> & Partial<Pick<Order, "currency">>;
+}) {
   const { amounts } = order;
+  if (order.kind === "stock") return <StockTotals amounts={amounts} pieces={order.total_pcs} currency={order.currency ?? "PKR"} />;
   const sample = order.kind === "sample";
   const pricing = order.status === "awaiting_price";
   // A sample order's add-on is the custom-design sample, whose pieces count in total_pcs too.
@@ -169,6 +186,33 @@ export function OrderTotals({ order }: { order: Pick<Order, "kind" | "status" | 
   );
 }
 
+/** A stock order's totals: the jeans, paid in full before dispatch; the cargo is paid to the cargo company. */
+function StockTotals({ amounts, pieces, currency }: { amounts: OrderAmounts; pieces: number; currency: string }) {
+  return (
+    <dl className="grid gap-2 text-sm">
+      <div className="flex items-baseline justify-between gap-4">
+        <dt className="text-muted-foreground">Jeans ({pieces} pcs)</dt>
+        <dd className="tabular-nums">{formatMoney(amounts.goods_cents, currency)}</dd>
+      </div>
+      <div className="flex items-baseline justify-between gap-4">
+        <dt className="text-muted-foreground">Cargo</dt>
+        <dd className="text-right">Paid on arrival</dd>
+      </div>
+      <div className="mt-2 flex items-baseline justify-between gap-4 border-t border-border pt-3">
+        <dt className="font-semibold">Total</dt>
+        <dd className="font-heading text-xl font-semibold tabular-nums">{formatMoney(amounts.total_cents, currency)}</dd>
+      </div>
+      <p className="text-muted-foreground">Paid in full before dispatch.</p>
+      {amounts.paid_cents > 0 ? (
+        <div className="flex items-baseline justify-between gap-4 text-emerald-700">
+          <dt>Paid so far</dt>
+          <dd className="tabular-nums">{formatMoney(amounts.paid_cents, currency)}</dd>
+        </div>
+      ) : null}
+    </dl>
+  );
+}
+
 /** The account to transfer to, with copy buttons for the long numbers. */
 export function BankDetailsCard({ bank, reference }: { bank: BankDetails; reference: string }) {
   const rows: [string, string | null, boolean][] = [
@@ -210,7 +254,7 @@ export function PaymentList({ payments }: { payments: Payment[] }) {
         <li key={index} className="rounded-2xl border border-border p-4 text-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-medium">
-              {payment.kind_label}: {formatMoney(payment.amount_cents)}
+              {payment.kind_label}: {formatMoney(payment.amount_cents, payment.currency)}
             </p>
             <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", tone[payment.status])}>{payment.status_label}</span>
           </div>
@@ -244,6 +288,14 @@ const SAMPLE_STATUS_EVENT: Partial<Record<OrderStatus, string>> = {
   confirmed: "Payment confirmed, preparing the samples",
 };
 
+/** The same for a stock order. */
+const STOCK_STATUS_EVENT: Partial<Record<OrderStatus, string>> = {
+  awaiting_deposit: "Waiting for the payment",
+  confirmed: "Payment confirmed, sets taken out of stock for you",
+  shipped: "Sent by cargo",
+  delivered: "Delivered",
+};
+
 function eventText(event: OrderEvent, kind: OrderKind): string {
   switch (event.type) {
     case "placed":
@@ -254,7 +306,11 @@ function eventText(event: OrderEvent, kind: OrderKind): string {
       if (event.from_status === "on_hold") return "Hold lifted, the order continues";
       if (event.from_status === "awaiting_price" && event.to_status === "awaiting_deposit") return event.note ?? "Price sent";
       if (!event.to_status) return "Status updated";
-      return (kind === "sample" ? SAMPLE_STATUS_EVENT[event.to_status] : undefined) ?? STATUS_EVENT[event.to_status] ?? "Status updated";
+      return (
+        (kind === "sample" ? SAMPLE_STATUS_EVENT[event.to_status] : kind === "stock" ? STOCK_STATUS_EVENT[event.to_status] : undefined) ??
+        STATUS_EVENT[event.to_status] ??
+        "Status updated"
+      );
     default:
       return event.note ?? event.type;
   }

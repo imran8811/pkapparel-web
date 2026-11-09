@@ -1,15 +1,16 @@
 import "server-only";
 import { NextResponse, type NextRequest } from "next/server";
 import { apiFile, ApiError } from "@/lib/api";
-import { SESSION_COOKIE, SESSION_ENDED } from "@/lib/account/session";
+import { SESSION_COOKIE, SESSION_ENDED, STOCK_LOGIN, STOCK_SESSION_ENDED } from "@/lib/account/session";
 
 /**
  * Streams a private file of the buyer's order from the API (PDFs, shared documents, production photos),
  * with the buyer's login token. Photos are shown inline and may be cached privately for a while.
+ * From the stock pages (stock), a missing or ended session leads to the stock login page.
  */
-export async function buyerDownload(request: NextRequest, path: string, options: { inline?: boolean } = {}): Promise<NextResponse> {
+export async function buyerDownload(request: NextRequest, path: string, options: { inline?: boolean; stock?: boolean } = {}): Promise<NextResponse> {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
-  if (!token) return NextResponse.redirect(new URL("/login", request.url), 303);
+  if (!token) return NextResponse.redirect(new URL(options.stock ? STOCK_LOGIN : "/login", request.url), 303);
 
   try {
     const file = await apiFile(path, { token });
@@ -22,7 +23,7 @@ export async function buyerDownload(request: NextRequest, path: string, options:
       },
     });
   } catch (error) {
-    if (error instanceof ApiError && error.status === 401) return NextResponse.redirect(new URL(SESSION_ENDED, request.url), 303);
+    if (error instanceof ApiError && error.status === 401) return NextResponse.redirect(new URL(options.stock ? STOCK_SESSION_ENDED : SESSION_ENDED, request.url), 303);
     if (error instanceof ApiError && (error.status === 404 || error.status === 409)) {
       return new NextResponse(error.message, { status: error.status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
     }

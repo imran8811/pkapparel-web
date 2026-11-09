@@ -6,8 +6,10 @@ import { NextResponse, type NextRequest } from "next/server";
  * These are only shortcuts; the real check is the API, which validates the token on every call.
  */
 const PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/session-ended"];
-const PUBLIC_ACCOUNT_PATHS = ["/account/session-ended"];
+const PUBLIC_ACCOUNT_PATHS = ["/account/session-ended", "/stock/account/session-ended"];
 const ACCOUNT_PATHS = ["/account", "/checkout", "/samples/order"];
+/** The stock pages' account and checkout: their login page is /stock/login. */
+const STOCK_ACCOUNT_PATHS = ["/stock/account", "/stock/checkout"];
 
 /*
  * Countries whose visitors get "not available in your region" instead of the site (owner decision, 2026-10-29).
@@ -139,9 +141,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(login);
   }
 
-  if (!ACCOUNT_PATHS.some((base) => matches(pathname, base))) return NextResponse.next();
+  const stockAccount = STOCK_ACCOUNT_PATHS.some((base) => matches(pathname, base));
+  if (!stockAccount && !ACCOUNT_PATHS.some((base) => matches(pathname, base))) return NextResponse.next();
   if (PUBLIC_ACCOUNT_PATHS.includes(pathname) || request.cookies.has("pk_session")) return NextResponse.next();
-  const login = new URL("/login", request.url);
+  const login = new URL(stockAccount ? "/stock/login" : "/login", request.url);
   login.searchParams.set("next", pathname + search);
   return NextResponse.redirect(login);
 }

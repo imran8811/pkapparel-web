@@ -140,6 +140,11 @@ export async function deliverOrder(orderId: number): Promise<FormState> {
   return run(`/v1/admin/orders/${orderId}/deliver`, "POST", undefined, "Marked as delivered.");
 }
 
+/** A stock order the buyer collected. */
+export async function markCollected(orderId: number): Promise<FormState> {
+  return run(`/v1/admin/orders/${orderId}/collected`, "POST", undefined, "Marked as collected.");
+}
+
 export async function addOrderNote(orderId: number, _previous: FormState, form: FormData): Promise<FormState> {
   return run(`/v1/admin/orders/${orderId}/notes`, "POST", { note: text(form, "note") }, "Note added.");
 }

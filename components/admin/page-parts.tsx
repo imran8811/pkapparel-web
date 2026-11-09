@@ -104,12 +104,12 @@ export function Pill({ tone = "neutral", children }: { tone?: "neutral" | "blue"
   );
 }
 
-/** An order's status (a ready order also says whether the balance has arrived); sample orders are marked. */
+/** An order's status (a ready order also says whether the balance has arrived); sample and stock orders are marked. */
 export function OrderStatusPill({ status, dueNowCents, kind = "bulk" }: { status: OrderStatus; dueNowCents: number; kind?: OrderKind }) {
   const { label, tone } = orderStatus(status, dueNowCents, kind);
   return (
     <span className="inline-flex items-center gap-1.5">
-      {kind === "sample" ? <Pill tone="muted">Sample</Pill> : null}
+      {kind === "sample" ? <Pill tone="muted">Sample</Pill> : kind === "stock" ? <Pill tone="muted">Stock</Pill> : null}
       <Pill tone={tone}>{label}</Pill>
     </span>
   );

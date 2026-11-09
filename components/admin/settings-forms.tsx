@@ -13,6 +13,8 @@ import type { Address } from "@/lib/site";
 /** One form per group. Each is keyed by its saved values, so it shows fresh data after a save. */
 export function SettingsForms({ settings }: { settings: AdminSettings }) {
   const { company, contact, addresses, social, commerce, factory_facts: facts, bank } = settings;
+  const stock = settings.stock ?? {};
+  const stockPayment = settings.stock_payment ?? {};
   const packing = commerce.packing;
 
   return (
@@ -177,6 +179,64 @@ export function SettingsForms({ settings }: { settings: AdminSettings }) {
             <TextField label="SWIFT / BIC" name="swift" defaultValue={bank.swift ?? ""} placeholder="ABCDPKKA" />
             <TextField label="Bank address" name="bank_address" defaultValue={bank.bank_address ?? ""} fieldClassName="sm:col-span-2" />
             <TextField label="Note for buyers" name="notes" defaultValue={bank.notes ?? ""} fieldClassName="sm:col-span-2" placeholder="e.g. Intermediary bank for USD transfers" />
+          </div>
+          <SaveRow />
+        </AdminForm>
+      </Section>
+
+      <Section
+        id="stock"
+        title="Stock orders"
+        description="Orders of stock jeans by set, in rupees, paid in full before they go by cargo or are collected."
+      >
+        <AdminForm key={JSON.stringify(stock)} action={saveSettings.bind(null, "stock")} className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <TextField label="Smallest order (sets)" name="min_sets_per_order" type="number" min={1} defaultValue={stock.min_sets_per_order ?? 1} />
+            <TextField
+              label="Send within (days)"
+              name="dispatch_days"
+              type="number"
+              min={1}
+              defaultValue={stock.dispatch_days ?? 2}
+              hint="After the payment is confirmed: by cargo, or ready to collect."
+            />
+            <TextField
+              label="Cancel unpaid orders after (days)"
+              name="payment_days"
+              type="number"
+              min={1}
+              defaultValue={stock.payment_days ?? 7}
+              hint="Unpaid orders never hold stock. The buyer is reminded after 2 days."
+            />
+            <TextField
+              label="Where buyers collect their orders"
+              name="pickup_address"
+              defaultValue={stock.pickup_address ?? ""}
+              fieldClassName="sm:col-span-2"
+              placeholder="e.g. Warehouse, street, area, city"
+            />
+            <TextField label="Collection times" name="pickup_hours" defaultValue={stock.pickup_hours ?? ""} placeholder="e.g. Mon–Sat, 10 am to 6 pm" />
+          </div>
+          <SaveRow />
+        </AdminForm>
+      </Section>
+
+      <Section
+        id="stock-payment"
+        title="Stock payment details"
+        description="Where stock buyers pay: any of a bank account, JazzCash and Easypaisa. Private: shown only on stock orders with an amount due (order page and emails)."
+      >
+        <AdminForm key={JSON.stringify(stockPayment)} action={saveSettings.bind(null, "stock_payment")} className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField label="Account title" name="account_title" defaultValue={stockPayment.account_title ?? ""} />
+            <TextField label="Bank" name="bank_name" defaultValue={stockPayment.bank_name ?? ""} />
+            <TextField label="Account number" name="account_number" defaultValue={stockPayment.account_number ?? ""} />
+            <TextField label="IBAN" name="iban" defaultValue={stockPayment.iban ?? ""} />
+            <TextField label="JazzCash account name" name="jazzcash_name" defaultValue={stockPayment.jazzcash_name ?? ""} />
+            <TextField label="JazzCash number" name="jazzcash_number" defaultValue={stockPayment.jazzcash_number ?? ""} placeholder="03xx xxxxxxx" />
+            <TextField label="Easypaisa account name" name="easypaisa_name" defaultValue={stockPayment.easypaisa_name ?? ""} />
+            <TextField label="Easypaisa number" name="easypaisa_number" defaultValue={stockPayment.easypaisa_number ?? ""} placeholder="03xx xxxxxxx" />
+            <TextField label="Note for buyers" name="notes" defaultValue={stockPayment.notes ?? ""} fieldClassName="sm:col-span-2" placeholder="e.g. Write the order number in the payment description" />
           </div>
           <SaveRow />
         </AdminForm>

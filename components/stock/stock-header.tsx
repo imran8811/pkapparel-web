@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Container } from "@/components/layout/container";
+import { StockAccountLink, StockCartLink } from "@/components/stock/stock-account-links";
 import { Button } from "@/components/ui/button";
 import { whatsappUrl } from "@/lib/links";
 import type { Site } from "@/lib/site";
@@ -11,7 +12,7 @@ export const STOCK_TAGLINE = ["Jeans in stock", "Sold by set"] as const;
 
 export const STOCK_WHATSAPP_MESSAGE = "Hello PK Apparel, I'd like to order jeans from your stock.";
 
-/** Sticky header of the stock pages: logo, the two jeans sections, how to order, contact and WhatsApp. */
+/** Sticky header of the stock pages: logo, the two jeans sections, how to order, contact, WhatsApp, account and cart. */
 export function StockHeader({ site }: { site: Site }) {
   const links = [...stockSegments.map((segment) => ({ href: stockUrl(segment.slug), label: segment.title })), ...stockInfoLinks];
 
@@ -30,14 +31,15 @@ export function StockHeader({ site }: { site: Site }) {
             </Link>
           ))}
         </nav>
-        <div className="ml-auto">
-          <Button asChild size="sm">
+        <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <Button asChild size="sm" variant="outline" className="hidden sm:inline-flex">
             <a href={whatsappUrl(site.contact.whatsapp, STOCK_WHATSAPP_MESSAGE)} target="_blank" rel="noopener noreferrer">
               <WhatsAppIcon className="size-4" />
-              <span className="hidden sm:inline">Order on WhatsApp</span>
-              <span className="sm:hidden">WhatsApp</span>
+              WhatsApp
             </a>
           </Button>
+          <StockAccountLink />
+          <StockCartLink />
         </div>
       </Container>
       <nav aria-label="Stock" className="border-t border-border/60 md:hidden">

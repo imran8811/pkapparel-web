@@ -22,8 +22,12 @@ export type Customer = {
   contact_name: string;
   business_type: BusinessType;
   country_code: string;
+  /** Asked when opening a stock account. */
+  city: string | null;
   phone: string;
   website: string | null;
+  /** Where the account was opened: its emails link to that part of the website. */
+  channel: "wholesale" | "stock";
   created_at: string;
 };
 
@@ -91,11 +95,11 @@ export type Cart = {
   can_checkout: boolean;
 };
 
-/** "courier" is for sample orders. */
-export type ShippingMode = "air" | "sea" | "forwarder" | "courier";
+/** "courier" is for sample orders; "cargo" and "pickup" for stock orders. */
+export type ShippingMode = "air" | "sea" | "forwarder" | "courier" | "cargo" | "pickup";
 
-/** A wholesale order, or a sample order (paid in full before dispatch). */
-export type OrderKind = "bulk" | "sample";
+/** A wholesale order, a sample order (paid in full before dispatch) or a stock order (by set, in rupees, paid in full). */
+export type OrderKind = "bulk" | "sample" | "stock";
 
 export type FreightQuote = {
   cost_cents: number | null;
@@ -173,6 +177,9 @@ export type OrderLine = {
   image_path: string | null;
   size_qty: Record<string, number>;
   qty: number;
+  /** Stock orders: the stock color and the sets (qty is the pieces, unit_price_cents the set price). */
+  stock_color_id?: number | null;
+  sets?: number | null;
   unit_price_cents: number;
   line_cents: number;
 };
@@ -260,6 +267,19 @@ export type Shipment = {
   note: string | null;
 };
 
+/** Where stock orders are paid: a bank account, JazzCash and Easypaisa (any of them). */
+export type StockPaymentDetails = {
+  bank_name: string | null;
+  account_title: string | null;
+  account_number: string | null;
+  iban: string | null;
+  jazzcash_name: string | null;
+  jazzcash_number: string | null;
+  easypaisa_name: string | null;
+  easypaisa_number: string | null;
+  notes: string | null;
+};
+
 export type BankDetails = {
   beneficiary: string | null;
   bank_name: string | null;
@@ -286,8 +306,9 @@ export type Order = {
   incoterm: string;
   buyer_reference: string | null;
   notes: string | null;
-  customer: { company_name: string; contact_name: string; email: string; phone: string; country_code: string; business_type: BusinessType };
-  address: Omit<Address, "id" | "is_default">;
+  customer: { company_name: string; contact_name: string; email: string; phone: string; country_code: string; business_type: BusinessType; city?: string | null };
+  /** A stock order the buyer collects has no address: { pickup: true } with the buyer's contact. */
+  address: Omit<Address, "id" | "is_default"> & { pickup?: boolean };
   forwarder: { name: string | null; contact: string | null } | null;
   total_pcs: number;
   lead_time_days: number;
@@ -300,7 +321,10 @@ export type Order = {
   next_payment_kind: "deposit" | "balance" | null;
   can_submit_payment: boolean;
   can_cancel: boolean;
-  bank: BankDetails | null;
+  /** Where to pay: the bank account, or for a stock order the local payment details. */
+  bank: BankDetails | StockPaymentDetails | null;
+  /** A stock order the buyer collects: where and when. */
+  pickup?: { address: string | null; hours: string | null } | null;
   confirmed_at: string | null;
   production_due_on: string | null;
   /** Days until the production due date (negative when late); null when not in production. */
@@ -332,6 +356,7 @@ export type OrderSummary = {
   status: OrderStatus;
   status_label: string;
   placed_at: string;
+  currency: string;
   total_pcs: number;
   shipping_mode: ShippingMode;
   shipping_mode_label: string;
@@ -363,6 +388,8 @@ export const SHIPPING_MODE_LABELS: Record<ShippingMode, string> = {
   sea: "Sea freight",
   forwarder: "Your own forwarder",
   courier: "Express courier",
+  cargo: "Cargo to your city",
+  pickup: "Collect from us",
 };
 
 /** "5–8 days" from a freight quote, or null. */

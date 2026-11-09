@@ -27,6 +27,7 @@ import {
   deleteDocument,
   deletePhoto,
   deliverOrder,
+  markCollected,
   holdOrder,
   readyToShip,
   recordPayment,
@@ -115,8 +116,10 @@ export function OrderActions({ order, canManage, canPay, today }: { order: Admin
   const unpaid = order.amounts.total_cents - order.amounts.paid_cents;
   const inProduction = order.status === "confirmed" || order.status === "in_production";
   const sample = order.kind === "sample";
-  // Samples ship once they are made (paid in full); bulk orders after "ready to ship".
-  const canShip = sample ? inProduction : order.status === "ready_to_ship";
+  const stock = order.kind === "stock";
+  const money = (cents: number) => formatMoney(cents, order.currency);
+  // Samples ship once they are made (paid in full); stock orders by cargo once paid (or are collected); bulk orders after "ready to ship".
+  const canShip = sample ? inProduction : stock ? order.status === "confirmed" && order.shipping_mode === "cargo" : order.status === "ready_to_ship";
   const priced = order.amounts.freight_cents !== null && !order.amounts.has_quoted_addons;
 
   return (
@@ -128,14 +131,14 @@ export function OrderActions({ order, canManage, canPay, today }: { order: Admin
           title="Send the price to the buyer?"
           description={
             priced
-              ? `The buyer is emailed the sample invoice for ${formatMoney(order.amounts.total_cents)}, with the bank details. The price cannot change afterwards.`
+              ? `The buyer is emailed the sample invoice for ${money(order.amounts.total_cents)}, with the bank details. The price cannot change afterwards.`
               : "Enter the courier and the custom-design sample's price under Totals first."
           }
           confirmLabel="Send the price"
           action={sendPrice.bind(null, order.id)}
         />
       ) : null}
-      {canManage && inProduction && !sample ? (
+      {canManage && inProduction && !sample && !stock ? (
         <ConfirmAction
           label="Ready to ship"
           icon={<CheckIcon />}
@@ -145,7 +148,28 @@ export function OrderActions({ order, canManage, canPay, today }: { order: Admin
           action={readyToShip.bind(null, order.id)}
         />
       ) : null}
-      {canManage && canShip ? (
+      {canManage && canShip && stock ? (
+        <ItemDialog title="Mark as sent by cargo" description="The buyer is emailed the cargo company and the bilty number." action={shipOrder.bind(null, order.id)} submitLabel="Mark as sent" trigger={<Button size="sm">Mark as sent by cargo</Button>}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField label="Cargo company" name="carrier" placeholder={order.forwarder?.name ?? "e.g. the cargo company you booked"} defaultValue={order.forwarder?.name ?? ""} />
+            <TextField label="Sent on" name="shipped_on" type="date" defaultValue={today} />
+            <TextField label="Bilty / tracking number" name="tracking_no" />
+            <TextField label="Cartons" name="cartons" type="number" min={1} />
+          </div>
+          <TextAreaField label="Note for the buyer" name="note" rows={2} />
+        </ItemDialog>
+      ) : null}
+      {canManage && stock && order.shipping_mode === "pickup" && order.status === "confirmed" ? (
+        <ConfirmAction
+          label="Mark as collected"
+          icon={<CheckIcon />}
+          title="Did the buyer collect this order?"
+          description="The order is marked delivered and the buyer gets a short thank-you email."
+          confirmLabel="Collected"
+          action={markCollected.bind(null, order.id)}
+        />
+      ) : null}
+      {canManage && canShip && !stock ? (
         <ItemDialog title="Mark as shipped" description="The buyer is emailed the tracking details." action={shipOrder.bind(null, order.id)} submitLabel="Mark as shipped" trigger={<Button size="sm">Mark as shipped</Button>}>
           <div className="grid gap-4 sm:grid-cols-2">
             <TextField label="Carrier or forwarder" name="carrier" placeholder="e.g. Maersk, DHL" />
@@ -158,7 +182,7 @@ export function OrderActions({ order, canManage, canPay, today }: { order: Admin
           <TextAreaField label="Note for the buyer" name="note" rows={2} />
           {unpaid > 0 ? (
             <TextAreaField
-              label={`Reason to ship with ${formatMoney(unpaid)} unpaid`}
+              label={`Reason to ship with ${money(unpaid)} unpaid`}
               name="unpaid_reason"
               rows={2}
               hint="Needed only when the balance has not arrived. It is kept in the history for the team."
@@ -178,15 +202,15 @@ export function OrderActions({ order, canManage, canPay, today }: { order: Admin
           trigger={<Button size="sm" variant="outline">Record a payment</Button>}
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <TextField label="Amount received (USD)" name="amount" inputMode="decimal" />
+            <TextField label={`Amount received (${order.currency === "PKR" ? "Rs" : "USD"})`} name="amount" inputMode="decimal" />
             <TextField label="Transaction ID" name="transaction_id" />
             <TextField label="Sent on" name="transferred_on" type="date" defaultValue={today} />
             <TextField label="Arrived on" name="received_on" type="date" defaultValue={today} />
             <TextField label="Sent by" name="payer_name" defaultValue={order.customer.company_name} />
-            <TextField label="From bank" name="payer_bank" />
+            <TextField label={stock ? "Paid from (bank, JazzCash or Easypaisa)" : "From bank"} name="payer_bank" />
           </div>
           <TextAreaField label="Notes" name="notes" rows={2} />
-          {order.amounts.paid_cents < order.amounts.deposit_cents ? (
+          {order.amounts.paid_cents < order.amounts.deposit_cents && !stock ? (
             <SwitchField label="Start production even if the deposit is not complete" name="start_anyway" hint="For example when bank fees made it a little short." />
           ) : null}
         </ItemDialog>
@@ -209,7 +233,11 @@ export function OrderActions({ order, canManage, canPay, today }: { order: Admin
       {canManage && CANCELLABLE.includes(order.status) ? (
         <ItemDialog
           title="Cancel this order"
-          description={order.amounts.paid_cents > 0 ? `${formatMoney(order.amounts.paid_cents)} was paid: any refund is handled outside the website.` : "Nothing was paid yet."}
+          description={
+            order.amounts.paid_cents > 0
+              ? `${money(order.amounts.paid_cents)} was paid: any refund is handled outside the website.${stock && order.confirmed_at ? " Its sets go back into stock." : ""}`
+              : "Nothing was paid yet."
+          }
           action={cancelOrderAsStaff.bind(null, order.id)}
           submitLabel="Cancel order"
           trigger={<Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10">Cancel order</Button>}
@@ -222,22 +250,33 @@ export function OrderActions({ order, canManage, canPay, today }: { order: Admin
   );
 }
 
-/** Confirm or reject a reported transfer (admins only). */
-export function PaymentReview({ payment, dueCents, today }: { payment: AdminPayment; dueCents: number; today: string }) {
+/** Confirm or reject a reported transfer (admins only). Confirming a stock order's payment takes its sets out of stock. */
+export function PaymentReview({ payment, dueCents, today, currency = "USD" }: { payment: AdminPayment; dueCents: number; today: string; currency?: string }) {
+  const stock = currency === "PKR";
   return (
     <div className="mt-3 flex flex-wrap gap-2">
       <ItemDialog
         title="Confirm this payment"
-        description="Only after you see the money in the bank statement. The buyer gets a receipt by email."
+        description={
+          stock
+            ? "Only after you see the money in the account. The buyer gets a receipt by email, and the order's sets are taken out of stock."
+            : "Only after you see the money in the bank statement. The buyer gets a receipt by email."
+        }
         action={confirmPayment.bind(null, payment.id ?? 0)}
         submitLabel="Confirm payment"
         trigger={<Button size="sm">Confirm</Button>}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField label="Amount that arrived (USD)" name="received" inputMode="decimal" defaultValue={(payment.amount_cents / 100).toFixed(2)} hint={`Reported: ${formatMoney(payment.amount_cents)}. Due: ${formatMoney(dueCents)}.`} />
+          <TextField
+            label={`Amount that arrived (${stock ? "Rs" : "USD"})`}
+            name="received"
+            inputMode="decimal"
+            defaultValue={stock ? String(Math.round(payment.amount_cents / 100)) : (payment.amount_cents / 100).toFixed(2)}
+            hint={`Reported: ${formatMoney(payment.amount_cents, currency)}. Due: ${formatMoney(dueCents, currency)}.`}
+          />
           <TextField label="Arrived on" name="received_on" type="date" defaultValue={today} />
         </div>
-        {payment.kind === "deposit" ? (
+        {payment.kind === "deposit" && !stock ? (
           <SwitchField label="Start production even if it does not cover the deposit" name="start_anyway" hint="For example when bank fees made it a little short." />
         ) : null}
       </ItemDialog>
