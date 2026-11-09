@@ -3,12 +3,10 @@
 import { useState, useSyncExternalStore, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Banknote, CircleCheck, LoaderCircle, Minus, PackageCheck, Phone, Plus, ShoppingBag, Truck } from "lucide-react";
-import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
+import { ArrowRight, Banknote, CircleCheck, LoaderCircle, Minus, PackageCheck, Plus, ShoppingBag, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { addToStockCart } from "@/lib/account/actions/stock";
 import { notifyUiChange } from "@/lib/account/use-ui-state";
-import { telUrl, whatsappUrl } from "@/lib/links";
 import { mediaSrc } from "@/lib/media";
 import { formatPiecePrice, formatRupees, RETURN_DAYS, setsInStock, stockSegmentInfo, type StockStyle } from "@/lib/stock";
 import { cn } from "@/lib/utils";
@@ -20,8 +18,8 @@ function useColorParam(): string | null {
   return useSyncExternalStore(noSubscription, () => new URLSearchParams(window.location.search).get("color"), () => null);
 }
 
-/** Gallery, colors, the set, sets in stock, and adding sets to the cart (or ordering by WhatsApp or phone). */
-export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; whatsapp: string; phone: string }) {
+/** Gallery, the color, the set, sets in stock, and adding sets to the cart. */
+export function StockStyleView({ style }: { style: StockStyle }) {
   const requested = useColorParam();
   const [chosen, setChosen] = useState<string | null>(null);
   const [photo, setPhoto] = useState(0);
@@ -37,7 +35,7 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
   const available = color.sets_in_stock;
   const quantity = Math.max(1, Math.min(sets, Math.max(available, 1)));
   const total = quantity * style.set_price_cents;
-  // A style copied from the wholesale shop has no price until staff enter one: it is ordered on WhatsApp or by phone.
+  // A listing copied from the wholesale shop has no price until staff enter one, and cannot be ordered until then.
   const priced = style.piece_price_cents > 0;
 
   const add = () =>
@@ -63,20 +61,6 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
     url.searchParams.set("color", next);
     window.history.replaceState(window.history.state, "", url);
   };
-
-  const pageUrl = () => (typeof window === "undefined" ? "" : `${window.location.origin}${window.location.pathname}?color=${color.slug}`);
-  const orderMessage = () =>
-    [
-      "Hello PK Apparel, I'd like to order from your stock:",
-      `${style.name}${style.style_no ? ` (${style.style_no})` : ""}`,
-      `Color: ${color.name} (${color.code})`,
-      `Sets: ${quantity} × ${style.set.pieces} pcs, sizes ${style.set.sizes.map((s) => s.size).join(", ")}`,
-      `Price: ${formatRupees(style.piece_price_cents)} a piece, ${formatRupees(style.set_price_cents)} a set`,
-      `Total: ${formatRupees(total)}`,
-      pageUrl(),
-    ].join("\n");
-  const askMessage = () => `Hello PK Apparel, when will ${style.name} in ${color.name} (${color.code}) be back in stock?\n${pageUrl()}`;
-  const priceMessage = () => `Hello PK Apparel, what is the price of ${style.name} in ${color.name} (${color.code}), per piece (sets of ${style.set.pieces} pieces)?\n${pageUrl()}`;
 
   return (
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
@@ -178,26 +162,7 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
 
           {available > 0 && !priced ? (
             <div className="mt-5 grid gap-3 border-t border-dashed border-border pt-5">
-              <p className="text-sm text-muted-foreground">The price of this set is not online yet. Ask us for it, and order on WhatsApp or by phone.</p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button asChild>
-                  <a
-                    href={whatsappUrl(whatsapp)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(event) => {
-                      event.currentTarget.href = whatsappUrl(whatsapp, priceMessage());
-                    }}
-                  >
-                    <WhatsAppIcon className="size-4" /> Ask the price
-                  </a>
-                </Button>
-                <Button asChild variant="outline">
-                  <a href={telUrl(phone)}>
-                    <Phone /> Call us
-                  </a>
-                </Button>
-              </div>
+              <p className="text-sm text-muted-foreground">The price of this set is not online yet. It can be ordered once it has one.</p>
             </div>
           ) : available > 0 ? (
             <>
@@ -257,43 +222,9 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
                   {adding ? <LoaderCircle className="animate-spin" /> : <ShoppingBag />}
                   {adding ? "Adding…" : "Add to cart"}
                 </Button>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button asChild variant="outline">
-                    <a
-                      href={whatsappUrl(whatsapp)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(event) => {
-                        event.currentTarget.href = whatsappUrl(whatsapp, orderMessage());
-                      }}
-                    >
-                      <WhatsAppIcon className="size-4" /> WhatsApp
-                    </a>
-                  </Button>
-                  <Button asChild variant="outline">
-                    <a href={telUrl(phone)}>
-                      <Phone /> Call us
-                    </a>
-                  </Button>
-                </div>
               </div>
             </>
-          ) : (
-            <div className="mt-5 grid gap-2">
-              <Button asChild variant="outline" size="lg">
-                <a
-                  href={whatsappUrl(whatsapp)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(event) => {
-                    event.currentTarget.href = whatsappUrl(whatsapp, askMessage());
-                  }}
-                >
-                  <WhatsAppIcon className="size-4" /> Ask when it is back
-                </a>
-              </Button>
-            </div>
-          )}
+          ) : null}
         </div>
 
         <ul className="grid gap-2.5 text-sm">

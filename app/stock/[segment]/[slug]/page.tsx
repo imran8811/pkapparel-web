@@ -10,7 +10,6 @@ import { StockStyleView } from "@/components/stock/stock-style-view";
 import { mediaSrc } from "@/lib/media";
 import { findRedirect } from "@/lib/redirects";
 import { absoluteUrl, pageMetadata } from "@/lib/seo";
-import { getSite } from "@/lib/site";
 import { setContents, sizeRange, stockSegmentInfo, stockUrl, type StockStyle } from "@/lib/stock";
 import { getStockStyle, getStockStyles } from "@/lib/stock-catalog";
 
@@ -54,7 +53,6 @@ export default async function StockStylePage({ params }: PageProps<"/stock/[segm
   }
   if (style.segment !== segment) permanentRedirect(stockUrl(style.segment, style.slug));
 
-  const site = await getSite();
   const info = stockSegmentInfo(style.segment);
 
   return (
@@ -67,7 +65,7 @@ export default async function StockStylePage({ params }: PageProps<"/stock/[segm
             root={{ label: info.title, href: stockUrl(style.segment) }}
             items={[{ label: listingName(style), href: stockUrl(style.segment, style.slug) }]}
           />
-          <StockStyleView style={style} whatsapp={site.contact.whatsapp} phone={site.contact.phone} />
+          <StockStyleView style={style} />
         </Container>
       </section>
 
