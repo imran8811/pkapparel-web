@@ -22,16 +22,16 @@ const REASON_OPTIONS = [
   { value: "correction", label: "Count correction (sets counted)" },
 ];
 
-/** The colors of a stock style: code, swatch, photos, and the sets in stock with every change logged. */
+/** The color of a stock listing (one each: a color is a listing of its own): code, swatch, photos, and the sets in stock with every change logged. */
 export function StockColorManager({ style }: { style: AdminStockStyle }) {
   const action = saveStockColor.bind(null, style.id, style.slug);
 
   return (
     <Panel
-      title="Colors and stock"
-      description={`Stock is counted in sets of ${style.set_pieces} pieces. Every change is logged with its reason, under Stock history below.`}
+      title="Color, photos and stock"
+      description={`Each listing is one color. Stock is counted in sets of ${style.set_pieces} pieces. Every change is logged with its reason, under Stock history below.`}
     >
-      {style.colors.length === 0 ? <p className="mb-4 text-sm text-muted-foreground">No colors yet. Add the first one with its photos and the sets in stock.</p> : null}
+      {style.colors.length === 0 ? <p className="mb-4 text-sm text-muted-foreground">No color yet. Add it with its photos and the sets in stock.</p> : null}
       <ul className="grid gap-3">
         {style.colors.map((color) => (
           <li key={color.id} className="flex flex-wrap items-center gap-4 rounded-xl border bg-white p-3">
@@ -99,20 +99,23 @@ export function StockColorManager({ style }: { style: AdminStockStyle }) {
           </li>
         ))}
       </ul>
-      <div className="mt-4">
-        <ItemDialog
-          title="Add a color"
-          action={action}
-          submitLabel="Add color"
-          trigger={
-            <Button size="sm" variant="outline">
-              <PlusIcon /> Add color
-            </Button>
-          }
-        >
-          <ColorFields color={null} />
-        </ItemDialog>
-      </div>
+      {/* One color per listing: another color is a listing of its own. */}
+      {style.colors.length === 0 ? (
+        <div className="mt-4">
+          <ItemDialog
+            title="Add the color"
+            action={action}
+            submitLabel="Add color"
+            trigger={
+              <Button size="sm">
+                <PlusIcon /> Add the color
+              </Button>
+            }
+          >
+            <ColorFields color={null} />
+          </ItemDialog>
+        </div>
+      ) : null}
     </Panel>
   );
 }

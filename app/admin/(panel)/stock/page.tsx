@@ -40,7 +40,7 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
     <>
       <PageHeader
         title="Stock"
-        description="Ready men's and boys' jeans, sold by set on the stock pages. Each style has one set, a price per set and its sets in stock per color."
+        description="Ready men's and boys' jeans, sold by set on the stock pages. Each listing is one color, with its own details, set, price per set and sets in stock."
         actions={
           <>
             <Button asChild size="sm" variant="outline">
@@ -66,7 +66,7 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
             </Button>
             <Button asChild size="sm">
               <Link href="/admin/stock/new">
-                <PlusIcon /> New stock style
+                <PlusIcon /> New listing
               </Link>
             </Button>
           </>
@@ -90,17 +90,17 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
         <form action="/admin/stock" className="relative ml-auto w-full sm:w-72">
           {status ? <input type="hidden" name="status" value={status} /> : null}
           <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <input name="q" defaultValue={q} placeholder="Name, style no. or color code" aria-label="Search stock styles" className={cn(inputClass, "pl-9")} />
+          <input name="q" defaultValue={q} placeholder="Name, style no. or color code" aria-label="Search stock listings" className={cn(inputClass, "pl-9")} />
         </form>
       </div>
 
       {styles.length === 0 ? (
-        <EmptyState title={q ? "No styles match" : "No stock styles yet"}>
+        <EmptyState title={q ? "No listings match" : "No stock listings yet"}>
           {q ? (
             "Try another search."
           ) : (
             <>
-              Add the first one with “New stock style”, or{" "}
+              Add the first one with “New listing”, or{" "}
               <Link href="/admin/stock/from-wholesale" className="font-medium text-denim-600 hover:underline">
                 copy the wholesale shop&apos;s jeans
               </Link>
@@ -123,11 +123,22 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
                 <Link href={`/admin/stock/${style.id}`} className="font-medium hover:text-denim-600">
                   {style.name}
                 </Link>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  {isStockSegment(style.segment) ? stockSegmentInfo(style.segment).title : style.segment}
-                  {" · "}
-                  {style.color_count} color{style.color_count === 1 ? "" : "s"} · sets of {style.set_pieces}
-                  {style.style_no ? ` · ${style.style_no}` : ""}
+                <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                  {style.color_name ? (
+                    <span className="size-2.5 shrink-0 rounded-full ring-1 ring-black/10" style={{ backgroundColor: style.color_hex ?? "#c8d8f4" }} />
+                  ) : null}
+                  <span className="truncate">
+                    {style.color_name ? (
+                      <>
+                        {style.color_name} <span className="font-mono">{style.color_code}</span>
+                      </>
+                    ) : (
+                      <span className="text-stitch-700">No color yet</span>
+                    )}
+                    {" · "}
+                    {isStockSegment(style.segment) ? stockSegmentInfo(style.segment).title : style.segment} · sets of {style.set_pieces}
+                    {style.style_no ? ` · ${style.style_no}` : ""}
+                  </span>
                 </p>
               </div>
               <span className={cn("hidden text-sm tabular-nums sm:block", style.set_price_cents === 0 && "text-stitch-700")}>

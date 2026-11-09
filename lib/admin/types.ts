@@ -442,6 +442,10 @@ export type AdminStockStyleSummary = {
   color_count: number;
   /** Sets of the active colors. */
   sets_in_stock: number;
+  /** The listing's color: each listing is one color (null until it is added). */
+  color_name: string | null;
+  color_code: string | null;
+  color_hex: string | null;
   thumbnail: string | null;
   updated_at: string;
 };
@@ -516,19 +520,25 @@ export type StockReport = {
 };
 
 /** A wholesale jeans style and what copying it into the stock makes (GET /v1/admin/stock/from-wholesale). */
+/** A wholesale jeans color and the stock listing it makes: each color is a listing of its own. */
 export type StockFromWholesaleRow = {
+  /** The wholesale color (what is chosen and copied). */
+  color_id: number;
   product_id: number;
   name: string;
+  color: string;
+  code: string;
+  hex: string | null;
+  /** The listing's web address: the style's and the color's. */
   slug: string;
   style_no: string | null;
   wholesale_status: ProductStatus;
   /** The stock segment of the copy: "men" or "boys". */
   segment: string;
   set_sizes: { size: string; pcs: number }[];
-  colors: number;
   photos: number;
   thumbnail: string | null;
-  /** A stock style has this web address: copied before, or made by hand. */
+  /** In the stock already: a stock color has its code, or a listing its web address (copied before, or made by hand). */
   stock_style_id: number | null;
   /** Copied before as a hidden draft without a price: copying again shows it. */
   hidden_copy: boolean;
@@ -538,14 +548,12 @@ export type StockFromWholesaleRow = {
   draft_reason: string | null;
   /** Why it cannot be copied. */
   problem: string | null;
-  /** Color codes other stock styles use: those colors are not copied. */
-  skipped_colors: string[];
   /** Description paragraphs and features about the wholesale business, left out of the copy. */
   left_out: string[];
 };
 
 /** `new`: copied now (otherwise an earlier hidden copy, shown now); `shown`: on the stock pages. */
-export type StockCopied = { product_id: number; stock_style_id: number; name: string; colors: number; photos: number; new: boolean; shown: boolean };
+export type StockCopied = { color_id: number; stock_style_id: number; name: string; color: string; photos: number; new: boolean; shown: boolean };
 
 /** "cancelled": a paid order was cancelled and its sets went back (recorded by the API, not chosen by staff). */
 export type StockReason = "received" | "returned" | "sold" | "damaged" | "correction" | "cancelled";

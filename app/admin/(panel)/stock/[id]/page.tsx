@@ -13,7 +13,7 @@ import { adminApi, adminApiWithMeta, getStaff } from "@/lib/admin/session";
 import type { AdminStockMovement, AdminStockStyle, CatalogDefinitions, Pagination } from "@/lib/admin/types";
 import { STOCK_PRODUCT_TYPE, stockUrl } from "@/lib/stock";
 
-export const metadata: Metadata = { title: "Edit stock style" };
+export const metadata: Metadata = { title: "Edit stock listing" };
 
 export default async function EditStockStylePage({ params, searchParams }: PageProps<"/admin/stock/[id]">) {
   const staff = await getStaff();
@@ -36,7 +36,7 @@ export default async function EditStockStylePage({ params, searchParams }: PageP
     <>
       <PageHeader
         back={{ href: "/admin/stock", label: "Stock" }}
-        title={style.name}
+        title={style.colors.length === 1 ? `${style.name}, ${style.colors[0].name.toLowerCase()}` : style.name}
         actions={
           style.status === "active" ? (
             <Button asChild variant="outline" size="sm">
@@ -50,7 +50,7 @@ export default async function EditStockStylePage({ params, searchParams }: PageP
       <div className="grid gap-6">
         <StockColorManager style={style} />
         <StockStyleForm key={style.updated_at} style={style} specs={specs} />
-        <Panel title="Stock history" description="Every change to this style's stock, newest first.">
+        <Panel title="Stock history" description="Every change to this listing's stock, newest first.">
           <StockHistory
             movements={history.data}
             page={history.meta.pagination.page}

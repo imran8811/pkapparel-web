@@ -5,7 +5,7 @@ import { mediaSrc } from "@/lib/media";
 import { formatSetPrice, sizeRange, stockSegmentInfo, stockUrl, type StockCard as Card } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
-/** A stock style in a grid: photo (second photo on hover), sizes of the set, price per set, colors, and whether it is sold out. */
+/** A stock listing in a grid (one color each): photo (second photo on hover), its color and code, sizes of the set, price per set, and whether it is sold out. */
 export function StockCard({ style, preload = false }: { style: Card; preload?: boolean }) {
   const cover = style.colors.find((color) => color.sets_in_stock > 0) ?? style.colors[0];
   const image = cover?.image;
@@ -52,6 +52,12 @@ export function StockCard({ style, preload = false }: { style: Card; preload?: b
         <h3 className="mt-1.5 font-heading text-lg leading-snug font-semibold tracking-tight transition-colors group-hover:text-denim-600">
           {style.name}
         </h3>
+        {cover && style.colors.length === 1 ? (
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <span aria-hidden className="size-3 shrink-0 rounded-full ring-1 ring-black/10" style={{ backgroundColor: cover.hex ?? "#c8d8f4" }} />
+            {cover.name} <span className="font-mono text-xs">{cover.code}</span>
+          </p>
+        ) : null}
         <div className="mt-auto flex items-center justify-between gap-3 pt-3">
           <p className="text-sm">
             <span className="font-semibold">{formatSetPrice(style.set_price_cents)}</span>{" "}
@@ -59,7 +65,7 @@ export function StockCard({ style, preload = false }: { style: Card; preload?: b
               {style.set_price_cents > 0 ? "/" : "·"} set of {style.set_pieces}
             </span>
           </p>
-          <ColorDots colors={style.colors} />
+          {style.colors.length > 1 ? <ColorDots colors={style.colors} /> : null}
         </div>
       </div>
     </Link>

@@ -57,7 +57,7 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
   {
     title: "Stock",
     items: [
-      { href: "/admin/stock", label: "Stock styles", icon: PackageIcon, area: "content" },
+      { href: "/admin/stock", label: "Stock listings", icon: PackageIcon, area: "content" },
       { href: "/admin/stock/report", label: "Stock report", icon: ChartColumnIcon, area: "stock_report" },
     ],
   },

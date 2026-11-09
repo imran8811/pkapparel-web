@@ -99,9 +99,9 @@ function StockStyleEditor({ style, specs, onSaved }: StockStyleFormProps & { onS
         <Panel>
           <div className="grid gap-4">
             {style ? (
-              <SelectField label="Status" name="status" defaultValue={style.status} options={STATUS_OPTIONS} hint="A style needs a color with a photo before it can be shown." />
+              <SelectField label="Status" name="status" defaultValue={style.status} options={STATUS_OPTIONS} hint="A listing needs its color with a photo before it can be shown." />
             ) : (
-              <p className="text-sm text-muted-foreground">New styles start as drafts. Add colors, photos and stock, then show the style.</p>
+              <p className="text-sm text-muted-foreground">New listings start as drafts. Add the color, its photos and stock, then show the listing.</p>
             )}
             <SwitchField label="Featured" name="is_featured" defaultChecked={style?.is_featured ?? false} hint="Shown first." />
             <FormError />
@@ -134,7 +134,7 @@ function StockStyleEditor({ style, specs, onSaved }: StockStyleFormProps & { onS
           <DeleteButton
             label="Delete style"
             title={`Delete “${style.name}”?`}
-            description="The style, its colors, photos and stock history are removed. This cannot be undone."
+            description="The listing, its color, photos and stock history are removed. This cannot be undone."
             onConfirm={() => deleteStockStyle(style.id, style.slug)}
           />
         ) : null}

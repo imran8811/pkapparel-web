@@ -120,10 +120,16 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
         </div>
 
         <div>
-          <p className="text-sm">
-            Color: <span className="font-medium">{color.name}</span> <span className="font-mono text-xs text-muted-foreground">({color.code})</span>
+          <p className="flex items-center gap-2 text-sm">
+            {style.colors.length === 1 ? (
+              <span aria-hidden className="size-5 shrink-0 rounded-full ring-1 ring-black/10" style={{ backgroundColor: color.hex ?? "#c8d8f4" }} />
+            ) : null}
+            <span>
+              Color: <span className="font-medium">{color.name}</span> <span className="font-mono text-xs text-muted-foreground">({color.code})</span>
+            </span>
           </p>
-          <div role="radiogroup" aria-label="Color" className="mt-3 flex flex-wrap gap-2">
+          {/* A listing is one color; the choice is only there for a style that still has several. */}
+          <div role="radiogroup" aria-label="Color" className={cn("mt-3 flex flex-wrap gap-2", style.colors.length === 1 && "hidden")}>
             {style.colors.map((option) => (
               <button
                 key={option.slug}

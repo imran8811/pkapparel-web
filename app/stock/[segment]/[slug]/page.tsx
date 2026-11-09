@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: PageProps<"/stock/[segment]/[
   if (!style) return {};
   const image = style.colors[0]?.images[0];
   return pageMetadata({
-    title: style.seo_title ?? `${style.name}, in stock`,
+    title: style.seo_title ?? `${listingName(style)}, in stock`,
     description: style.seo_description ?? description(style),
     path: stockUrl(style.segment, style.slug),
     image: image ? mediaSrc(image.path) : undefined,
@@ -65,7 +65,7 @@ export default async function StockStylePage({ params }: PageProps<"/stock/[segm
             tone="dark"
             className="mb-8"
             root={{ label: info.title, href: stockUrl(style.segment) }}
-            items={[{ label: style.name, href: stockUrl(style.segment, style.slug) }]}
+            items={[{ label: listingName(style), href: stockUrl(style.segment, style.slug) }]}
           />
           <StockStyleView style={style} whatsapp={site.contact.whatsapp} phone={site.contact.phone} />
         </Container>
@@ -87,6 +87,11 @@ export default async function StockStylePage({ params }: PageProps<"/stock/[segm
   );
 }
 
+/** "Men's slim stretch jeans in sky blue": a listing is one color, and listings of a style share its name. */
+function listingName(style: StockStyle): string {
+  return style.colors.length === 1 ? `${style.name} in ${style.colors[0].name.toLowerCase()}` : style.name;
+}
+
 function description(style: StockStyle): string {
   const text = style.description_html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   return (
@@ -101,7 +106,7 @@ function structuredData(style: StockStyle) {
   return {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: style.name,
+    name: listingName(style),
     description: description(style),
     url,
     image: style.colors.flatMap((color) => color.images.slice(0, 1).map((image) => absoluteUrl(mediaSrc(image.path)))),

@@ -6,7 +6,7 @@ import { adminApi, getStaff } from "@/lib/admin/session";
 import type { CatalogDefinitions } from "@/lib/admin/types";
 import { STOCK_PRODUCT_TYPE } from "@/lib/stock";
 
-export const metadata: Metadata = { title: "New stock style" };
+export const metadata: Metadata = { title: "New stock listing" };
 
 export default async function NewStockStylePage() {
   const staff = await getStaff();
@@ -16,7 +16,11 @@ export default async function NewStockStylePage() {
 
   return (
     <>
-      <PageHeader back={{ href: "/admin/stock", label: "Stock" }} title="New stock style" />
+      <PageHeader
+        back={{ href: "/admin/stock", label: "Stock" }}
+        title="New stock listing"
+        description="A listing is one color of jeans. Save its details first, then add the color with its photos and the sets in stock."
+      />
       <StockStyleForm style={null} specs={specs} />
     </>
   );

@@ -8,7 +8,7 @@ import type { AdminStockColor, AdminStockStyle, StockCopied, StockImportResult }
 import { setsInStock } from "@/lib/stock";
 
 /*
- * Stock styles, their colors and their stock. Prices are typed in rupees and sent in paisa (rupees × 100).
+ * Stock listings (one color each), their color and its stock. Prices are typed in rupees and sent in paisa (rupees × 100).
  */
 
 /** "6,000" → 600000, "" → null */
@@ -181,14 +181,17 @@ async function stockImport(csv: string, apply: boolean): Promise<StockImportOutc
 
 export type StockCopyOutcome = { ok: true; copied: StockCopied[] } | { ok: false; message: string };
 
-/** Copies the chosen wholesale styles into the stock (shown, without a price or stock yet), and shows earlier hidden copies. */
-export async function copyFromWholesale(productIds: number[]): Promise<StockCopyOutcome> {
-  const ids = productIds.filter((id) => Number.isInteger(id) && id > 0);
-  if (ids.length === 0) return { ok: false, message: "Tick the styles to copy." };
+/**
+ * Copies the chosen wholesale colors into the stock, a listing each (shown, without a price or stock yet), and shows
+ * earlier hidden copies.
+ */
+export async function copyFromWholesale(colorIds: number[]): Promise<StockCopyOutcome> {
+  const ids = colorIds.filter((id) => Number.isInteger(id) && id > 0);
+  if (ids.length === 0) return { ok: false, message: "Tick the colors to copy." };
   try {
     const { copied } = await adminApi<{ copied: StockCopied[] }>("/v1/admin/stock/from-wholesale", {
       method: "POST",
-      body: { product_ids: ids },
+      body: { color_ids: ids },
       timeoutMs: 120_000,
     });
     // The copies are on the stock pages (all of them carry the "stock" tag).
@@ -197,6 +200,6 @@ export async function copyFromWholesale(productIds: number[]): Promise<StockCopy
     return { ok: true, copied };
   } catch (error) {
     const state = errorState(error);
-    return { ok: false, message: Object.values(state.fields ?? {})[0] ?? state.message ?? "The styles could not be copied." };
+    return { ok: false, message: Object.values(state.fields ?? {})[0] ?? state.message ?? "The colors could not be copied." };
   }
 }

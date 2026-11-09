@@ -59,7 +59,7 @@ export default async function StockReportPage({ searchParams }: PageProps<"/admi
       </dl>
 
       {report.rows.length === 0 ? (
-        <EmptyState title="No stock yet">Add stock styles and their colors first.</EmptyState>
+        <EmptyState title="No stock yet">Add stock listings first.</EmptyState>
       ) : (
         <div className="overflow-x-auto rounded-2xl border bg-white">
           <table className="w-full min-w-[48rem] text-sm">

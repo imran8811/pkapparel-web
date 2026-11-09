@@ -17,27 +17,27 @@ const plural = (count: number, word: string) => `${count} ${word}${count === 1 ?
 const copyable = (row: StockFromWholesaleRow) => (row.stock_style_id === null && row.problem === null) || (row.hidden_copy && row.shown);
 
 function doneMessage(done: StockCopied[]): string {
-  if (done.length === 0) return "Nothing changed: those styles are in the stock already.";
+  if (done.length === 0) return "Nothing changed: those colors are in the stock already.";
   const added = done.filter((item) => item.new).length;
   const shown = done.filter((item) => item.shown).length;
-  const parts = [added > 0 ? `${plural(added, "style")} copied` : null, shown > 0 ? `${plural(shown, "style")} now on the stock pages` : null];
-  return `${parts.filter(Boolean).join(", ")}. They show “Price on request” until you enter a price per set, and their colors show “Sold out” until you enter the sets in stock.`;
+  const parts = [added > 0 ? `${plural(added, "listing")} added` : null, shown > 0 ? `${plural(shown, "listing")} now on the stock pages` : null];
+  return `${parts.filter(Boolean).join(", ")}. They show “Price on request” until you enter a price per set, and “Sold out” until you enter the sets in stock.`;
 }
 
 /**
- * The wholesale shop's jeans for men (and boys), ticked to be copied into the stock. A style shown in the wholesale
- * shop is shown on the stock pages at once. A style copied before links to its stock style; the others say why
- * they cannot be copied.
+ * Every color of the wholesale shop's jeans for men (and boys), ticked to be copied: each color becomes a stock listing
+ * of its own. A color of a style shown in the wholesale shop is shown on the stock pages at once. A color in the
+ * stock already links to its listing; the others say why they cannot be copied.
  */
 export function StockFromWholesale({ rows }: { rows: StockFromWholesaleRow[] }) {
   const toCopy = rows.filter(copyable);
-  const [chosen, setChosen] = useState(() => new Set(toCopy.map((row) => row.product_id)));
+  const [chosen, setChosen] = useState(() => new Set(toCopy.map((row) => row.color_id)));
   const [done, setDone] = useState<StockCopied[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  // After a copy the page reloads its rows: styles copied by then are no longer copyable.
-  const selected = toCopy.filter((row) => chosen.has(row.product_id));
+  // After a copy the page reloads its rows: colors copied by then are no longer copyable.
+  const selected = toCopy.filter((row) => chosen.has(row.color_id));
 
   const toggle = (id: number, on: boolean) =>
     setChosen((current) => {
@@ -50,7 +50,7 @@ export function StockFromWholesale({ rows }: { rows: StockFromWholesaleRow[] }) 
   const copy = () => {
     setError(null);
     startTransition(async () => {
-      const outcome = await copyFromWholesale(selected.map((row) => row.product_id));
+      const outcome = await copyFromWholesale(selected.map((row) => row.color_id));
       if (outcome.ok) setDone(outcome.copied);
       else setError(outcome.message);
     });
@@ -64,7 +64,7 @@ export function StockFromWholesale({ rows }: { rows: StockFromWholesaleRow[] }) 
           <p className="min-w-0 flex-1">{doneMessage(done)}</p>
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm" variant="outline">
-              <Link href="/admin/stock">Stock styles</Link>
+              <Link href="/admin/stock">Stock listings</Link>
             </Button>
             <Button asChild size="sm" variant="outline">
               <a href="/stock" target="_blank" rel="noopener noreferrer">
@@ -76,8 +76,8 @@ export function StockFromWholesale({ rows }: { rows: StockFromWholesaleRow[] }) 
       ) : null}
 
       <Panel
-        title="Men's jeans in the wholesale shop"
-        description="Ticked styles are copied into the stock: name, details, the set (the wholesale sizes and pieces per size), colors and photos. A style shown in the wholesale shop is shown on the stock pages at once, with “Price on request” until you enter its price per set, and its colors “Sold out” until you enter their sets in stock. Description paragraphs about made-to-order wholesale are left out."
+        title="Men's jeans colors in the wholesale shop"
+        description="Each ticked color becomes a stock listing of its own: the style's name and details (with the color's own fabric details), the set (the wholesale sizes and pieces per size), the color and its photos. A color of a style shown in the wholesale shop is shown on the stock pages at once, with “Price on request” until you enter its price per set, and “Sold out” until you enter its sets in stock. Description paragraphs about made-to-order wholesale are left out."
       >
         <ul className="grid gap-3">
           {rows.map((row) => {
@@ -85,15 +85,15 @@ export function StockFromWholesale({ rows }: { rows: StockFromWholesaleRow[] }) 
             const canCopy = copyable(row);
             const pieces = row.set_sizes.reduce((sum, size) => sum + size.pcs, 0);
             return (
-              <li key={row.product_id} className={cn("flex flex-wrap items-start gap-3 rounded-xl border p-3 sm:flex-nowrap", canCopy ? "bg-white" : "bg-cotton-50")}>
+              <li key={row.color_id} className={cn("flex flex-wrap items-start gap-3 rounded-xl border p-3 sm:flex-nowrap", canCopy ? "bg-white" : "bg-cotton-50")}>
                 <span className="flex size-5 shrink-0 items-center justify-center pt-1">
                   {canCopy ? (
                     <input
                       type="checkbox"
-                      checked={chosen.has(row.product_id)}
-                      onChange={(event) => toggle(row.product_id, event.target.checked)}
+                      checked={chosen.has(row.color_id)}
+                      onChange={(event) => toggle(row.color_id, event.target.checked)}
                       disabled={pending}
-                      aria-label={`Copy ${row.name}`}
+                      aria-label={`Copy ${row.name}, ${row.color}`}
                       className="size-4 accent-denim-600"
                     />
                   ) : null}
@@ -106,13 +106,15 @@ export function StockFromWholesale({ rows }: { rows: StockFromWholesaleRow[] }) 
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">
-                    {row.name} {row.style_no ? <span className="font-mono text-xs text-muted-foreground">{row.style_no}</span> : null}
+                  <p className="font-medium">{row.name}</p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-sm">
+                    <span className="size-3 shrink-0 rounded-full ring-1 ring-black/10" style={{ backgroundColor: row.hex ?? "#c8d8f4" }} />
+                    {row.color} <span className="font-mono text-xs text-muted-foreground">{row.code}</span>
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {isStockSegment(row.segment) ? stockSegmentInfo(row.segment).title : row.segment}
                     {" · "}
-                    {plural(row.colors, "color")} · {plural(row.photos, "photo")}
+                    {plural(row.photos, "photo")}
                     {row.set_sizes.length > 0 ? ` · set of ${pieces}: ${setContents(row.set_sizes)}` : ""}
                   </p>
                   {!inStock && row.problem ? <p className="mt-1 text-xs text-stitch-700">{row.problem}</p> : null}
@@ -120,11 +122,6 @@ export function StockFromWholesale({ rows }: { rows: StockFromWholesaleRow[] }) 
                   {canCopy && !row.hidden_copy ? (
                     <p className={cn("mt-1 text-xs", row.shown ? "text-emerald-700" : "text-stitch-700")}>
                       {row.shown ? "Shown on the stock pages once copied." : `Copied as a hidden draft: ${row.draft_reason ?? "it cannot be shown yet."}`}
-                    </p>
-                  ) : null}
-                  {canCopy && row.skipped_colors.length > 0 ? (
-                    <p className="mt-1 text-xs text-stitch-700">
-                      Not copied: {row.skipped_colors.join(", ")}. Other stock styles use {row.skipped_colors.length === 1 ? "this color code" : "these color codes"}.
                     </p>
                   ) : null}
                   {canCopy && !row.hidden_copy && row.left_out.length > 0 ? (
@@ -153,10 +150,10 @@ export function StockFromWholesale({ rows }: { rows: StockFromWholesaleRow[] }) 
           {toCopy.length > 0 ? (
             <Button type="button" onClick={copy} disabled={pending || selected.length === 0}>
               {pending ? <Loader2Icon className="animate-spin" /> : <CopyIcon />}
-              Copy {plural(selected.length, "style")}
+              Copy {plural(selected.length, "color")}
             </Button>
           ) : (
-            <p className="text-sm text-muted-foreground">Nothing left to copy: every style is in the stock already, or cannot be copied.</p>
+            <p className="text-sm text-muted-foreground">Nothing left to copy: every color is in the stock already, or cannot be copied.</p>
           )}
           {error ? (
             <p role="alert" className="text-sm text-destructive">
