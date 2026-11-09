@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ColorDots } from "@/components/shop/product-card";
 import { mediaSrc } from "@/lib/media";
-import { formatRupees, sizeRange, stockSegmentInfo, stockUrl, type StockCard as Card } from "@/lib/stock";
+import { formatSetPrice, sizeRange, stockSegmentInfo, stockUrl, type StockCard as Card } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 /** A stock style in a grid: photo (second photo on hover), sizes of the set, price per set, colors, and whether it is sold out. */
@@ -54,8 +54,10 @@ export function StockCard({ style, preload = false }: { style: Card; preload?: b
         </h3>
         <div className="mt-auto flex items-center justify-between gap-3 pt-3">
           <p className="text-sm">
-            <span className="font-semibold">{formatRupees(style.set_price_cents)}</span>{" "}
-            <span className="text-muted-foreground">/ set of {style.set_pieces}</span>
+            <span className="font-semibold">{formatSetPrice(style.set_price_cents)}</span>{" "}
+            <span className="text-muted-foreground">
+              {style.set_price_cents > 0 ? "/" : "·"} set of {style.set_pieces}
+            </span>
           </p>
           <ColorDots colors={style.colors} />
         </div>

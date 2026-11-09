@@ -10,7 +10,7 @@ import { addToStockCart } from "@/lib/account/actions/stock";
 import { notifyUiChange } from "@/lib/account/use-ui-state";
 import { telUrl, whatsappUrl } from "@/lib/links";
 import { mediaSrc } from "@/lib/media";
-import { formatRupees, RETURN_DAYS, setsInStock, stockSegmentInfo, type StockStyle } from "@/lib/stock";
+import { formatRupees, formatSetPrice, RETURN_DAYS, setsInStock, stockSegmentInfo, type StockStyle } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 const noSubscription = () => () => {};
@@ -37,6 +37,8 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
   const available = color.sets_in_stock;
   const quantity = Math.max(1, Math.min(sets, Math.max(available, 1)));
   const total = quantity * style.set_price_cents;
+  // A style copied from the wholesale shop has no price until staff enter one: it is ordered on WhatsApp or by phone.
+  const priced = style.set_price_cents > 0;
 
   const add = () =>
     startAdding(async () => {
@@ -73,6 +75,7 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
       pageUrl(),
     ].join("\n");
   const askMessage = () => `Hello PK Apparel, when will ${style.name} in ${color.name} (${color.code}) be back in stock?\n${pageUrl()}`;
+  const priceMessage = () => `Hello PK Apparel, what is the price of ${style.name} in ${color.name} (${color.code}), per set of ${style.set.pieces} pieces?\n${pageUrl()}`;
 
   return (
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
@@ -111,8 +114,8 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
           <p className="font-mono text-[11px] tracking-[0.18em] text-denim-600 uppercase">{stockSegmentInfo(style.segment).title} · in stock</p>
           <h1 className="mt-3 text-4xl leading-[1.04] font-bold tracking-[-0.03em] sm:text-5xl">{style.name}</h1>
           <p className="mt-5 flex flex-wrap items-baseline gap-x-2">
-            <span className="font-heading text-3xl font-semibold tabular-nums">{formatRupees(style.set_price_cents)}</span>
-            <span className="text-muted-foreground">per set of {style.set.pieces} pieces</span>
+            <span className="font-heading text-3xl font-semibold tabular-nums">{formatSetPrice(style.set_price_cents)}</span>
+            <span className="text-muted-foreground">{priced ? "per set" : "for sets"} of {style.set.pieces} pieces</span>
           </p>
         </div>
 
@@ -160,7 +163,30 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
             {available > 0 ? `${setsInStock(available)} in ${color.name.toLowerCase()}` : `${color.name} is sold out`}
           </p>
 
-          {available > 0 ? (
+          {available > 0 && !priced ? (
+            <div className="mt-5 grid gap-3 border-t border-dashed border-border pt-5">
+              <p className="text-sm text-muted-foreground">The price of this set is not online yet. Ask us for it, and order on WhatsApp or by phone.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button asChild>
+                  <a
+                    href={whatsappUrl(whatsapp)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(event) => {
+                      event.currentTarget.href = whatsappUrl(whatsapp, priceMessage());
+                    }}
+                  >
+                    <WhatsAppIcon className="size-4" /> Ask the price
+                  </a>
+                </Button>
+                <Button asChild variant="outline">
+                  <a href={telUrl(phone)}>
+                    <Phone /> Call us
+                  </a>
+                </Button>
+              </div>
+            </div>
+          ) : available > 0 ? (
             <>
               <div className="mt-5 flex items-center justify-between gap-4 border-t border-dashed border-border pt-5">
                 <span className="text-sm font-medium">Sets</span>

@@ -8,7 +8,7 @@ export const metadata = pageMetadata({
   path: "/stock",
 });
 
-/** The stock pages open on the men's jeans, with the filters in a sidebar (owner decision 2026-11-09). */
+/** The stock pages open on the men's jeans, with the filters in a sidebar and only a breadcrumb above (owner decisions 2026-11-09). */
 export default function StockHomePage({ searchParams }: PageProps<"/stock">) {
-  return <StockListingPage segment={DEFAULT_STOCK_SEGMENT} searchParams={searchParams} />;
+  return <StockListingPage segment={DEFAULT_STOCK_SEGMENT} searchParams={searchParams} home />;
 }

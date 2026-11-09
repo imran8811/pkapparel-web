@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Eyebrow } from "@/components/brand/eyebrow";
 import { Container } from "@/components/layout/container";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { StockGrid } from "@/components/stock/stock-card";
 import { ActiveFilters, activeFilterCount, StockFilterPanel, stockFiltersFrom, stockHref } from "@/components/stock/stock-filters";
 import { StockFiltersSheet } from "@/components/stock/stock-filters-sheet";
@@ -22,25 +23,41 @@ const GRID = "lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start lg:gap-1
 
 /**
  * A jeans section's listing (/stock for men's jeans, /stock/boys): the filters in a sidebar, behind a "Filters" button
- * on phones, and the styles beside them. The title is prerendered; the list follows the filters in the address and
- * renders on request.
+ * on phones, and the styles beside them. The heading is prerendered; the list follows the filters in the address and
+ * renders on request. On the stock home only a breadcrumb is shown above the list, without a title or intro (owner
+ * request 2026-11-09); its title stays for screen readers.
  */
-export function StockListingPage({ segment, searchParams }: { segment: StockSegment; searchParams: SearchParams }) {
+export function StockListingPage({ segment, searchParams, home = false }: { segment: StockSegment; searchParams: SearchParams; home?: boolean }) {
+  const title = stockSegmentInfo(segment).title;
+  const listing = (
+    <Suspense fallback={<ListingSkeleton />}>
+      <Listing segment={segment} searchParams={searchParams} />
+    </Suspense>
+  );
+
+  if (home) {
+    return (
+      <section className="pt-6 pb-16 sm:pt-8 sm:pb-20">
+        <Container>
+          <Breadcrumbs tone="dark" className="mb-6 sm:mb-8" root={{ label: "Stock", href: "/stock" }} items={[{ label: title, href: stockUrl(segment) }]} />
+          <h1 className="sr-only">{title}</h1>
+          {listing}
+        </Container>
+      </section>
+    );
+  }
+
   return (
     <>
       <section className="border-b border-border/70">
         <Container className="py-8 sm:py-10">
           <Eyebrow>Ready stock, sold by set</Eyebrow>
-          <h1 className="mt-3 text-3xl leading-tight font-bold tracking-[-0.02em] sm:text-4xl">{stockSegmentInfo(segment).title}</h1>
+          <h1 className="mt-3 text-3xl leading-tight font-bold tracking-[-0.02em] sm:text-4xl">{title}</h1>
           <p className="mt-3 max-w-2xl text-muted-foreground">{STOCK_INTROS[segment]}</p>
         </Container>
       </section>
       <section className="pt-8 pb-16 sm:pt-10 sm:pb-20">
-        <Container>
-          <Suspense fallback={<ListingSkeleton />}>
-            <Listing segment={segment} searchParams={searchParams} />
-          </Suspense>
-        </Container>
+        <Container>{listing}</Container>
       </section>
     </>
   );

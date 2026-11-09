@@ -124,6 +124,11 @@ export function formatRupees(cents: number): string {
   return `Rs ${rupees.format(Math.round(cents / 100))}`;
 }
 
+/** "Rs 6,000", or "Price on request" while a style copied from the wholesale shop has no price yet. */
+export function formatSetPrice(cents: number): string {
+  return cents > 0 ? formatRupees(cents) : "Price on request";
+}
+
 /** "28–36", or the one size */
 export function sizeRange(sizes: string[]): string {
   if (sizes.length <= 1) return sizes[0] ?? "";
@@ -149,8 +154,10 @@ export function filterStock(styles: StockCard[], filters: StockFilters): StockCa
       (!filters.fit || style.fit?.toLowerCase() === filters.fit.toLowerCase()) &&
       (!filters.stretch || style.stretch === filters.stretch),
   );
-  if (filters.sort === "price-asc") return [...matching].sort((a, b) => a.set_price_cents - b.set_price_cents);
-  if (filters.sort === "price-desc") return [...matching].sort((a, b) => b.set_price_cents - a.set_price_cents);
+  // Styles without a price yet come last either way.
+  const price = (style: StockCard, none: number) => (style.set_price_cents > 0 ? style.set_price_cents : none);
+  if (filters.sort === "price-asc") return [...matching].sort((a, b) => price(a, Number.MAX_SAFE_INTEGER) - price(b, Number.MAX_SAFE_INTEGER));
+  if (filters.sort === "price-desc") return [...matching].sort((a, b) => price(b, -1) - price(a, -1));
   return matching;
 }
 

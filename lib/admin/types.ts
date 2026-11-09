@@ -530,6 +530,12 @@ export type StockFromWholesaleRow = {
   thumbnail: string | null;
   /** A stock style has this web address: copied before, or made by hand. */
   stock_style_id: number | null;
+  /** Copied before as a hidden draft without a price: copying again shows it. */
+  hidden_copy: boolean;
+  /** On the stock pages once copied (a new copy, or a hidden one shown again); for other styles in stock, now. */
+  shown: boolean;
+  /** Why a copy would stay a hidden draft. */
+  draft_reason: string | null;
   /** Why it cannot be copied. */
   problem: string | null;
   /** Color codes other stock styles use: those colors are not copied. */
@@ -538,7 +544,8 @@ export type StockFromWholesaleRow = {
   left_out: string[];
 };
 
-export type StockCopied = { product_id: number; stock_style_id: number; name: string; colors: number; photos: number };
+/** `new`: copied now (otherwise an earlier hidden copy, shown now); `shown`: on the stock pages. */
+export type StockCopied = { product_id: number; stock_style_id: number; name: string; colors: number; photos: number; new: boolean; shown: boolean };
 
 /** "cancelled": a paid order was cancelled and its sets went back (recorded by the API, not chosen by staff). */
 export type StockReason = "received" | "returned" | "sold" | "damaged" | "correction" | "cancelled";

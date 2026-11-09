@@ -95,7 +95,7 @@ function description(style: StockStyle): string {
   ).slice(0, 160);
 }
 
-/** Product structured data: sold by set, priced per set, in stock or sold out. */
+/** Product structured data: sold by set, priced per set (no offer until it has a price), in stock or sold out. */
 function structuredData(style: StockStyle) {
   const url = absoluteUrl(stockUrl(style.segment, style.slug));
   return {
@@ -110,13 +110,17 @@ function structuredData(style: StockStyle) {
     color: style.colors.map((color) => color.name).join(", "),
     size: setContents(style.set.sizes),
     ...(style.specs.composition ? { material: style.specs.composition } : {}),
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "PKR",
-      price: (style.set_price_cents / 100).toFixed(0),
-      availability: style.sets_in_stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      eligibleQuantity: { "@type": "QuantitativeValue", value: style.set.pieces, unitText: "pieces per set" },
-      url,
-    },
+    ...(style.set_price_cents > 0
+      ? {
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "PKR",
+            price: (style.set_price_cents / 100).toFixed(0),
+            availability: style.sets_in_stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            eligibleQuantity: { "@type": "QuantitativeValue", value: style.set.pieces, unitText: "pieces per set" },
+            url,
+          },
+        }
+      : {}),
   };
 }

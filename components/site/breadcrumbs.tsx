@@ -24,7 +24,7 @@ export function Breadcrumbs({ items, root = HOME, tone = "light", className }: {
           {trail.map((crumb, index) => {
             const last = index === trail.length - 1;
             return (
-              <li key={crumb.href} className="flex items-center gap-1.5">
+              <li key={`${index}:${crumb.href}`} className="flex items-center gap-1.5">
                 {last ? (
                   <span aria-current="page" className={tone === "light" ? "text-cotton-50/90" : "text-foreground"}>
                     {crumb.label}
@@ -50,7 +50,9 @@ export function Breadcrumbs({ items, root = HOME, tone = "light", className }: {
             "@type": "ListItem",
             position: index + 1,
             name: crumb.label,
-            item: absoluteUrl(crumb.href),
+            // The last crumb is the page itself, so its URL may be left out. It is when an earlier crumb has the same
+            // one: /stock is both the stock home and the men's jeans.
+            ...(index === trail.length - 1 && trail.slice(0, -1).some((other) => other.href === crumb.href) ? {} : { item: absoluteUrl(crumb.href) }),
           })),
         }}
       />

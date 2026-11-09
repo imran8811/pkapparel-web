@@ -181,7 +181,7 @@ async function stockImport(csv: string, apply: boolean): Promise<StockImportOutc
 
 export type StockCopyOutcome = { ok: true; copied: StockCopied[] } | { ok: false; message: string };
 
-/** Copies the chosen wholesale styles into the stock, as drafts without a price or stock. */
+/** Copies the chosen wholesale styles into the stock (shown, without a price or stock yet), and shows earlier hidden copies. */
 export async function copyFromWholesale(productIds: number[]): Promise<StockCopyOutcome> {
   const ids = productIds.filter((id) => Number.isInteger(id) && id > 0);
   if (ids.length === 0) return { ok: false, message: "Tick the styles to copy." };
@@ -191,7 +191,8 @@ export async function copyFromWholesale(productIds: number[]): Promise<StockCopy
       body: { product_ids: ids },
       timeoutMs: 120_000,
     });
-    // Drafts are not on the stock pages: only the admin pages change.
+    // The copies are on the stock pages (all of them carry the "stock" tag).
+    updateTag("stock");
     refresh();
     return { ok: true, copied };
   } catch (error) {
