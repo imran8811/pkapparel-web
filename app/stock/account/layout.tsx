@@ -1,6 +1,7 @@
+import { Suspense } from "react";
 import { Eyebrow } from "@/components/brand/eyebrow";
 import { Container } from "@/components/layout/container";
-import { StockAccountNav } from "@/components/stock/stock-account-nav";
+import { StockAccountNav, StockAccountNavFallback } from "@/components/stock/stock-account-nav";
 
 /** The stock account: the buyer's stock orders, payments and receipts. Data is loaded by the pages. */
 export default function StockAccountLayout({ children }: LayoutProps<"/stock/account">) {
@@ -10,7 +11,10 @@ export default function StockAccountLayout({ children }: LayoutProps<"/stock/acc
         <Container className="pt-8 sm:pt-10">
           <Eyebrow>Stock account</Eyebrow>
           <div className="mt-4">
-            <StockAccountNav />
+            {/* The tabs mark the current page from the URL, known only at request time under the order pages. */}
+            <Suspense fallback={<StockAccountNavFallback />}>
+              <StockAccountNav />
+            </Suspense>
           </div>
         </Container>
       </section>

@@ -64,11 +64,8 @@ export default async function StockStylePage({ params }: PageProps<"/stock/[segm
           <Breadcrumbs
             tone="dark"
             className="mb-8"
-            root={{ label: "Stock", href: "/stock" }}
-            items={[
-              { label: info.title, href: stockUrl(style.segment) },
-              { label: style.name, href: stockUrl(style.segment, style.slug) },
-            ]}
+            root={{ label: info.title, href: stockUrl(style.segment) }}
+            items={[{ label: style.name, href: stockUrl(style.segment, style.slug) }]}
           />
           <StockStyleView style={style} whatsapp={site.contact.whatsapp} phone={site.contact.phone} />
         </Container>

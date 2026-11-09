@@ -16,6 +16,8 @@ const ACCESS = {
   payments: ["admin", "sales"],
   payments_review: ["admin"],
   customers: ["admin", "sales"],
+  /** The stock report (stock on hand, its value and sales): editors manage the stock, sales staff sell it. */
+  stock_report: ["admin", "editor", "sales"],
   /** Shipping rates and add-ons (prices used at checkout). */
   commerce: ["admin", "sales"],
   settings: ["admin"],

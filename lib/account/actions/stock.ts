@@ -5,7 +5,7 @@ import { unstable_rethrow } from "next/navigation";
 import { apiWithMeta, ApiError } from "@/lib/api";
 import { guestCartToken, rememberGuestCart, sessionToken, setUiState, stockCustomerApi } from "@/lib/account/session";
 import type { Address, Order } from "@/lib/account/types";
-import { checked, errorState, failure, optional, text, type FormState } from "@/lib/forms";
+import { checked, errorState, failure, optional, success, text, type FormState } from "@/lib/forms";
 import { stockOrderUrl, type StockCart } from "@/lib/stock";
 
 /*
@@ -116,4 +116,26 @@ export async function placeStockOrder(_previous: FormState, form: FormData): Pro
 
   await setUiState({ signedIn: true, stockCartCount: 0 });
   return { status: "success", redirectTo: `${stockOrderUrl(order.order_no)}?placed=1` };
+}
+
+/** The stock account's details: shop, contact, city, phone, business type and email (a new email is confirmed again). */
+export async function updateStockProfile(_previous: FormState, form: FormData): Promise<FormState> {
+  try {
+    await stockCustomerApi("/v1/account", {
+      method: "PUT",
+      body: {
+        email: text(form, "email"),
+        company_name: text(form, "company_name"),
+        contact_name: text(form, "contact_name"),
+        business_type: text(form, "business_type"),
+        city: text(form, "city"),
+        phone: text(form, "phone"),
+        current_password: optional(form, "current_password"),
+      },
+    });
+  } catch (error) {
+    return errorState(error);
+  }
+  refresh();
+  return success("Your details are saved.");
 }

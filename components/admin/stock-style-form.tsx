@@ -29,7 +29,8 @@ const SIZES = Array.from({ length: 48 - 16 + 1 }, (_, index) => String(16 + inde
 const MAX_PCS = 24;
 
 /** Rupees for an input: 600000 → "6000" */
-const rupees = (cents: number | null | undefined) => (cents == null ? "" : String(Math.round(cents / 100)));
+/** Empty for a style without a price yet (copied from the wholesale shop). */
+const rupees = (cents: number | null | undefined) => (cents ? String(Math.round(cents / 100)) : "");
 
 type StockStyleFormProps = { style: AdminStockStyle | null; specs: CatalogSpec[] };
 
@@ -115,7 +116,13 @@ function StockStyleEditor({ style, specs, onSaved }: StockStyleFormProps & { onS
             inputMode="numeric"
             defaultValue={rupees(style?.set_price_cents)}
             placeholder="6000"
-            hint={style ? `Now ${formatRupees(style.set_price_cents)} for ${style.set_pieces} pieces.` : "The price of one whole set."}
+            hint={
+              style && style.set_price_cents > 0
+                ? `Now ${formatRupees(style.set_price_cents)} for ${style.set_pieces} pieces.`
+                : style
+                  ? `No price yet. The price of one whole set of ${style.set_pieces} pieces.`
+                  : "The price of one whole set."
+            }
           />
         </Panel>
 

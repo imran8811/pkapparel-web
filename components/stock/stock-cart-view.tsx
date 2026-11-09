@@ -42,10 +42,10 @@ export function StockCartView({ initialCart, signedIn }: { initialCart: StockCar
         <p className="mx-auto mt-2 max-w-md text-muted-foreground">Choose a style, pick a color and add the sets you need.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Button asChild>
-            <Link href="/stock/men">Men&apos;s jeans</Link>
+            <Link href={stockUrl("men")}>Men&apos;s jeans</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/stock/boys">Boys&apos; jeans</Link>
+            <Link href={stockUrl("boys")}>Boys&apos; jeans</Link>
           </Button>
         </div>
       </div>

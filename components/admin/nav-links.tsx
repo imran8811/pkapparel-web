@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   AwardIcon,
   BadgePlusIcon,
+  ChartColumnIcon,
   FactoryIcon,
   FileTextIcon,
   RulerIcon,
@@ -55,7 +56,10 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
   },
   {
     title: "Stock",
-    items: [{ href: "/admin/stock", label: "Stock styles", icon: PackageIcon, area: "content" }],
+    items: [
+      { href: "/admin/stock", label: "Stock styles", icon: PackageIcon, area: "content" },
+      { href: "/admin/stock/report", label: "Stock report", icon: ChartColumnIcon, area: "stock_report" },
+    ],
   },
   {
     title: "Website",

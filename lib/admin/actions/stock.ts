@@ -1,10 +1,10 @@
 "use server";
 
-import { updateTag } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminApi } from "@/lib/admin/session";
 import { checked, errorState, failure, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
-import type { AdminStockColor, AdminStockStyle } from "@/lib/admin/types";
+import type { AdminStockColor, AdminStockStyle, StockCopied, StockImportResult } from "@/lib/admin/types";
 import { setsInStock } from "@/lib/stock";
 
 /*
@@ -36,7 +36,7 @@ function specFields(form: FormData): Record<string, string | null> {
   return Object.fromEntries([...keys].map((key) => [key.slice("spec_".length), optional(form, key)]));
 }
 
-function refresh(...slugs: string[]) {
+function refreshStock(...slugs: string[]) {
   updateTag("stock");
   for (const slug of new Set(slugs.filter(Boolean))) updateTag(`stock:${slug}`);
 }
@@ -71,7 +71,7 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
     return renameFields(errorState(error));
   }
 
-  refresh(style.slug, text(form, "original_slug"));
+  refreshStock(style.slug, text(form, "original_slug"));
   if (!id) return { ...success("Style created. Now add its colors, photos and stock."), redirectTo: `/admin/stock/${style.id}` };
   return success(style.status === "active" ? "Style saved and shown on the stock pages." : "Style saved.");
 }
@@ -83,7 +83,7 @@ export async function deleteStockStyle(id: number, slug: string): Promise<FormSt
   } catch (error) {
     return errorState(error);
   }
-  refresh(slug);
+  refreshStock(slug);
   redirect("/admin/stock");
 }
 
@@ -115,7 +115,7 @@ export async function saveStockColor(styleId: number, styleSlug: string, _previo
     return errorState(error);
   }
 
-  refresh(styleSlug);
+  refreshStock(styleSlug);
   return success(id ? `${color.name} saved.` : `${color.name} added.`);
 }
 
@@ -126,7 +126,7 @@ export async function deleteStockColor(id: number, styleSlug: string): Promise<F
   } catch (error) {
     return errorState(error);
   }
-  refresh(styleSlug);
+  refreshStock(styleSlug);
   return success("Color deleted.");
 }
 
@@ -147,6 +147,55 @@ export async function changeStock(colorId: number, styleSlug: string, _previous:
     return errorState(error);
   }
 
-  refresh(styleSlug);
+  refreshStock(styleSlug);
   return success(`${color.name}: ${setsInStock(color.sets_in_stock).toLowerCase()}.`);
+}
+
+export type StockImportOutcome = { ok: true; result: StockImportResult } | { ok: false; message: string };
+
+/** Reads a stock count file: what it would change, and its problems. Nothing changes yet. */
+export async function previewStockImport(csv: string): Promise<StockImportOutcome> {
+  return stockImport(csv, false);
+}
+
+/** Makes the file's counts the stock (only when no line has a problem). */
+export async function applyStockImport(csv: string): Promise<StockImportOutcome> {
+  const outcome = await stockImport(csv, true);
+  if (outcome.ok && outcome.result.applied) {
+    // Every stock page shows the new counts (all style pages carry the "stock" tag too).
+    updateTag("stock");
+    refresh();
+  }
+  return outcome;
+}
+
+async function stockImport(csv: string, apply: boolean): Promise<StockImportOutcome> {
+  if (csv.trim() === "") return { ok: false, message: "The file is empty." };
+  try {
+    return { ok: true, result: await adminApi<StockImportResult>("/v1/admin/stock/import", { method: "POST", body: { csv, apply }, timeoutMs: 30_000 }) };
+  } catch (error) {
+    const state = errorState(error);
+    return { ok: false, message: Object.values(state.fields ?? {})[0] ?? state.message ?? "The file could not be read." };
+  }
+}
+
+export type StockCopyOutcome = { ok: true; copied: StockCopied[] } | { ok: false; message: string };
+
+/** Copies the chosen wholesale styles into the stock, as drafts without a price or stock. */
+export async function copyFromWholesale(productIds: number[]): Promise<StockCopyOutcome> {
+  const ids = productIds.filter((id) => Number.isInteger(id) && id > 0);
+  if (ids.length === 0) return { ok: false, message: "Tick the styles to copy." };
+  try {
+    const { copied } = await adminApi<{ copied: StockCopied[] }>("/v1/admin/stock/from-wholesale", {
+      method: "POST",
+      body: { product_ids: ids },
+      timeoutMs: 120_000,
+    });
+    // Drafts are not on the stock pages: only the admin pages change.
+    refresh();
+    return { ok: true, copied };
+  } catch (error) {
+    const state = errorState(error);
+    return { ok: false, message: Object.values(state.fields ?? {})[0] ?? state.message ?? "The styles could not be copied." };
+  }
 }

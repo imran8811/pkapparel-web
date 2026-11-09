@@ -3,7 +3,7 @@ import { getProducts, getShopCategories } from "@/lib/catalog";
 import { getPosts } from "@/lib/content";
 import { absoluteUrl } from "@/lib/seo";
 import { productUrl } from "@/lib/shop";
-import { stockSegments, stockUrl } from "@/lib/stock";
+import { DEFAULT_STOCK_SEGMENT, stockSegments, stockUrl } from "@/lib/stock";
 import { getStockStyles } from "@/lib/stock-catalog";
 
 const PAGES: { path: string; priority: number }[] = [
@@ -40,7 +40,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...PAGES.map((page) => ({ url: absoluteUrl(page.path), priority: page.priority })),
     // The stock pages (only reachable from the stock countries, but crawlers may index them: owner decision 2026-11-09).
     ...STOCK_PAGES.map((page) => ({ url: absoluteUrl(page.path), priority: page.priority })),
-    ...stockSegments.map((segment) => ({ url: absoluteUrl(stockUrl(segment.slug)), priority: 0.8 })),
+    // The men's jeans are /stock itself (listed above).
+    ...stockSegments.filter((segment) => segment.slug !== DEFAULT_STOCK_SEGMENT).map((segment) => ({ url: absoluteUrl(stockUrl(segment.slug)), priority: 0.8 })),
     ...stock.map((style) => ({ url: absoluteUrl(stockUrl(style.segment, style.slug)), priority: 0.7 })),
     // Shop pages without styles online are "made to order" pages, kept out of search results.
     ...categories

@@ -20,8 +20,12 @@ export function isStockSegment(value: string): value is StockSegment {
 
 export const stockSegmentInfo = (slug: StockSegment) => stockSegments.find((segment) => segment.slug === slug)!;
 
-/** /stock, /stock/men or /stock/men/{style} */
+/** The section listed at /stock itself: the stock pages open on the men's jeans (owner decision 2026-11-09). */
+export const DEFAULT_STOCK_SEGMENT: StockSegment = "men";
+
+/** A section's listing (/stock for the men's jeans, /stock/boys) or a style (/stock/men/{style}). */
 export function stockUrl(segment?: string, slug?: string): string {
+  if (!slug && (!segment || segment === DEFAULT_STOCK_SEGMENT)) return "/stock";
   return ["/stock", segment, slug].filter(Boolean).join("/");
 }
 

@@ -2,22 +2,51 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { LoaderCircle, LogOut } from "lucide-react";
 import { logout } from "@/lib/account/actions/auth";
+import { cn } from "@/lib/utils";
 
-/** The stock account's heading bar: back to the overview, and logging out (a full reload, so no page keeps the session). */
+const TABS = [
+  { href: "/stock/account", label: "Your orders" },
+  { href: "/stock/account/profile", label: "Your details" },
+];
+
+/** Tabs of the stock account, with the current page marked. Reads the URL, so it sits inside <Suspense>. */
 export function StockAccountNav() {
+  return <Tabs pathname={usePathname()} />;
+}
+
+/** The same tabs without a marked page: the static fallback while the URL is read. */
+export function StockAccountNavFallback() {
+  return <Tabs pathname={null} />;
+}
+
+/** The stock account's tabs, and logging out (a full reload, so no page keeps the session). */
+function Tabs({ pathname }: { pathname: string | null }) {
   const [pending, startTransition] = useTransition();
 
   return (
     <div className="flex items-end justify-between gap-4">
-      <nav aria-label="Account" className="-mb-px flex min-w-0 gap-1">
-        <Link href="/stock/account" className="shrink-0 border-b-2 border-stitch-500 px-3 py-3 text-sm font-medium sm:px-4">
-          Your orders
-        </Link>
-        <Link href="/stock" className="shrink-0 border-b-2 border-transparent px-3 py-3 text-sm font-medium text-muted-foreground hover:text-foreground sm:px-4">
-          Shop the stock
-        </Link>
+      <nav aria-label="Account" className="-mb-px flex min-w-0 gap-1 overflow-x-auto">
+        {TABS.map((tab) => {
+          // Order pages belong to "Your orders".
+          const active =
+            pathname !== null && (tab.href === "/stock/account" ? pathname === tab.href || pathname.startsWith("/stock/account/orders") : pathname.startsWith(tab.href));
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "shrink-0 border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:px-4",
+                active ? "border-stitch-500 text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {tab.label}
+            </Link>
+          );
+        })}
       </nav>
       <button
         type="button"

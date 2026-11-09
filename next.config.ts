@@ -90,6 +90,8 @@ const nextConfig: NextConfig = {
     // URLs of the old pkapparel.com that no longer exist. Shop and blog URLs keep their old paths.
     return [
       { source: "/pkapparel", destination: "/", permanent: true },
+      // The men's jeans are listed at /stock itself (owner decision 2026-11-09). The filters in the address carry over.
+      { source: "/stock/men", destination: "/stock", permanent: true },
       { source: "/men/jeans-pant", destination: "/wholesale-shop/men/jeans-pant", permanent: true },
       { source: "/women/jeans-pant", destination: "/wholesale-shop/women/jeans-pant", permanent: true },
       { source: "/men/chino-pant", destination: "/wholesale-shop/men/chino-pant", permanent: true },

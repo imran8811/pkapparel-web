@@ -20,6 +20,10 @@ export const CART_COOKIE = "pk_cart";
 /** Where a rejected session cookie is cleared before going back to the login page. */
 export const SESSION_ENDED = "/account/session-ended";
 
+/** The stock pages' login page and "session ended" route (stock visitors can only open pages under /stock). */
+export const STOCK_LOGIN = "/stock/login";
+export const STOCK_SESSION_ENDED = "/stock/account/session-ended";
+
 const secure = process.env.NODE_ENV === "production";
 
 type ApiRequest = NonNullable<Parameters<typeof apiWithMeta>[1]>;
@@ -39,15 +43,32 @@ export async function clientIp(): Promise<string | undefined> {
   return requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || requestHeaders.get("x-real-ip") || undefined;
 }
 
-/** Calls a buyer account endpoint. Without a session it goes to the login page; a rejected session is ended. */
+/**
+ * Calls a buyer account endpoint. Without a session it goes to the login page; a rejected session is ended.
+ * Called from a stock page (a server action of the stock account: cancel, payment, password…), it goes to the stock
+ * pages' login and "session ended" routes, the only ones stock visitors can open.
+ */
 export async function customerApiWithMeta<T, M = Record<string, unknown>>(path: string, request: BuyerRequest = {}): Promise<{ data: T; meta: M }> {
   const token = await sessionToken();
-  if (!token) redirect("/login");
+  const stock = await calledFromStockPage();
+  if (!token) redirect(stock ? STOCK_LOGIN : "/login");
   try {
     return await apiWithMeta<T, M>(path, { ...request, token });
   } catch (error) {
-    if (error instanceof ApiError && error.status === 401) redirect(SESSION_ENDED);
+    if (error instanceof ApiError && error.status === 401) redirect(stock ? STOCK_SESSION_ENDED : SESSION_ENDED);
     throw error;
+  }
+}
+
+/** Whether the request comes from a stock page (server actions are posted from the page that shows the form). */
+async function calledFromStockPage(): Promise<boolean> {
+  const referer = (await headers()).get("referer");
+  if (!referer) return false;
+  try {
+    const path = new URL(referer).pathname;
+    return path === "/stock" || path.startsWith("/stock/");
+  } catch {
+    return false;
   }
 }
 
@@ -94,11 +115,8 @@ export async function getCart(): Promise<Cart> {
 }
 
 /*
- * The stock pages' versions: their login page and "session ended" route are under /stock.
+ * The stock pages' versions of the account calls.
  */
-
-export const STOCK_LOGIN = "/stock/login";
-export const STOCK_SESSION_ENDED = "/stock/account/session-ended";
 
 /** Calls a buyer account endpoint from a stock page. Without a session it goes to the stock login page. */
 export async function stockCustomerApi<T>(path: string, request: BuyerRequest = {}): Promise<T> {

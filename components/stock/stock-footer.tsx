@@ -35,7 +35,7 @@ function FooterColumn({ title, links }: { title: string; links: readonly { href:
 /** Footer of the stock pages: only stock links, and the contacts (addresses without the country). */
 export function StockFooter({ site }: { site: Site }) {
   const { company, contact, addresses } = site;
-  const jeansLinks = [...stockSegments.map((segment) => ({ href: stockUrl(segment.slug), label: segment.title })), { href: "/stock", label: "All stock" }];
+  const jeansLinks = stockSegments.map((segment) => ({ href: stockUrl(segment.slug), label: segment.title }));
 
   return (
     <footer className="relative mt-auto overflow-hidden bg-denim-950 text-cotton-50">

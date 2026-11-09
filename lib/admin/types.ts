@@ -482,6 +482,64 @@ export type AdminStockStyle = {
   sets_in_stock: number;
 };
 
+/** A stock count file read by the API: what it changes (applied, or only previewed) and its problems. */
+export type StockImportResult = {
+  changes: { line: number; code: string; style: string; color: string; from: number; to: number }[];
+  unchanged: number;
+  errors: { line: number; message: string }[];
+  applied: boolean;
+};
+
+export type StockReportRow = {
+  style_id: number;
+  style_name: string;
+  style_no: string | null;
+  segment: string;
+  shown: boolean;
+  code: string;
+  color: string;
+  set_price_cents: number;
+  sets_in_stock: number;
+  value_cents: number;
+  /** In the period, less the sets of orders cancelled after payment. */
+  sold_sets: number;
+  sold_cents: number;
+  received_sets: number;
+  returned_sets: number;
+};
+
+export type StockReport = {
+  days: number;
+  since: string;
+  rows: StockReportRow[];
+  totals: { sets_in_stock: number; value_cents: number; sold_sets: number; sold_cents: number; received_sets: number; returned_sets: number };
+};
+
+/** A wholesale jeans style and what copying it into the stock makes (GET /v1/admin/stock/from-wholesale). */
+export type StockFromWholesaleRow = {
+  product_id: number;
+  name: string;
+  slug: string;
+  style_no: string | null;
+  wholesale_status: ProductStatus;
+  /** The stock segment of the copy: "men" or "boys". */
+  segment: string;
+  set_sizes: { size: string; pcs: number }[];
+  colors: number;
+  photos: number;
+  thumbnail: string | null;
+  /** A stock style has this web address: copied before, or made by hand. */
+  stock_style_id: number | null;
+  /** Why it cannot be copied. */
+  problem: string | null;
+  /** Color codes other stock styles use: those colors are not copied. */
+  skipped_colors: string[];
+  /** Description paragraphs and features about the wholesale business, left out of the copy. */
+  left_out: string[];
+};
+
+export type StockCopied = { product_id: number; stock_style_id: number; name: string; colors: number; photos: number };
+
 /** "cancelled": a paid order was cancelled and its sets went back (recorded by the API, not chosen by staff). */
 export type StockReason = "received" | "returned" | "sold" | "damaged" | "correction" | "cancelled";
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ImageIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { CopyIcon, DownloadIcon, ImageIcon, PlusIcon, SearchIcon, UploadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, NoAccess, PageHeader, Pill } from "@/components/admin/page-parts";
 import { inputClass } from "@/components/admin/styles";
@@ -44,7 +44,25 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
         actions={
           <>
             <Button asChild size="sm" variant="outline">
+              <Link href="/admin/stock/report">Report</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
               <Link href="/admin/stock/history">Stock history</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <a href="/admin/stock/export" download>
+                <DownloadIcon /> Export CSV
+              </a>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/admin/stock/import">
+                <UploadIcon /> Import counts
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/admin/stock/from-wholesale">
+                <CopyIcon /> Copy from wholesale
+              </Link>
             </Button>
             <Button asChild size="sm">
               <Link href="/admin/stock/new">
@@ -77,7 +95,19 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
       </div>
 
       {styles.length === 0 ? (
-        <EmptyState title={q ? "No styles match" : "No stock styles yet"}>{q ? "Try another search." : "Add the first one with “New stock style”."}</EmptyState>
+        <EmptyState title={q ? "No styles match" : "No stock styles yet"}>
+          {q ? (
+            "Try another search."
+          ) : (
+            <>
+              Add the first one with “New stock style”, or{" "}
+              <Link href="/admin/stock/from-wholesale" className="font-medium text-denim-600 hover:underline">
+                copy the wholesale shop&apos;s jeans
+              </Link>
+              .
+            </>
+          )}
+        </EmptyState>
       ) : (
         <ul className="overflow-hidden rounded-2xl border bg-white">
           {styles.map((style) => (
@@ -100,7 +130,9 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
                   {style.style_no ? ` · ${style.style_no}` : ""}
                 </p>
               </div>
-              <span className="hidden text-sm tabular-nums sm:block">{formatRupees(style.set_price_cents)}</span>
+              <span className={cn("hidden text-sm tabular-nums sm:block", style.set_price_cents === 0 && "text-stitch-700")}>
+                {style.set_price_cents > 0 ? formatRupees(style.set_price_cents) : "No price"}
+              </span>
               <span className={cn("w-20 text-right text-sm tabular-nums", style.sets_in_stock === 0 && "text-muted-foreground")}>
                 {style.sets_in_stock} set{style.sets_in_stock === 1 ? "" : "s"}
               </span>
