@@ -19,13 +19,13 @@ function paisa(value: string): number | null {
   return Number.isFinite(parsed) ? Math.round(parsed * 100) : NaN;
 }
 
-/** The API's "specs.fit" is the form's "spec_fit", and its "set_price_cents" the form's "set_price". */
+/** The API's "specs.fit" is the form's "spec_fit", and its "piece_price_cents" the form's "piece_price". */
 function renameFields(state: FormState): FormState {
   if (!state.fields) return state;
   const fields: Record<string, string> = {};
   for (const [name, message] of Object.entries(state.fields)) {
     const spec = /^specs\.(\w+)$/.exec(name)?.[1];
-    fields[spec ? `spec_${spec}` : name === "set_price_cents" ? "set_price" : name] = message;
+    fields[spec ? `spec_${spec}` : name === "piece_price_cents" ? "piece_price" : name] = message;
   }
   return { ...state, fields };
 }
@@ -43,9 +43,10 @@ function refreshStock(...slugs: string[]) {
 
 export async function saveStockStyle(_previous: FormState, form: FormData): Promise<FormState> {
   const id = number(form, "id");
-  const price = paisa(text(form, "set_price"));
+  // Prices are per piece; the API makes the set's price from its pieces.
+  const price = paisa(text(form, "piece_price"));
   if (price === null || Number.isNaN(price)) {
-    return failure("Please check the highlighted fields.", { set_price: "Enter the price of one set in rupees, like 6000." });
+    return failure("Please check the highlighted fields.", { piece_price: "Enter the price of one piece in rupees, like 980." });
   }
 
   const body = {
@@ -56,7 +57,7 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
     specs: specFields(form),
     description_html: text(form, "description_html"),
     set_sizes: jsonList<{ size: string; pcs: number }>(form, "set_sizes"),
-    set_price_cents: price,
+    piece_price_cents: price,
     seo_title: optional(form, "seo_title"),
     seo_description: optional(form, "seo_description"),
     status: optional(form, "status") ?? undefined,
@@ -72,8 +73,8 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
   }
 
   refreshStock(style.slug, text(form, "original_slug"));
-  if (!id) return { ...success("Style created. Now add its colors, photos and stock."), redirectTo: `/admin/stock/${style.id}` };
-  return success(style.status === "active" ? "Style saved and shown on the stock pages." : "Style saved.");
+  if (!id) return { ...success("Listing created. Now add its color, photos and stock."), redirectTo: `/admin/stock/${style.id}` };
+  return success(style.status === "active" ? "Listing saved and shown on the stock pages." : "Listing saved.");
 }
 
 export async function deleteStockStyle(id: number, slug: string): Promise<FormState> {

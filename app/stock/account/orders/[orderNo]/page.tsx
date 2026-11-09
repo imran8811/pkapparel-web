@@ -71,6 +71,7 @@ export default async function StockOrderPage({ params }: PageProps<"/stock/accou
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {line.sets ?? 0} {line.sets === 1 ? "set" : "sets"} × {formatRupees(line.unit_price_cents)} · {line.qty} pcs
+                      {line.sets && line.qty > 0 ? ` · ${formatRupees(Math.round((line.unit_price_cents * line.sets) / line.qty))} a piece` : ""}
                     </p>
                   </div>
                   <p className="shrink-0 text-sm font-medium tabular-nums">{formatRupees(line.line_cents)}</p>

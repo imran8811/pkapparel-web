@@ -81,6 +81,7 @@ export function OrderLines({
           <div className="col-start-2 text-sm sm:col-start-3 sm:text-right">
             <p className="tabular-nums">
               {stock ? `${line.sets ?? 0} ${line.sets === 1 ? "set" : "sets"} (${line.qty} pcs)` : `${line.qty} pcs`} × {money(line.unit_price_cents)}
+              {stock && line.sets && line.qty > 0 ? <span className="block text-xs text-muted-foreground">{money(Math.round((line.unit_price_cents * line.sets) / line.qty))} a piece</span> : null}
             </p>
             <p className="font-semibold tabular-nums">{money(line.line_cents)}</p>
           </div>

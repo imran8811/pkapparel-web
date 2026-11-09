@@ -73,7 +73,7 @@ export function StockCartView({ initialCart, signedIn }: { initialCart: StockCar
                       {line.name} <span className="font-mono text-xs">{line.code}</span>
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Set of {line.set.pieces}: {setContents(line.set.sizes)} · {formatRupees(line.set_price_cents)} per set
+                      Set of {line.set.pieces}: {setContents(line.set.sizes)} · {formatRupees(line.piece_price_cents)} a piece, {formatRupees(line.set_price_cents)} a set
                     </p>
                   </div>
                   <button

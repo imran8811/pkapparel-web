@@ -435,6 +435,8 @@ export type AdminStockStyleSummary = {
   name: string;
   style_no: string | null;
   segment: string;
+  /** Prices are per piece; a set costs its pieces times this (set_price_cents). 0: no price yet. */
+  piece_price_cents: number;
   set_price_cents: number;
   set_pieces: number;
   status: ProductStatus;
@@ -474,6 +476,8 @@ export type AdminStockStyle = {
   description_html: string;
   set_sizes: { size: string; pcs: number }[];
   set_pieces: number;
+  /** Prices are per piece; a set costs its pieces times this (set_price_cents). 0: no price yet. */
+  piece_price_cents: number;
   set_price_cents: number;
   seo_title: string | null;
   seo_description: string | null;

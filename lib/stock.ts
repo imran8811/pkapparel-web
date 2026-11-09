@@ -67,6 +67,8 @@ export type StockCard = {
   /** The sizes of the set, smallest first. */
   sizes: string[];
   set_pieces: number;
+  /** Prices are per piece; a set costs its pieces times this (set_price_cents). 0: no price yet. */
+  piece_price_cents: number;
   set_price_cents: number;
   sets_in_stock: number;
   is_featured: boolean;
@@ -92,6 +94,8 @@ export type StockStyle = {
   spec_fields: SpecField[];
   description_html: string;
   set: { sizes: StockSetSize[]; pieces: number };
+  /** Prices are per piece; a set costs its pieces times this (set_price_cents). 0: no price yet. */
+  piece_price_cents: number;
   set_price_cents: number;
   sets_in_stock: number;
   colors: StockColor[];
@@ -124,8 +128,8 @@ export function formatRupees(cents: number): string {
   return `Rs ${rupees.format(Math.round(cents / 100))}`;
 }
 
-/** "Rs 6,000", or "Price on request" while a style copied from the wholesale shop has no price yet. */
-export function formatSetPrice(cents: number): string {
+/** "Rs 980" (a piece), or "Price on request" while a listing copied from the wholesale shop has no price yet. */
+export function formatPiecePrice(cents: number): string {
   return cents > 0 ? formatRupees(cents) : "Price on request";
 }
 
@@ -154,8 +158,8 @@ export function filterStock(styles: StockCard[], filters: StockFilters): StockCa
       (!filters.fit || style.fit?.toLowerCase() === filters.fit.toLowerCase()) &&
       (!filters.stretch || style.stretch === filters.stretch),
   );
-  // Styles without a price yet come last either way.
-  const price = (style: StockCard, none: number) => (style.set_price_cents > 0 ? style.set_price_cents : none);
+  // By the price per piece; listings without a price yet come last either way.
+  const price = (style: StockCard, none: number) => (style.piece_price_cents > 0 ? style.piece_price_cents : none);
   if (filters.sort === "price-asc") return [...matching].sort((a, b) => price(a, Number.MAX_SAFE_INTEGER) - price(b, Number.MAX_SAFE_INTEGER));
   if (filters.sort === "price-desc") return [...matching].sort((a, b) => price(b, -1) - price(a, -1));
   return matching;
@@ -179,6 +183,7 @@ export type StockCartLine = {
   image: ProductImage | null;
   style: { slug: string; name: string; style_no: string | null; segment: StockSegment };
   set: { sizes: StockSetSize[]; pieces: number };
+  piece_price_cents: number;
   set_price_cents: number;
   sets: number;
   pieces: number;

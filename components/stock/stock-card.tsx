@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ColorDots } from "@/components/shop/product-card";
 import { mediaSrc } from "@/lib/media";
-import { formatSetPrice, sizeRange, stockSegmentInfo, stockUrl, type StockCard as Card } from "@/lib/stock";
+import { formatPiecePrice, formatRupees, sizeRange, stockSegmentInfo, stockUrl, type StockCard as Card } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 /** A stock listing in a grid (one color each): photo (second photo on hover), its color and code, sizes of the set, price per set, and whether it is sold out. */
@@ -60,10 +60,13 @@ export function StockCard({ style, preload = false }: { style: Card; preload?: b
         ) : null}
         <div className="mt-auto flex items-center justify-between gap-3 pt-3">
           <p className="text-sm">
-            <span className="font-semibold">{formatSetPrice(style.set_price_cents)}</span>{" "}
-            <span className="text-muted-foreground">
-              {style.set_price_cents > 0 ? "/" : "·"} set of {style.set_pieces}
-            </span>
+            <span className="font-semibold">{formatPiecePrice(style.piece_price_cents)}</span>{" "}
+            <span className="text-muted-foreground">{style.piece_price_cents > 0 ? "/ piece" : `· set of ${style.set_pieces}`}</span>
+            {style.piece_price_cents > 0 ? (
+              <span className="block text-xs text-muted-foreground">
+                {formatRupees(style.set_price_cents)} a set of {style.set_pieces}
+              </span>
+            ) : null}
           </p>
           {style.colors.length > 1 ? <ColorDots colors={style.colors} /> : null}
         </div>

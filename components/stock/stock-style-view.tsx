@@ -10,7 +10,7 @@ import { addToStockCart } from "@/lib/account/actions/stock";
 import { notifyUiChange } from "@/lib/account/use-ui-state";
 import { telUrl, whatsappUrl } from "@/lib/links";
 import { mediaSrc } from "@/lib/media";
-import { formatRupees, formatSetPrice, RETURN_DAYS, setsInStock, stockSegmentInfo, type StockStyle } from "@/lib/stock";
+import { formatPiecePrice, formatRupees, RETURN_DAYS, setsInStock, stockSegmentInfo, type StockStyle } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 const noSubscription = () => () => {};
@@ -38,7 +38,7 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
   const quantity = Math.max(1, Math.min(sets, Math.max(available, 1)));
   const total = quantity * style.set_price_cents;
   // A style copied from the wholesale shop has no price until staff enter one: it is ordered on WhatsApp or by phone.
-  const priced = style.set_price_cents > 0;
+  const priced = style.piece_price_cents > 0;
 
   const add = () =>
     startAdding(async () => {
@@ -71,11 +71,12 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
       `${style.name}${style.style_no ? ` (${style.style_no})` : ""}`,
       `Color: ${color.name} (${color.code})`,
       `Sets: ${quantity} × ${style.set.pieces} pcs, sizes ${style.set.sizes.map((s) => s.size).join(", ")}`,
+      `Price: ${formatRupees(style.piece_price_cents)} a piece, ${formatRupees(style.set_price_cents)} a set`,
       `Total: ${formatRupees(total)}`,
       pageUrl(),
     ].join("\n");
   const askMessage = () => `Hello PK Apparel, when will ${style.name} in ${color.name} (${color.code}) be back in stock?\n${pageUrl()}`;
-  const priceMessage = () => `Hello PK Apparel, what is the price of ${style.name} in ${color.name} (${color.code}), per set of ${style.set.pieces} pieces?\n${pageUrl()}`;
+  const priceMessage = () => `Hello PK Apparel, what is the price of ${style.name} in ${color.name} (${color.code}), per piece (sets of ${style.set.pieces} pieces)?\n${pageUrl()}`;
 
   return (
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
@@ -114,9 +115,15 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
           <p className="font-mono text-[11px] tracking-[0.18em] text-denim-600 uppercase">{stockSegmentInfo(style.segment).title} · in stock</p>
           <h1 className="mt-3 text-4xl leading-[1.04] font-bold tracking-[-0.03em] sm:text-5xl">{style.name}</h1>
           <p className="mt-5 flex flex-wrap items-baseline gap-x-2">
-            <span className="font-heading text-3xl font-semibold tabular-nums">{formatSetPrice(style.set_price_cents)}</span>
-            <span className="text-muted-foreground">{priced ? "per set" : "for sets"} of {style.set.pieces} pieces</span>
+            <span className="font-heading text-3xl font-semibold tabular-nums">{formatPiecePrice(style.piece_price_cents)}</span>
+            <span className="text-muted-foreground">{priced ? "per piece" : `for sets of ${style.set.pieces} pieces`}</span>
           </p>
+          {priced ? (
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              One set: {style.set.pieces} pieces × {formatRupees(style.piece_price_cents)} ={" "}
+              <span className="font-medium text-foreground tabular-nums">{formatRupees(style.set_price_cents)}</span>
+            </p>
+          ) : null}
         </div>
 
         <div>
@@ -216,7 +223,9 @@ export function StockStyleView({ style, whatsapp, phone }: { style: StockStyle; 
                 </div>
               </div>
               <div className="mt-4 flex items-end justify-between gap-3">
-                <p className="text-sm text-muted-foreground">{quantity * style.set.pieces} pieces</p>
+                <p className="text-sm text-muted-foreground">
+                  {quantity * style.set.pieces} pieces × {formatRupees(style.piece_price_cents)}
+                </p>
                 <p className="font-heading text-2xl font-semibold tabular-nums">{formatRupees(total)}</p>
               </div>
               {result ? (

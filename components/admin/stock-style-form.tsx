@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { AdminForm, FormError, SelectField, SubmitButton, SwitchField, TextAreaField, TextField, useAdminForm } from "@/components/admin/form";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { Panel } from "@/components/admin/page-parts";
@@ -28,8 +28,7 @@ const SIZES = Array.from({ length: 48 - 16 + 1 }, (_, index) => String(16 + inde
 
 const MAX_PCS = 24;
 
-/** Rupees for an input: 600000 → "6000" */
-/** Empty for a style without a price yet (copied from the wholesale shop). */
+/** Rupees for an input: 98000 → "980". Empty for a listing without a price yet (copied from the wholesale shop). */
 const rupees = (cents: number | null | undefined) => (cents ? String(Math.round(cents / 100)) : "");
 
 type StockStyleFormProps = { style: AdminStockStyle | null; specs: CatalogSpec[] };
@@ -41,6 +40,11 @@ export function StockStyleForm(props: StockStyleFormProps) {
 }
 
 function StockStyleEditor({ style, specs, onSaved }: StockStyleFormProps & { onSaved?: () => void }) {
+  // The set and the price per piece, so the price panel shows what one set costs.
+  const [pieces, setPieces] = useState<Record<string, number>>(() => Object.fromEntries((style?.set_sizes ?? []).map(({ size, pcs }) => [size, pcs])));
+  const [price, setPrice] = useState(rupees(style?.piece_price_cents));
+  const setTotal = Object.values(pieces).reduce((sum, pcs) => sum + pcs, 0);
+
   return (
     <AdminForm action={saveStockStyle} onSuccess={onSaved} className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       {style ? (
@@ -68,7 +72,7 @@ function StockStyleEditor({ style, specs, onSaved }: StockStyleFormProps & { onS
         </Panel>
 
         <Panel title="The set" description="Stock is sold by set only. Tick the waist sizes in one set and the pieces of each size.">
-          <SetSizesField initial={style?.set_sizes ?? []} />
+          <SetSizesField pieces={pieces} setPieces={setPieces} />
         </Panel>
 
         <Panel title="Specifications" description="Shown on the style's page in this order. Pick a suggestion or type your own.">
@@ -111,18 +115,13 @@ function StockStyleEditor({ style, specs, onSaved }: StockStyleFormProps & { onS
 
         <Panel title="Price">
           <TextField
-            label="Price per set (Rs)"
-            name="set_price"
+            label="Price per piece (Rs)"
+            name="piece_price"
             inputMode="numeric"
-            defaultValue={rupees(style?.set_price_cents)}
-            placeholder="6000"
-            hint={
-              style && style.set_price_cents > 0
-                ? `Now ${formatRupees(style.set_price_cents)} for ${style.set_pieces} pieces.`
-                : style
-                  ? `No price yet. The price of one whole set of ${style.set_pieces} pieces.`
-                  : "The price of one whole set."
-            }
+            defaultValue={rupees(style?.piece_price_cents)}
+            onChange={(event) => setPrice(event.target.value)}
+            placeholder="980"
+            hint={setPriceHint(price, setTotal)}
           />
         </Panel>
 
@@ -168,9 +167,17 @@ function SpecField({ spec, defaultValue }: { spec: CatalogSpec; defaultValue: st
   );
 }
 
+/** "One set: 12 pieces × Rs 980 = Rs 11,760." as the price and the set are typed. */
+function setPriceHint(price: string, pieces: number): string {
+  const typed = Number(price.replace(/^rs\.?/i, "").replace(/[,\s]/g, ""));
+  if (price.trim() === "" || !Number.isFinite(typed) || typed <= 0) return "Without a price the listing shows “Price on request”. A set costs its pieces times this price.";
+  if (pieces === 0) return "Choose the sizes of the set to see what one set costs.";
+  const piece = Math.round(typed * 100);
+  return `One set: ${pieces} pieces × ${formatRupees(piece)} = ${formatRupees(piece * pieces)}.`;
+}
+
 /** Waist sizes of the set with the pieces of each; sent as JSON in the hidden "set_sizes" field. */
-function SetSizesField({ initial }: { initial: { size: string; pcs: number }[] }) {
-  const [pieces, setPieces] = useState<Record<string, number>>(() => Object.fromEntries(initial.map(({ size, pcs }) => [size, pcs])));
+function SetSizesField({ pieces, setPieces }: { pieces: Record<string, number>; setPieces: Dispatch<SetStateAction<Record<string, number>>> }) {
   const { state } = useAdminForm();
   const error = state.fields?.set_sizes;
   const chosen = SIZES.filter((size) => pieces[size] !== undefined);

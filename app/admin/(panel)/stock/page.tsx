@@ -141,8 +141,15 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
                   </span>
                 </p>
               </div>
-              <span className={cn("hidden text-sm tabular-nums sm:block", style.set_price_cents === 0 && "text-stitch-700")}>
-                {style.set_price_cents > 0 ? formatRupees(style.set_price_cents) : "No price"}
+              <span className={cn("hidden text-right text-sm tabular-nums sm:block", style.piece_price_cents === 0 && "text-stitch-700")}>
+                {style.piece_price_cents > 0 ? (
+                  <>
+                    {formatRupees(style.piece_price_cents)}/pc
+                    <span className="block text-xs text-muted-foreground">{formatRupees(style.set_price_cents)}/set</span>
+                  </>
+                ) : (
+                  "No price"
+                )}
               </span>
               <span className={cn("w-20 text-right text-sm tabular-nums", style.sets_in_stock === 0 && "text-muted-foreground")}>
                 {style.sets_in_stock} set{style.sets_in_stock === 1 ? "" : "s"}

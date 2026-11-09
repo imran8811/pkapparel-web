@@ -89,7 +89,7 @@ export function StockCheckoutForm({ checkout, customer }: { checkout: StockCheck
               <span className="min-w-0">
                 <span className="block font-medium">{line.style.name}</span>
                 <span className="text-muted-foreground">
-                  {line.name} · {line.sets} × {formatRupees(line.set_price_cents)}
+                  {line.name} · {line.sets} × {formatRupees(line.set_price_cents)} ({line.set.pieces} × {formatRupees(line.piece_price_cents)})
                 </span>
               </span>
               <span className="shrink-0 tabular-nums">{formatRupees(line.line_cents)}</span>
