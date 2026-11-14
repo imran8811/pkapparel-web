@@ -2,7 +2,14 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { api } from "@/lib/api";
 
-export type Address = { label: string; line: string; city: string; country: string };
+export type Address = {
+  label: string;
+  line: string;
+  city: string;
+  /** Printed after the city on invoices and receipts ("Lahore 54000"). */
+  postal_code?: string | null;
+  country: string;
+};
 
 export type SocialNetwork = "facebook" | "instagram" | "tiktok" | "linkedin" | "youtube";
 

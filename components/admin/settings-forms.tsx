@@ -53,7 +53,7 @@ export function SettingsForms({ settings }: { settings: AdminSettings }) {
         </AdminForm>
       </Section>
 
-      <Section id="addresses" title="Addresses" description="Factory and office addresses on the contact page and in the footer (up to 4).">
+      <Section id="addresses" title="Addresses" description="Factory and office addresses on the contact page and in the footer (up to 4). The first one, with its post code, is printed on invoices, receipts and emails.">
         <AdminForm key={JSON.stringify(addresses)} action={saveSettings.bind(null, "addresses")} className="grid gap-4">
           <AddressesEditor initial={addresses} />
           <SaveRow />
@@ -281,7 +281,7 @@ function SaveRow() {
 }
 
 function AddressesEditor({ initial }: { initial: Address[] }) {
-  const [addresses, setAddresses] = useState(initial.length ? initial : [{ label: "", line: "", city: "", country: "Pakistan" }]);
+  const [addresses, setAddresses] = useState<Address[]>(initial.length ? initial : [{ label: "", line: "", city: "", postal_code: "", country: "Pakistan" }]);
   const { state } = useAdminForm();
 
   const update = (index: number, key: keyof Address, value: string) =>
@@ -291,6 +291,7 @@ function AddressesEditor({ initial }: { initial: Address[] }) {
     { key: "label", label: "Label", placeholder: "Factory" },
     { key: "line", label: "Street", placeholder: "18-KM Ferozepur Road", wide: true },
     { key: "city", label: "City", placeholder: "Lahore" },
+    { key: "postal_code", label: "Post code", placeholder: "54000" },
     { key: "country", label: "Country", placeholder: "Pakistan" },
   ];
 
@@ -298,14 +299,14 @@ function AddressesEditor({ initial }: { initial: Address[] }) {
     <div className="grid gap-4">
       <input type="hidden" name="addresses" value={JSON.stringify(addresses)} />
       {addresses.map((address, index) => (
-        <div key={index} className="grid gap-3 rounded-xl border bg-cotton-50/60 p-4 sm:grid-cols-[1fr_2fr_1fr_1fr_auto] sm:items-end">
+        <div key={index} className="grid gap-3 rounded-xl border bg-cotton-50/60 p-4 sm:grid-cols-[1fr_2fr_1fr_0.8fr_1fr_auto] sm:items-end">
           {fields.map((field) => {
             const error = state.fields?.[`addresses.${index}.${field.key}`];
             return (
               <label key={field.key} className="grid gap-1.5 text-sm font-medium">
                 {field.label}
                 <input
-                  value={address[field.key]}
+                  value={address[field.key] ?? ""}
                   onChange={(event) => update(index, field.key, event.target.value)}
                   placeholder={field.placeholder}
                   aria-invalid={error ? true : undefined}
@@ -334,7 +335,7 @@ function AddressesEditor({ initial }: { initial: Address[] }) {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setAddresses((current) => [...current, { label: "", line: "", city: "", country: "Pakistan" }])}
+            onClick={() => setAddresses((current) => [...current, { label: "", line: "", city: "", postal_code: "", country: "Pakistan" }])}
           >
             <PlusIcon />
             Add address
