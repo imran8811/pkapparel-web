@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MailIcon } from "lucide-react";
+import { MailIcon, ScrollTextIcon } from "lucide-react";
 import { CustomerStatusForm } from "@/components/admin/customer-status-form";
 import { EmptyState, NoAccess, OrderStatusPill, PageHeader, Panel, Pill } from "@/components/admin/page-parts";
+import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { BUSINESS_TYPES } from "@/lib/account/types";
 import { can } from "@/lib/admin/permissions";
@@ -42,6 +43,15 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
           </span>
         }
         description={`${customer.contact_name} · ${business ?? customer.business_type} · ${countryName(customer.country_code)}`}
+        actions={
+          can(staff.role, "invoices") ? (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/admin/invoices/new?customer=${customer.id}`}>
+                <ScrollTextIcon /> New invoice
+              </Link>
+            </Button>
+          ) : null
+        }
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">

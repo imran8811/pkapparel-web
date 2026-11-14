@@ -578,3 +578,103 @@ export type AdminStockMovement = {
   staff_name: string | null;
   created_at: string;
 };
+
+/* Invoices made in Admin → Invoices for buyers outside the website (/v1/admin/invoices). */
+
+export type InvoiceType = "sample" | "proforma" | "commercial";
+
+export type InvoiceStatus = "open" | "paid" | "cancelled";
+
+/** What the list and the page show: open invoices are "not sent", "sent" or "overdue". */
+export type InvoiceStage = "not_sent" | "sent" | "overdue" | "paid" | "cancelled";
+
+export type InvoiceParty = {
+  company: string | null;
+  contact_name: string | null;
+  email: string | null;
+  phone: string | null;
+  /** Street, postcode and city, one per line. */
+  address: string | null;
+  country_code: string;
+  tax_id: string | null;
+};
+
+export type InvoiceLine = {
+  description: string;
+  details: string | null;
+  hs_code: string | null;
+  qty: number;
+  unit: string;
+  unit_price_cents: number;
+  amount_cents: number;
+};
+
+export type InvoiceAmounts = {
+  subtotal_cents: number;
+  shipping_cents: number;
+  discount_cents: number;
+  total_cents: number;
+  /** Already paid (e.g. the deposit), deducted. */
+  received_cents: number;
+  /** A proforma's deposit; 100 for the other types. */
+  deposit_percent: number;
+  due_now_cents: number;
+  /** What stays to pay after the amount due now (a proforma's balance before shipment). */
+  balance_after_cents: number;
+};
+
+export type Invoice = {
+  id: number;
+  invoice_no: string;
+  type: InvoiceType;
+  type_label: string;
+  status: InvoiceStatus;
+  stage: InvoiceStage;
+  stage_label: string;
+  customer_id: number | null;
+  /** The buyer account the invoice was made from (the list leaves it out). */
+  customer: { id: number; company_name: string; email: string } | null;
+  buyer: InvoiceParty;
+  /** Deliver to; null when it is the buyer. */
+  consignee: InvoiceParty | null;
+  currency: string;
+  issue_date: string;
+  due_date: string | null;
+  buyer_reference: string | null;
+  incoterm: string | null;
+  shipping_method: string | null;
+  delivery_time: string | null;
+  amounts: InvoiceAmounts;
+  /** Pieces on the invoice (the list only). */
+  total_qty: number | null;
+  /** The lines (empty in the list). */
+  lines: InvoiceLine[];
+  notes: string | null;
+  terms: string | null;
+  staff_notes: string | null;
+  sent_at: string | null;
+  sent_to: string | null;
+  paid_on: string | null;
+  payment_reference: string | null;
+  cancelled_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InvoiceCounts = Record<"open" | "overdue" | "paid" | "cancelled", number> & Record<InvoiceType, number>;
+
+export type InvoiceDefaults = {
+  today: string;
+  due_dates: Record<InvoiceType, string | null>;
+  terms: Record<InvoiceType, string>;
+  deposit_percent: number;
+  sample_price_cents: number;
+  sample_lead_time_days: number;
+  lead_time_days: number;
+  currencies: string[];
+  incoterms: string[];
+  /** False while Settings has no bank account: the PDF then says the details follow. */
+  bank_ready: boolean;
+  company_name: string;
+};

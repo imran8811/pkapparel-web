@@ -99,6 +99,9 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
   - `lib/admin/permissions.ts` mirrors the roles, only to hide what a role cannot use: production staff see stages and photos, sales staff the order workflow and a read-only payment queue, admins everything (only they confirm payments).
   - Forms post to server actions in `lib/admin/actions`.
   - **Orders:** the order page (`app/admin/(panel)/orders/[id]`) offers the next steps for its status: payments, production stages and photos, charges, documents, ready to ship, shipped, delivered, hold, cancel and notes. *Payments* is the queue of reported transfers.
+  - **Invoices** (`app/admin/(panel)/invoices`, sales staff and admins): sample, proforma and final invoices for buyers who order outside the website.
+    - The form (`components/admin/invoice-form.tsx`) fills the buyer from an account (search, or `/admin/invoices/new?customer={id}` from the customer's page) or takes typed details, and shows the totals while typing (the same sums as the API).
+    - The invoice page previews or downloads the PDF (`/admin/invoices/{id}/pdf`, `?view=1` opens it in the browser; never cached), emails it, marks it paid or unpaid, cancels it, or makes a copy as another type.
   - **Dashboard:** admins see a launch checklist (what is still missing before the shop takes orders) until every item is done.
 - **Wholesale shop (`app/(site)/wholesale-shop`):** URLs keep the old site's pattern, `/wholesale-shop/{segment}/{type}/{style}`.
   - Segments are `men` and `women`; the product types are listed in `lib/nav.ts`, mirroring the API's `App\Models\ProductTypes`. The former `/wholesale-shop/boys/…` and `/girls/…` pages redirect to Men and Women (`next.config.ts`).
@@ -116,7 +119,7 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
   - **The order page** shows the production timeline with photos, the shipment and tracking, and the documents (proforma and balance invoice, receipts, files staff share). Sample orders use the same pages with their own wording (no deposit, production or balance invoice).
   - **Downloads and private photos** go through route handlers that fetch the file from the API with the login token, so the token never reaches the browser:
     - buyers: `/account/orders/{orderNo}/` + `proforma-invoice`, `invoice`, `receipts/{receiptNo}`, `documents/{id}`, `photos/{id}`
-    - admin: `/admin/orders/{id}/proforma-invoice` and `/invoice`, `/admin/payments/{id}/slip` and `/receipt`, `/admin/order-documents/{id}`, `/admin/order-photos/{id}`, `/admin/inquiry-files/{id}`
+    - admin: `/admin/orders/{id}/proforma-invoice` and `/invoice`, `/admin/invoices/{id}/pdf`, `/admin/payments/{id}/slip` and `/receipt`, `/admin/order-documents/{id}`, `/admin/order-photos/{id}`, `/admin/inquiry-files/{id}`
     - Photos are shown with a plain `<img>`, because the image optimizer would fetch them without the login cookie. They are shrunk in the browser before upload (one per request; the host accepts at most 4.5 MB per request).
   - **The email confirmation link** (`/verify-email?token=…`) is a route handler that confirms the address and redirects.
 - **Quote requests, samples and reviews:**

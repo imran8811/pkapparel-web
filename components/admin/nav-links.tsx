@@ -20,6 +20,7 @@ import {
   NewspaperIcon,
   PackageIcon,
   ReceiptTextIcon,
+  ScrollTextIcon,
   BanknoteIcon,
   ShieldCheckIcon,
   SettingsIcon,
@@ -39,6 +40,7 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
     title: "Sales",
     items: [
       { href: "/admin/orders", label: "Orders", icon: ReceiptTextIcon, area: "orders" },
+      { href: "/admin/invoices", label: "Invoices", icon: ScrollTextIcon, area: "invoices" },
       { href: "/admin/payments", label: "Payments", icon: BanknoteIcon, area: "payments" },
       { href: "/admin/customers", label: "Customers", icon: UsersIcon, area: "customers" },
       { href: "/admin/inquiries", label: "Inquiries", icon: InboxIcon, area: "inquiries" },
