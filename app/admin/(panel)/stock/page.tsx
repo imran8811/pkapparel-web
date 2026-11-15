@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { CopyIcon, DownloadIcon, ImageIcon, PlusIcon, SearchIcon, UploadIcon } from "lucide-react";
+import { CopyIcon, DownloadIcon, FileSpreadsheetIcon, ImageIcon, PlusIcon, SearchIcon, UploadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, NoAccess, PageHeader, Pill } from "@/components/admin/page-parts";
 import { inputClass } from "@/components/admin/styles";
@@ -57,6 +57,11 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
             <Button asChild size="sm" variant="outline">
               <Link href="/admin/stock/import">
                 <UploadIcon /> Import counts
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/admin/stock/import-listings">
+                <FileSpreadsheetIcon /> Import listings
               </Link>
             </Button>
             <Button asChild size="sm" variant="outline">
@@ -156,6 +161,11 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
               </span>
               {style.is_featured ? <Pill tone="blue">Featured</Pill> : null}
               <Pill tone={STATUS[style.status].tone}>{STATUS[style.status].label}</Pill>
+              <Button asChild variant="ghost" size="icon-sm">
+                <Link href={`/admin/stock/new?copy=${style.id}`} aria-label={`Duplicate ${style.name}${style.color_name ? `, ${style.color_name}` : ""}`} title="Duplicate">
+                  <CopyIcon />
+                </Link>
+              </Button>
             </li>
           ))}
         </ul>

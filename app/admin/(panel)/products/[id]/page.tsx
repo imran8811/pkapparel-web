@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ExternalLinkIcon } from "lucide-react";
+import { CopyIcon, ExternalLinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ColorManager } from "@/components/admin/color-manager";
 import { NoAccess, PageHeader } from "@/components/admin/page-parts";
@@ -39,13 +39,20 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
         back={{ href: "/admin/products", label: "Shop styles" }}
         title={product.name}
         actions={
-          product.status === "active" ? (
+          <>
             <Button asChild variant="outline" size="sm">
-              <Link href={productUrl(product)} target="_blank">
-                <ExternalLinkIcon /> View in the shop
+              <Link href={`/admin/products/new?copy=${product.id}`}>
+                <CopyIcon /> Duplicate
               </Link>
             </Button>
-          ) : null
+            {product.status === "active" ? (
+              <Button asChild variant="outline" size="sm">
+                <Link href={productUrl(product)} target="_blank">
+                  <ExternalLinkIcon /> View in the shop
+                </Link>
+              </Button>
+            ) : null}
+          </>
         }
       />
       <div className="grid gap-6">

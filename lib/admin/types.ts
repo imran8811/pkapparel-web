@@ -498,6 +498,27 @@ export type StockImportResult = {
   applied: boolean;
 };
 
+/** A new listing read from a file; `id` once it is created. `specs`: how many specifications the line fills in. */
+export type StockListingImportRow = {
+  line: number;
+  id: number | null;
+  name: string;
+  style_no: string | null;
+  segment: "men" | "boys";
+  slug: string;
+  color: string;
+  code: string;
+  hex: string | null;
+  set_sizes: { size: string; pcs: number }[];
+  set_pieces: number;
+  piece_price_cents: number;
+  set_price_cents: number;
+  sets_in_stock: number;
+  specs: number;
+};
+
+export type StockListingImportResult = { listings: StockListingImportRow[]; errors: { line: number; message: string }[]; applied: boolean };
+
 export type StockReportRow = {
   style_id: number;
   style_name: string;

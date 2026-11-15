@@ -4,7 +4,7 @@ import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminApi } from "@/lib/admin/session";
 import { checked, errorState, failure, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
-import type { AdminStockColor, AdminStockStyle, StockCopied, StockImportResult } from "@/lib/admin/types";
+import type { AdminStockColor, AdminStockStyle, StockCopied, StockImportResult, StockListingImportResult } from "@/lib/admin/types";
 import { setsInStock } from "@/lib/stock";
 
 /*
@@ -174,6 +174,36 @@ async function stockImport(csv: string, apply: boolean): Promise<StockImportOutc
   if (csv.trim() === "") return { ok: false, message: "The file is empty." };
   try {
     return { ok: true, result: await adminApi<StockImportResult>("/v1/admin/stock/import", { method: "POST", body: { csv, apply }, timeoutMs: 30_000 }) };
+  } catch (error) {
+    const state = errorState(error);
+    return { ok: false, message: Object.values(state.fields ?? {})[0] ?? state.message ?? "The file could not be read." };
+  }
+}
+
+export type StockListingImportOutcome = { ok: true; result: StockListingImportResult } | { ok: false; message: string };
+
+/** Reads a file of new listings: the listings it would create, and its problems. Nothing is created yet. */
+export async function previewStockListingImport(csv: string): Promise<StockListingImportOutcome> {
+  return stockListingImport(csv, false);
+}
+
+/** Creates the file's listings, as drafts (only when no line has a problem). */
+export async function applyStockListingImport(csv: string): Promise<StockListingImportOutcome> {
+  const outcome = await stockListingImport(csv, true);
+  if (outcome.ok && outcome.result.applied) {
+    updateTag("stock");
+    refresh();
+  }
+  return outcome;
+}
+
+async function stockListingImport(csv: string, apply: boolean): Promise<StockListingImportOutcome> {
+  if (csv.trim() === "") return { ok: false, message: "The file is empty." };
+  try {
+    return {
+      ok: true,
+      result: await adminApi<StockListingImportResult>("/v1/admin/stock/import-listings", { method: "POST", body: { csv, apply }, timeoutMs: 60_000 }),
+    };
   } catch (error) {
     const state = errorState(error);
     return { ok: false, message: Object.values(state.fields ?? {})[0] ?? state.message ?? "The file could not be read." };

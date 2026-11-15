@@ -32,7 +32,13 @@ const MAX_PCS = 24;
 /** Rupees for an input: 98000 → "980". Empty for a listing without a price yet (copied from the wholesale shop). */
 const rupees = (cents: number | null | undefined) => (cents ? String(Math.round(cents / 100)) : "");
 
-type StockStyleFormProps = { style: AdminStockStyle | null; specs: CatalogSpec[] };
+type StockStyleFormProps = {
+  /** The listing being edited, or null for a new listing. */
+  style: AdminStockStyle | null;
+  /** For a new listing: the listing it is a duplicate of, whose details fill the form. */
+  copyOf?: AdminStockStyle | null;
+  specs: CatalogSpec[];
+};
 
 export function StockStyleForm(props: StockStyleFormProps) {
   // A new style opens in its own editor once saved; the "new style" form then starts empty again.
@@ -40,10 +46,21 @@ export function StockStyleForm(props: StockStyleFormProps) {
   return <StockStyleEditor key={version} {...props} onSaved={props.style ? undefined : () => setVersion((current) => current + 1)} />;
 }
 
-function StockStyleEditor({ style, specs, onSaved }: StockStyleFormProps & { onSaved?: () => void }) {
+/**
+ * What a duplicate starts from: the listing's details under the same name (each color is a listing of its own, so
+ * another color of the same jeans keeps the name). The web address is made anew, and the search engine texts and the
+ * featured flag are left out. The color, its photos and stock are not copied.
+ */
+function asCopy(original: AdminStockStyle): AdminStockStyle {
+  return { ...original, slug: "", seo_title: null, seo_description: null, status: "draft", is_featured: false, colors: [], sets_in_stock: 0 };
+}
+
+function StockStyleEditor({ style, copyOf, specs, onSaved }: StockStyleFormProps & { onSaved?: () => void }) {
+  // The values the fields start with: the listing's own, or those of the listing it duplicates.
+  const values = style ?? (copyOf ? asCopy(copyOf) : null);
   // The set and the price per piece, so the price panel shows what one set costs.
-  const [pieces, setPieces] = useState<Record<string, number>>(() => Object.fromEntries((style?.set_sizes ?? []).map(({ size, pcs }) => [size, pcs])));
-  const [price, setPrice] = useState(rupees(style?.piece_price_cents));
+  const [pieces, setPieces] = useState<Record<string, number>>(() => Object.fromEntries((values?.set_sizes ?? []).map(({ size, pcs }) => [size, pcs])));
+  const [price, setPrice] = useState(rupees(values?.piece_price_cents));
   const setTotal = Object.values(pieces).reduce((sum, pcs) => sum + pcs, 0);
 
   return (
@@ -58,15 +75,15 @@ function StockStyleEditor({ style, specs, onSaved }: StockStyleFormProps & { onS
       <div className="grid min-w-0 gap-6">
         <Panel>
           <div className="grid gap-4 sm:grid-cols-2">
-            <TextField label="Name" name="name" defaultValue={style?.name} placeholder="e.g. Men's slim stretch jeans" fieldClassName="sm:col-span-2" className="h-12 text-lg font-medium" />
-            <SelectField label="For" name="segment" defaultValue={style?.segment ?? "men"} options={stockSegments.map((s) => ({ value: s.slug, label: s.title }))} />
-            <TextField label="Style no." name="style_no" defaultValue={style?.style_no ?? ""} placeholder="Optional" maxLength={40} />
+            <TextField label="Name" name="name" defaultValue={values?.name} placeholder="e.g. Men's slim stretch jeans" fieldClassName="sm:col-span-2" className="h-12 text-lg font-medium" />
+            <SelectField label="For" name="segment" defaultValue={values?.segment ?? "men"} options={stockSegments.map((s) => ({ value: s.slug, label: s.title }))} />
+            <TextField label="Style no." name="style_no" defaultValue={values?.style_no ?? ""} placeholder="Optional" maxLength={40} />
             <TextField
               label="Web address"
               name="slug"
-              defaultValue={style?.slug}
+              defaultValue={values?.slug}
               placeholder="made-from-the-name"
-              hint={style ? "Changing it breaks links people saved (a shown style's old address redirects)." : "Leave empty to make it from the name."}
+              hint={style ? "Changing it breaks links people saved (a shown style's old address redirects)." : "Leave empty to make it from the name (numbered if another listing has it)."}
               fieldClassName="sm:col-span-2"
             />
           </div>
@@ -80,24 +97,24 @@ function StockStyleEditor({ style, specs, onSaved }: StockStyleFormProps & { onS
           <div className="grid gap-4 sm:grid-cols-2">
             {specs.map((spec) =>
               spec.key === "stretch" ? (
-                <SelectField key={spec.key} label={spec.label} name="spec_stretch" defaultValue={style?.specs.stretch ?? ""} options={STRETCH_OPTIONS} />
+                <SelectField key={spec.key} label={spec.label} name="spec_stretch" defaultValue={values?.specs.stretch ?? ""} options={STRETCH_OPTIONS} />
               ) : isFlyClosure(spec) ? (
-                <SelectField key={spec.key} label={spec.label} name="spec_closure" {...closureSelect(style?.specs.closure)} />
+                <SelectField key={spec.key} label={spec.label} name="spec_closure" {...closureSelect(values?.specs.closure)} />
               ) : (
-                <SpecField key={spec.key} spec={spec} defaultValue={style?.specs[spec.key] ?? ""} />
+                <SpecField key={spec.key} spec={spec} defaultValue={values?.specs[spec.key] ?? ""} />
               ),
             )}
           </div>
         </Panel>
 
         <Panel>
-          <RichTextEditor name="description_html" label="Description" defaultValue={style?.description_html ?? ""} folder="stock" placeholder="What shopkeepers should know about this style…" />
+          <RichTextEditor name="description_html" label="Description" defaultValue={values?.description_html ?? ""} folder="stock" placeholder="What shopkeepers should know about this style…" />
         </Panel>
 
         <Panel title="Search engines" description="Optional. Without these, the name and description are used.">
           <div className="grid gap-4">
-            <TextField label="SEO title" name="seo_title" defaultValue={style?.seo_title ?? ""} maxLength={200} />
-            <TextAreaField label="SEO description" name="seo_description" defaultValue={style?.seo_description ?? ""} rows={3} maxLength={320} />
+            <TextField label="SEO title" name="seo_title" defaultValue={values?.seo_title ?? ""} maxLength={200} />
+            <TextAreaField label="SEO description" name="seo_description" defaultValue={values?.seo_description ?? ""} rows={3} maxLength={320} />
           </div>
         </Panel>
       </div>
@@ -110,7 +127,7 @@ function StockStyleEditor({ style, specs, onSaved }: StockStyleFormProps & { onS
             ) : (
               <p className="text-sm text-muted-foreground">New listings start as drafts. Add the color, its photos and stock, then show the listing.</p>
             )}
-            <SwitchField label="Featured" name="is_featured" defaultChecked={style?.is_featured ?? false} hint="Shown first." />
+            <SwitchField label="Featured" name="is_featured" defaultChecked={values?.is_featured ?? false} hint="Shown first." />
             <FormError />
             <SubmitButton className="w-full">{style ? "Save style" : "Create style"}</SubmitButton>
           </div>
@@ -121,7 +138,7 @@ function StockStyleEditor({ style, specs, onSaved }: StockStyleFormProps & { onS
             label="Price per piece (Rs)"
             name="piece_price"
             inputMode="numeric"
-            defaultValue={rupees(style?.piece_price_cents)}
+            defaultValue={rupees(values?.piece_price_cents)}
             onChange={(event) => setPrice(event.target.value)}
             placeholder="980"
             hint={setPriceHint(price, setTotal)}
@@ -129,7 +146,7 @@ function StockStyleEditor({ style, specs, onSaved }: StockStyleFormProps & { onS
         </Panel>
 
         <Panel>
-          <TextField label="Order in lists" name="sort_order" type="number" min={0} defaultValue={style?.sort_order ?? 0} hint="Lower numbers come first." />
+          <TextField label="Order in lists" name="sort_order" type="number" min={0} defaultValue={values?.sort_order ?? 0} hint="Lower numbers come first." />
         </Panel>
 
         {style ? (

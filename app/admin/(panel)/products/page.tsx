@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ImageIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { CopyIcon, ImageIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, NoAccess, PageHeader, Pill } from "@/components/admin/page-parts";
 import { inputClass } from "@/components/admin/styles";
@@ -100,6 +100,11 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
               <span className="hidden text-sm tabular-nums sm:block">{formatMoney(product.price_cents)}</span>
               {product.is_featured ? <Pill tone="blue">Featured</Pill> : null}
               <Pill tone={STATUS[product.status].tone}>{STATUS[product.status].label}</Pill>
+              <Button asChild variant="ghost" size="icon-sm">
+                <Link href={`/admin/products/new?copy=${product.id}`} aria-label={`Duplicate ${product.name}`} title="Duplicate">
+                  <CopyIcon />
+                </Link>
+              </Button>
             </li>
           ))}
         </ul>

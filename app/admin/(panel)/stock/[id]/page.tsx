@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ExternalLinkIcon } from "lucide-react";
+import { CopyIcon, ExternalLinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NoAccess, PageHeader, Panel } from "@/components/admin/page-parts";
 import { StockColorManager } from "@/components/admin/stock-color-manager";
@@ -38,13 +38,20 @@ export default async function EditStockStylePage({ params, searchParams }: PageP
         back={{ href: "/admin/stock", label: "Stock" }}
         title={style.colors.length === 1 ? `${style.name}, ${style.colors[0].name.toLowerCase()}` : style.name}
         actions={
-          style.status === "active" ? (
+          <>
             <Button asChild variant="outline" size="sm">
-              <Link href={stockUrl(style.segment, style.slug)} target="_blank">
-                <ExternalLinkIcon /> View on the stock pages
+              <Link href={`/admin/stock/new?copy=${style.id}`}>
+                <CopyIcon /> Duplicate
               </Link>
             </Button>
-          ) : null
+            {style.status === "active" ? (
+              <Button asChild variant="outline" size="sm">
+                <Link href={stockUrl(style.segment, style.slug)} target="_blank">
+                  <ExternalLinkIcon /> View on the stock pages
+                </Link>
+              </Button>
+            ) : null}
+          </>
         }
       />
       <div className="grid gap-6">

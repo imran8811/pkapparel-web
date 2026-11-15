@@ -32,12 +32,29 @@ const dollars = (cents: number | null | undefined) => (cents == null ? "" : (cen
 
 export type ShopDefaults = { moq_per_color: number; set_pcs_per_size: number; min_pcs_per_size: number; lead_time_days: number; sample_price_cents: number };
 
-type ProductFormProps = { product: AdminProduct | null; charts: AdminSizeChart[]; defaults: ShopDefaults; catalog: CatalogDefinitions };
+type ProductFormProps = {
+  /** The style being edited, or null for a new style. */
+  product: AdminProduct | null;
+  /** For a new style: the style it is a duplicate of, whose details fill the form. */
+  copyOf?: AdminProduct | null;
+  charts: AdminSizeChart[];
+  defaults: ShopDefaults;
+  catalog: CatalogDefinitions;
+};
 
 export function ProductForm(props: ProductFormProps) {
   // A new style opens in its own editor once saved; the "new style" form then starts empty again.
   const [version, setVersion] = useState(0);
   return <ProductEditor key={version} {...props} onSaved={props.product ? undefined : () => setVersion((current) => current + 1)} />;
+}
+
+/**
+ * What a duplicate starts from: the style's details, under a name that shows it is a copy. The web address is made
+ * from the new name, and the search engine texts (they name the original) and the featured flag are left out. Colors
+ * are not copied: each has its own code and photos.
+ */
+function asCopy(original: AdminProduct): AdminProduct {
+  return { ...original, name: `${original.name} (copy)`, slug: "", seo_title: null, seo_description: null, status: "draft", is_featured: false, colors: [] };
 }
 
 /** A saved value of a spec, from the style's specs, columns or attributes (for a type the style had before). */
@@ -47,15 +64,17 @@ function savedSpec(product: AdminProduct | null, key: string): string {
   return product.specs[key] ?? product.attributes[key] ?? (typeof column === "string" ? column : "");
 }
 
-function ProductEditor({ product, charts, defaults, catalog, onSaved }: ProductFormProps & { onSaved?: () => void }) {
-  const [segment, setSegment] = useState<Segment>((product?.segment as Segment) ?? "men");
-  const [type, setType] = useState<string>(product?.product_type ?? "jeans-pant");
+function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: ProductFormProps & { onSaved?: () => void }) {
+  // The values the fields start with: the style's own, or those of the style it duplicates.
+  const values = product ?? (copyOf ? asCopy(copyOf) : null);
+  const [segment, setSegment] = useState<Segment>((values?.segment as Segment) ?? "men");
+  const [type, setType] = useState<string>(values?.product_type ?? "jeans-pant");
   const types = typesFor(segment);
   const definition = catalog.types.find((t) => t.slug === type) ?? catalog.types[0];
 
-  const [sizeSystem, setSizeSystem] = useState<SizeSystem>(product?.size_system ?? definition.size_systems[0]);
-  const [sizes, setSizes] = useState<string[]>(product && product.size_system !== "other" ? product.sizes : []);
-  const [otherSizes, setOtherSizes] = useState(product?.size_system === "other" ? product.sizes.join(", ") : "");
+  const [sizeSystem, setSizeSystem] = useState<SizeSystem>(values?.size_system ?? definition.size_systems[0]);
+  const [sizes, setSizes] = useState<string[]>(values && values.size_system !== "other" ? values.sizes : []);
+  const [otherSizes, setOtherSizes] = useState(values?.size_system === "other" ? values.sizes.join(", ") : "");
   const systemSizes = catalog.size_systems.find((s) => s.key === sizeSystem)?.sizes ?? null;
 
   const chooseSystem = (system: SizeSystem) => {
@@ -87,7 +106,7 @@ function ProductEditor({ product, charts, defaults, catalog, onSaved }: ProductF
       <div className="grid min-w-0 gap-6">
         <Panel>
           <div className="grid gap-4 sm:grid-cols-2">
-            <TextField label="Name" name="name" defaultValue={product?.name} placeholder="e.g. Men's slim stretch jeans" fieldClassName="sm:col-span-2" className="h-12 text-lg font-medium" />
+            <TextField label="Name" name="name" defaultValue={values?.name} placeholder="e.g. Men's slim stretch jeans" fieldClassName="sm:col-span-2" className="h-12 text-lg font-medium" />
             <SelectField
               label="For"
               name="segment"
@@ -106,11 +125,11 @@ function ProductEditor({ product, charts, defaults, catalog, onSaved }: ProductF
             <TextField
               label="Web address"
               name="slug"
-              defaultValue={product?.slug}
+              defaultValue={values?.slug}
               placeholder="made-from-the-name"
               hint={product ? "Changing it breaks links people saved." : "Leave empty to make it from the name."}
             />
-            <TextField label="Style no." name="style_no" defaultValue={product?.style_no ?? ""} placeholder="Optional" maxLength={40} />
+            <TextField label="Style no." name="style_no" defaultValue={values?.style_no ?? ""} placeholder="Optional" maxLength={40} />
           </div>
         </Panel>
 
@@ -121,11 +140,11 @@ function ProductEditor({ product, charts, defaults, catalog, onSaved }: ProductF
           <div className="grid gap-4 sm:grid-cols-2">
             {definition.specs.map((spec) =>
               spec.key === "stretch" ? (
-                <SelectField key={spec.key} label={spec.label} name="spec_stretch" defaultValue={savedSpec(product, "stretch")} options={STRETCH_OPTIONS} />
+                <SelectField key={spec.key} label={spec.label} name="spec_stretch" defaultValue={savedSpec(values, "stretch")} options={STRETCH_OPTIONS} />
               ) : isFlyClosure(spec) ? (
-                <SelectField key={spec.key} label={spec.label} name="spec_closure" {...closureSelect(savedSpec(product, "closure"))} />
+                <SelectField key={spec.key} label={spec.label} name="spec_closure" {...closureSelect(savedSpec(values, "closure"))} />
               ) : (
-                <SpecField key={spec.key} spec={spec} defaultValue={savedSpec(product, spec.key)} />
+                <SpecField key={spec.key} spec={spec} defaultValue={savedSpec(values, spec.key)} />
               ),
             )}
           </div>
@@ -133,11 +152,11 @@ function ProductEditor({ product, charts, defaults, catalog, onSaved }: ProductF
 
         <Panel>
           <div className="grid gap-5">
-            <RichTextEditor name="description_html" label="Description" defaultValue={product?.description_html ?? ""} folder="products" placeholder="What makes this style good for your buyers…" />
+            <RichTextEditor name="description_html" label="Description" defaultValue={values?.description_html ?? ""} folder="products" placeholder="What makes this style good for your buyers…" />
             <TextAreaField
               label="Features"
               name="features"
-              defaultValue={product?.features.join("\n") ?? ""}
+              defaultValue={values?.features.join("\n") ?? ""}
               rows={4}
               hint="One per line, e.g. “Five-pocket styling”. Shown as tags under the description."
             />
@@ -182,7 +201,7 @@ function ProductEditor({ product, charts, defaults, catalog, onSaved }: ProductF
               key={sizeSystem}
               label="Size chart"
               name="size_chart_id"
-              defaultValue={charts.some((chart) => chart.id === product?.size_chart_id && chart.size_system === sizeSystem) ? String(product?.size_chart_id) : ""}
+              defaultValue={charts.some((chart) => chart.id === values?.size_chart_id && chart.size_system === sizeSystem) ? String(values?.size_chart_id) : ""}
               options={[
                 { value: "", label: "None (sent with the quote)" },
                 ...charts.filter((chart) => chart.size_system === sizeSystem).map((chart) => ({ value: String(chart.id), label: chart.name })),
@@ -195,19 +214,19 @@ function ProductEditor({ product, charts, defaults, catalog, onSaved }: ProductF
 
         <Panel title="Packing" description="Used for freight estimates. Leave empty if not known yet.">
           <div className="grid gap-4 sm:grid-cols-3">
-            <TextField label="Weight per piece (g)" name="piece_weight_g" type="number" min={1} defaultValue={product?.piece_weight_g ?? ""} />
-            <TextField label="Pieces per carton" name="pcs_per_carton" type="number" min={1} defaultValue={product?.pcs_per_carton ?? ""} />
-            <TextField label="Empty carton (kg)" name="carton_weight" type="number" min={0} step="0.01" defaultValue={product?.carton_weight_g != null ? product.carton_weight_g / 1000 : ""} />
-            <TextField label="Carton length (cm)" name="carton_length" type="number" min={1} step="0.1" defaultValue={product?.carton_length_mm != null ? product.carton_length_mm / 10 : ""} />
-            <TextField label="Carton width (cm)" name="carton_width" type="number" min={1} step="0.1" defaultValue={product?.carton_width_mm != null ? product.carton_width_mm / 10 : ""} />
-            <TextField label="Carton height (cm)" name="carton_height" type="number" min={1} step="0.1" defaultValue={product?.carton_height_mm != null ? product.carton_height_mm / 10 : ""} />
+            <TextField label="Weight per piece (g)" name="piece_weight_g" type="number" min={1} defaultValue={values?.piece_weight_g ?? ""} />
+            <TextField label="Pieces per carton" name="pcs_per_carton" type="number" min={1} defaultValue={values?.pcs_per_carton ?? ""} />
+            <TextField label="Empty carton (kg)" name="carton_weight" type="number" min={0} step="0.01" defaultValue={values?.carton_weight_g != null ? values.carton_weight_g / 1000 : ""} />
+            <TextField label="Carton length (cm)" name="carton_length" type="number" min={1} step="0.1" defaultValue={values?.carton_length_mm != null ? values.carton_length_mm / 10 : ""} />
+            <TextField label="Carton width (cm)" name="carton_width" type="number" min={1} step="0.1" defaultValue={values?.carton_width_mm != null ? values.carton_width_mm / 10 : ""} />
+            <TextField label="Carton height (cm)" name="carton_height" type="number" min={1} step="0.1" defaultValue={values?.carton_height_mm != null ? values.carton_height_mm / 10 : ""} />
           </div>
         </Panel>
 
         <Panel title="Search engines" description="Optional. Without these, the name and description are used.">
           <div className="grid gap-4">
-            <TextField label="SEO title" name="seo_title" defaultValue={product?.seo_title ?? ""} maxLength={200} />
-            <TextAreaField label="SEO description" name="seo_description" defaultValue={product?.seo_description ?? ""} rows={3} maxLength={320} />
+            <TextField label="SEO title" name="seo_title" defaultValue={values?.seo_title ?? ""} maxLength={200} />
+            <TextAreaField label="SEO description" name="seo_description" defaultValue={values?.seo_description ?? ""} rows={3} maxLength={320} />
           </div>
         </Panel>
       </div>
@@ -220,7 +239,7 @@ function ProductEditor({ product, charts, defaults, catalog, onSaved }: ProductF
             ) : (
               <p className="text-sm text-muted-foreground">New styles start as drafts. Add colors and photos, then show the style in the shop.</p>
             )}
-            <SwitchField label="Featured" name="is_featured" defaultChecked={product?.is_featured ?? false} hint="Shown first in the shop." />
+            <SwitchField label="Featured" name="is_featured" defaultChecked={values?.is_featured ?? false} hint="Shown first in the shop." />
             <FormError />
             <SubmitButton className="w-full">{product ? "Save style" : "Create style"}</SubmitButton>
           </div>
@@ -228,27 +247,27 @@ function ProductEditor({ product, charts, defaults, catalog, onSaved }: ProductF
 
         <Panel title="Price">
           <div className="grid gap-4">
-            <TextField label="Price per piece (USD)" name="price" inputMode="decimal" defaultValue={dollars(product?.price_cents)} placeholder="5.00" hint="FOB Pakistan. A color can have its own price." />
-            <TiersField initial={product?.tiers ?? []} />
+            <TextField label="Price per piece (USD)" name="price" inputMode="decimal" defaultValue={dollars(values?.price_cents)} placeholder="5.00" hint="FOB Pakistan. A color can have its own price." />
+            <TiersField initial={values?.tiers ?? []} />
           </div>
         </Panel>
 
         <Panel title="Order rules" description="Leave empty to use the site settings.">
           <div className="grid gap-4">
-            <TextField label="Minimum per color (pcs)" name="moq_per_color" type="number" min={1} defaultValue={product?.moq_per_color ?? ""} placeholder={`${defaults.moq_per_color} (default)`} />
+            <TextField label="Minimum per color (pcs)" name="moq_per_color" type="number" min={1} defaultValue={values?.moq_per_color ?? ""} placeholder={`${defaults.moq_per_color} (default)`} />
             <TextField
               label="Minimum per size (pcs)"
               name="min_pcs_per_size"
               type="number"
               min={1}
-              defaultValue={product?.min_pcs_per_size ?? ""}
+              defaultValue={values?.min_pcs_per_size ?? ""}
               placeholder={`${defaults.min_pcs_per_size} (default)`}
               hint="Every size ordered in a color needs at least this many pieces."
             />
-            <TextField label="Pieces per size in a set" name="set_pcs_per_size" type="number" min={1} defaultValue={product?.set_pcs_per_size ?? ""} placeholder={`${defaults.set_pcs_per_size} (default)`} />
-            <TextField label="Production time (days)" name="lead_time_days" type="number" min={1} defaultValue={product?.lead_time_days ?? ""} placeholder={`${defaults.lead_time_days} (default)`} />
-            <TextField label="Sample price (USD)" name="sample_price" inputMode="decimal" defaultValue={dollars(product?.sample_price_cents)} placeholder={`${dollars(defaults.sample_price_cents)} (default)`} />
-            <TextField label="Order in lists" name="sort_order" type="number" min={0} defaultValue={product?.sort_order ?? 0} hint="Lower numbers come first." />
+            <TextField label="Pieces per size in a set" name="set_pcs_per_size" type="number" min={1} defaultValue={values?.set_pcs_per_size ?? ""} placeholder={`${defaults.set_pcs_per_size} (default)`} />
+            <TextField label="Production time (days)" name="lead_time_days" type="number" min={1} defaultValue={values?.lead_time_days ?? ""} placeholder={`${defaults.lead_time_days} (default)`} />
+            <TextField label="Sample price (USD)" name="sample_price" inputMode="decimal" defaultValue={dollars(values?.sample_price_cents)} placeholder={`${dollars(defaults.sample_price_cents)} (default)`} />
+            <TextField label="Order in lists" name="sort_order" type="number" min={0} defaultValue={values?.sort_order ?? 0} hint="Lower numbers come first." />
           </div>
         </Panel>
 
