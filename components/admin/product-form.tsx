@@ -5,6 +5,7 @@ import { PlusIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminForm, Field, FormError, SelectField, SubmitButton, SwitchField, TextAreaField, TextField, useAdminForm } from "@/components/admin/form";
 import { DeleteButton } from "@/components/admin/delete-button";
+import { FirstColorPanel } from "@/components/admin/first-color";
 import { Panel } from "@/components/admin/page-parts";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { inputClass } from "@/components/admin/styles";
@@ -132,6 +133,16 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
             <TextField label="Style no." name="style_no" defaultValue={values?.style_no ?? ""} placeholder="Optional" maxLength={40} />
           </div>
         </Panel>
+
+        {product ? null : (
+          <FirstColorPanel
+            title="First color and photos"
+            description="Optional: saved with the style. Add more colors, and a color's own price or fabric details, once the style is created."
+            folder="products"
+            codePlaceholder="e.g. 1051"
+            codeHint="Letters, digits and dashes. Unique in the shop."
+          />
+        )}
 
         <Panel
           title="Specifications"

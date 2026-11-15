@@ -3,7 +3,7 @@
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminApi } from "@/lib/admin/session";
-import { checked, errorState, failure, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
+import { checked, errorState, failure, firstColor, firstColorField, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
 import type { AdminColor, AdminProduct } from "@/lib/admin/types";
 
 /*
@@ -40,7 +40,7 @@ function renameFields(state: FormState): FormState {
   for (const [name, message] of Object.entries(state.fields)) {
     // The API's "specs.neckline" / "spec_overrides.wash" are the form's "spec_neckline" / "spec_wash".
     const spec = /^(?:specs|spec_overrides)\.(\w+)$/.exec(name)?.[1];
-    fields[spec ? `spec_${spec}` : name.startsWith("tiers") ? "tiers" : (FIELD_NAMES[name] ?? name)] = message;
+    fields[firstColorField(name) ?? (spec ? `spec_${spec}` : name.startsWith("tiers") ? "tiers" : (FIELD_NAMES[name] ?? name))] = message;
   }
   return { ...state, fields };
 }
@@ -96,6 +96,8 @@ export async function saveProduct(_previous: FormState, form: FormData): Promise
     carton_weight_g: scaled(form, "carton_weight", 1000),
     seo_title: optional(form, "seo_title"),
     seo_description: optional(form, "seo_description"),
+    // A new style's first color with its photos, if filled in.
+    ...(id ? {} : { color: firstColor(form) }),
   };
 
   let product: AdminProduct;
@@ -110,7 +112,10 @@ export async function saveProduct(_previous: FormState, form: FormData): Promise
   const previousSlug = text(form, "original_slug");
   if (previousSlug && previousSlug !== product.slug) updateTag(`product:${previousSlug}`);
 
-  if (!id) return { ...success("Style created. Now add its colors and photos."), redirectTo: `/admin/products/${product.id}` };
+  if (!id) {
+    const message = product.colors.length > 0 ? "Style created with its first color. Add any other colors, then show it in the shop." : "Style created. Now add its colors and photos.";
+    return { ...success(message), redirectTo: `/admin/products/${product.id}` };
+  }
   return success(product.status === "active" ? "Style saved and shown in the shop." : "Style saved.");
 }
 

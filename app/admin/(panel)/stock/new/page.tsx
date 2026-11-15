@@ -36,8 +36,8 @@ export default async function NewStockStylePage({ searchParams }: PageProps<"/ad
         title={original ? "Duplicate listing" : "New stock listing"}
         description={
           original
-            ? `A copy of “${originalName}”. Change what is different, then create it as a new listing. The color, its photos and stock are not copied: add the new color once the listing is created.`
-            : "A listing is one color of jeans. Save its details first, then add the color with its photos and the sets in stock."
+            ? `A copy of “${originalName}”. Change what is different, then create it as a new listing. The color, its photos and stock are not copied: add the new color below.`
+            : "A listing is one color of jeans: its details, its color with photos, and the sets in stock."
         }
       />
       <StockStyleForm key={original?.id ?? "new"} style={null} copyOf={original} specs={specs} />

@@ -36,7 +36,7 @@ export default async function NewProductPage({ searchParams }: PageProps<"/admin
         title={original ? "Duplicate style" : "New style"}
         description={
           original
-            ? `A copy of “${original.name}”. Change what is different, then create it as a new style. Colors and photos are not copied: add them once the style is created.`
+            ? `A copy of “${original.name}”. Change what is different, then create it as a new style. Colors and photos are not copied: add the first color below, any others once the style is created.`
             : undefined
         }
       />

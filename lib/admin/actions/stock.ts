@@ -3,7 +3,7 @@
 import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminApi } from "@/lib/admin/session";
-import { checked, errorState, failure, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
+import { checked, errorState, failure, firstColor, firstColorField, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
 import type { AdminStockColor, AdminStockStyle, StockCopied, StockImportResult, StockListingImportResult } from "@/lib/admin/types";
 import { setsInStock } from "@/lib/stock";
 
@@ -25,7 +25,7 @@ function renameFields(state: FormState): FormState {
   const fields: Record<string, string> = {};
   for (const [name, message] of Object.entries(state.fields)) {
     const spec = /^specs\.(\w+)$/.exec(name)?.[1];
-    fields[spec ? `spec_${spec}` : name === "piece_price_cents" ? "piece_price" : name] = message;
+    fields[firstColorField(name) ?? (spec ? `spec_${spec}` : name === "piece_price_cents" ? "piece_price" : name)] = message;
   }
   return { ...state, fields };
 }
@@ -63,6 +63,8 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
     status: optional(form, "status") ?? undefined,
     is_featured: checked(form, "is_featured"),
     sort_order: number(form, "sort_order") ?? 0,
+    // A new listing's color with its photos and stock, if filled in.
+    ...(id ? {} : { color: firstColor(form) }),
   };
 
   let style: AdminStockStyle;
@@ -73,7 +75,10 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
   }
 
   refreshStock(style.slug, text(form, "original_slug"));
-  if (!id) return { ...success("Listing created. Now add its color, photos and stock."), redirectTo: `/admin/stock/${style.id}` };
+  if (!id) {
+    const message = style.colors.length > 0 ? "Listing created with its color. Show it on the stock pages when it is ready." : "Listing created. Now add its color, photos and stock.";
+    return { ...success(message), redirectTo: `/admin/stock/${style.id}` };
+  }
   return success(style.status === "active" ? "Listing saved and shown on the stock pages." : "Listing saved.");
 }
 

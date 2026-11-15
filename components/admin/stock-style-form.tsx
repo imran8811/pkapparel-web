@@ -3,6 +3,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { AdminForm, FormError, SelectField, SubmitButton, SwitchField, TextAreaField, TextField, useAdminForm } from "@/components/admin/form";
 import { DeleteButton } from "@/components/admin/delete-button";
+import { FirstColorPanel } from "@/components/admin/first-color";
 import { Panel } from "@/components/admin/page-parts";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { inputClass } from "@/components/admin/styles";
@@ -88,6 +89,17 @@ function StockStyleEditor({ style, copyOf, specs, onSaved }: StockStyleFormProps
             />
           </div>
         </Panel>
+
+        {style ? null : (
+          <FirstColorPanel
+            title="Color and photos"
+            description="The listing's color with its photos and the sets in stock, saved with it. You can also add them once the listing is created."
+            folder="stock"
+            codePlaceholder="e.g. ST-2051"
+            codeHint="Letters, digits and dashes. Unique in the stock."
+            setsInStock
+          />
+        )}
 
         <Panel title="The set" description="Stock is sold by set only. Tick the waist sizes in one set and the pieces of each size.">
           <SetSizesField pieces={pieces} setPieces={setPieces} />
