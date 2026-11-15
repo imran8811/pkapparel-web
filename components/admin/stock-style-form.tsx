@@ -74,6 +74,14 @@ function StockStyleEditor({ style, copyOf, specs, onSaved }: StockStyleFormProps
       ) : null}
 
       <div className="grid min-w-0 gap-6">
+        {style ? null : (
+          <FirstColorPanel
+            description="The listing's photos, its color and the sets in stock, saved with it. The color code is made automatically."
+            folder="stock"
+            setsInStock
+          />
+        )}
+
         <Panel>
           <div className="grid gap-4 sm:grid-cols-2">
             <TextField label="Name" name="name" defaultValue={values?.name} placeholder="e.g. Men's slim stretch jeans" fieldClassName="sm:col-span-2" className="h-12 text-lg font-medium" />
@@ -89,17 +97,6 @@ function StockStyleEditor({ style, copyOf, specs, onSaved }: StockStyleFormProps
             />
           </div>
         </Panel>
-
-        {style ? null : (
-          <FirstColorPanel
-            title="Color and photos"
-            description="The listing's color with its photos and the sets in stock, saved with it. You can also add them once the listing is created."
-            folder="stock"
-            codePlaceholder="e.g. ST-2051"
-            codeHint="Letters, digits and dashes. Unique in the stock."
-            setsInStock
-          />
-        )}
 
         <Panel title="The set" description="Stock is sold by set only. Tick the waist sizes in one set and the pieces of each size.">
           <SetSizesField pieces={pieces} setPieces={setPieces} />

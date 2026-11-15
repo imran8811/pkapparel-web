@@ -105,6 +105,13 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
       ) : null}
 
       <div className="grid min-w-0 gap-6">
+        {product ? null : (
+          <FirstColorPanel
+            description="The photos of the first color, saved with the style. Its code is made automatically. Add other colors once the style is created."
+            folder="products"
+          />
+        )}
+
         <Panel>
           <div className="grid gap-4 sm:grid-cols-2">
             <TextField label="Name" name="name" defaultValue={values?.name} placeholder="e.g. Men's slim stretch jeans" fieldClassName="sm:col-span-2" className="h-12 text-lg font-medium" />
@@ -133,16 +140,6 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
             <TextField label="Style no." name="style_no" defaultValue={values?.style_no ?? ""} placeholder="Optional" maxLength={40} />
           </div>
         </Panel>
-
-        {product ? null : (
-          <FirstColorPanel
-            title="First color and photos"
-            description="Optional: saved with the style. Add more colors, and a color's own price or fabric details, once the style is created."
-            folder="products"
-            codePlaceholder="e.g. 1051"
-            codeHint="Letters, digits and dashes. Unique in the shop."
-          />
-        )}
 
         <Panel
           title="Specifications"
