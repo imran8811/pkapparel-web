@@ -4,7 +4,7 @@ import { StockStyleForm } from "@/components/admin/stock-style-form";
 import { can } from "@/lib/admin/permissions";
 import { adminApi, getStaff } from "@/lib/admin/session";
 import type { CatalogDefinitions } from "@/lib/admin/types";
-import { STOCK_PRODUCT_TYPE } from "@/lib/stock";
+import { stockSpecs } from "@/lib/stock";
 
 export const metadata: Metadata = { title: "New stock listing" };
 
@@ -12,7 +12,7 @@ export default async function NewStockStylePage() {
   const staff = await getStaff();
   if (!can(staff.role, "content")) return <NoAccess />;
   const catalog = await adminApi<CatalogDefinitions>("/v1/admin/product-types");
-  const specs = catalog.types.find((type) => type.slug === STOCK_PRODUCT_TYPE)?.specs ?? [];
+  const specs = stockSpecs(catalog);
 
   return (
     <>

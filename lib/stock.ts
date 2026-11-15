@@ -5,6 +5,7 @@
  */
 
 import type { Address } from "@/lib/account/types";
+import type { CatalogDefinitions, CatalogSpec } from "@/lib/admin/types";
 import type { ProductImage, SpecField, Specs } from "@/lib/shop";
 
 export const stockSegments = [
@@ -41,6 +42,14 @@ export const stockLegalLinks = [
 
 /** Stock is jeans only: its specs (labels and suggestions) are those of the wholesale shop's jeans pants. */
 export const STOCK_PRODUCT_TYPE = "jeans-pant";
+
+/** Details only stock listings have, after the jeans specs. Mirrors the API's StockStyle::OWN_SPECS. */
+const STOCK_OWN_SPECS: CatalogSpec[] = [{ key: "label", label: "Label", max: 80, suggestions: [], per_color: false }];
+
+/** The specs of the stock listing form, in display order: the jeans specs, then the stock's own (the label). */
+export function stockSpecs(catalog: CatalogDefinitions): CatalogSpec[] {
+  return [...(catalog.types.find((type) => type.slug === STOCK_PRODUCT_TYPE)?.specs ?? []), ...STOCK_OWN_SPECS];
+}
 
 /** Days after delivery to report an issue and return goods (owner decision 2026-11-09). */
 export const RETURN_DAYS = 7;

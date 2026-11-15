@@ -11,7 +11,7 @@ import { ApiError } from "@/lib/api";
 import { can } from "@/lib/admin/permissions";
 import { adminApi, adminApiWithMeta, getStaff } from "@/lib/admin/session";
 import type { AdminStockMovement, AdminStockStyle, CatalogDefinitions, Pagination } from "@/lib/admin/types";
-import { STOCK_PRODUCT_TYPE, stockUrl } from "@/lib/stock";
+import { stockSpecs, stockUrl } from "@/lib/stock";
 
 export const metadata: Metadata = { title: "Edit stock listing" };
 
@@ -30,7 +30,7 @@ export default async function EditStockStylePage({ params, searchParams }: PageP
     adminApi<CatalogDefinitions>("/v1/admin/product-types"),
     adminApiWithMeta<AdminStockMovement[], { pagination: Pagination }>("/v1/admin/stock/movements", { query: { style_id: id, page, per_page: 20 } }),
   ]);
-  const specs = catalog.types.find((type) => type.slug === STOCK_PRODUCT_TYPE)?.specs ?? [];
+  const specs = stockSpecs(catalog);
 
   return (
     <>
