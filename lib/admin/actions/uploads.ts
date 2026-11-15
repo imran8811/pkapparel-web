@@ -4,10 +4,10 @@ import { unstable_rethrow } from "next/navigation";
 import { ApiError } from "@/lib/api";
 import { adminApi } from "@/lib/admin/session";
 import type { Upload } from "@/lib/admin/types";
+import { UPLOAD_FOLDERS } from "@/lib/admin/upload-folders";
 
 export type UploadResult = { ok: true; upload: Upload } | { ok: false; error: string };
 
-const FOLDERS = ["blog", "pages", "products", "factory", "certificates"];
 const MAX_BYTES = 9 * 1024 * 1024;
 
 /** Uploads one image to the API, which checks, resizes and stores it. */
@@ -16,7 +16,7 @@ export async function uploadImage(form: FormData): Promise<UploadResult> {
   const folder = form.get("folder");
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose an image to upload." };
   if (file.size > MAX_BYTES) return { ok: false, error: "The image is too large. The limit is 9 MB." };
-  if (typeof folder !== "string" || !FOLDERS.includes(folder)) return { ok: false, error: "Unknown upload folder." };
+  if (typeof folder !== "string" || !(UPLOAD_FOLDERS as readonly string[]).includes(folder)) return { ok: false, error: "Unknown upload folder." };
 
   const body = new FormData();
   body.set("folder", folder);

@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { useAdminForm } from "@/components/admin/form";
 import { uploadImage } from "@/lib/admin/actions/uploads";
 import { prepareImage } from "@/lib/admin/prepare-image";
+import type { UploadFolder } from "@/lib/admin/upload-folders";
 import { cn } from "@/lib/utils";
 
-export type UploadFolder = "blog" | "pages" | "products" | "stock" | "factory" | "certificates";
+export type { UploadFolder };
 
 /** Uploads one image right away and keeps its path in a hidden input called `name`. */
 export function ImageField({
