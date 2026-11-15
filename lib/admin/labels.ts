@@ -1,5 +1,5 @@
 import type { AddonPricing, OrderKind, OrderStatus } from "@/lib/account/types";
-import type { InquiryStatus, InquiryType, StockReason } from "@/lib/admin/types";
+import type { CatalogSpec, InquiryStatus, InquiryType, StockReason } from "@/lib/admin/types";
 
 /* Wording used across the admin. */
 
@@ -90,3 +90,24 @@ export const STOCK_REASONS: Record<StockReason, string> = {
   correction: "Count correction",
   cancelled: "Order cancelled",
 };
+
+/** The closures of styles with a fly (jeans, shorts, cargos, chinos), chosen from a dropdown in that order. */
+export const FLY_CLOSURES = ["Zip fly", "Button fly"];
+
+/** The type closes with a fly (its suggestions name one). Jackets, skirts and hoodies close differently and keep a text field. */
+export const isFlyClosure = (spec: CatalogSpec) => spec.key === "closure" && spec.suggestions.includes(FLY_CLOSURES[0]);
+
+/**
+ * The closure dropdown, with the saved closure selected ("zip fly" selects "Zip fly").
+ * A saved closure outside the list (e.g. "Elastic waist") is added to it, so saving the form keeps it.
+ * `empty` adds a first choice that sends no closure, e.g. "Same as the style" for a color.
+ */
+export function closureSelect(saved: string | null | undefined, empty?: string) {
+  const value = (saved ?? "").trim();
+  const known = FLY_CLOSURES.find((closure) => closure.toLowerCase() === value.toLowerCase());
+  const choices = value && !known ? [...FLY_CLOSURES, value] : FLY_CLOSURES;
+  return {
+    defaultValue: known ?? (value || (empty === undefined ? FLY_CLOSURES[0] : "")),
+    options: [...(empty === undefined ? [] : [{ value: "", label: empty }]), ...choices.map((closure) => ({ value: closure, label: closure }))],
+  };
+}

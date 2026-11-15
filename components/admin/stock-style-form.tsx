@@ -7,6 +7,7 @@ import { Panel } from "@/components/admin/page-parts";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { inputClass } from "@/components/admin/styles";
 import { deleteStockStyle, saveStockStyle } from "@/lib/admin/actions/stock";
+import { closureSelect, isFlyClosure } from "@/lib/admin/labels";
 import type { AdminStockStyle, CatalogSpec } from "@/lib/admin/types";
 import { formatRupees, stockSegments } from "@/lib/stock";
 import { cn } from "@/lib/utils";
@@ -80,6 +81,8 @@ function StockStyleEditor({ style, specs, onSaved }: StockStyleFormProps & { onS
             {specs.map((spec) =>
               spec.key === "stretch" ? (
                 <SelectField key={spec.key} label={spec.label} name="spec_stretch" defaultValue={style?.specs.stretch ?? ""} options={STRETCH_OPTIONS} />
+              ) : isFlyClosure(spec) ? (
+                <SelectField key={spec.key} label={spec.label} name="spec_closure" {...closureSelect(style?.specs.closure)} />
               ) : (
                 <SpecField key={spec.key} spec={spec} defaultValue={style?.specs[spec.key] ?? ""} />
               ),

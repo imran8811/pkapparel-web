@@ -9,6 +9,7 @@ import { Panel } from "@/components/admin/page-parts";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { inputClass } from "@/components/admin/styles";
 import { deleteProduct, saveProduct } from "@/lib/admin/actions/products";
+import { closureSelect, isFlyClosure } from "@/lib/admin/labels";
 import type { AdminProduct, AdminSizeChart, CatalogDefinitions, CatalogSpec } from "@/lib/admin/types";
 import { segments, typesFor, type ProductType, type Segment } from "@/lib/nav";
 import type { SizeSystem } from "@/lib/shop";
@@ -121,6 +122,8 @@ function ProductEditor({ product, charts, defaults, catalog, onSaved }: ProductF
             {definition.specs.map((spec) =>
               spec.key === "stretch" ? (
                 <SelectField key={spec.key} label={spec.label} name="spec_stretch" defaultValue={savedSpec(product, "stretch")} options={STRETCH_OPTIONS} />
+              ) : isFlyClosure(spec) ? (
+                <SelectField key={spec.key} label={spec.label} name="spec_closure" {...closureSelect(savedSpec(product, "closure"))} />
               ) : (
                 <SpecField key={spec.key} spec={spec} defaultValue={savedSpec(product, spec.key)} />
               ),

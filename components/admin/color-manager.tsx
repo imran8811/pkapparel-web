@@ -11,6 +11,7 @@ import { Panel, Pill } from "@/components/admin/page-parts";
 import { PhotoList } from "@/components/admin/photo-list";
 import { inputClass } from "@/components/admin/styles";
 import { deleteColor, saveColor } from "@/lib/admin/actions/products";
+import { closureSelect, isFlyClosure } from "@/lib/admin/labels";
 import type { AdminColor, AdminProduct, CatalogSpec } from "@/lib/admin/types";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -139,6 +140,8 @@ function ColorFields({ color, product, fabricSpecs }: { color: AdminColor | null
                   { value: "non-stretch", label: "Rigid (no stretch)" },
                 ]}
               />
+            ) : isFlyClosure(spec) ? (
+              <SelectField key={spec.key} label={spec.label} name="spec_closure" {...closureSelect(specs.closure, "Same as the style")} />
             ) : (
               <TextField
                 key={spec.key}
