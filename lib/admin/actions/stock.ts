@@ -84,7 +84,8 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
   if (!id) {
     const message =
       style.status === "active" ? "Listing created and shown on the stock pages." : "Listing created as a draft. Add its color with a photo, then show it on the stock pages.";
-    return { ...success(message), redirectTo: `/admin/stock/${style.id}` };
+    // Back to the stock list, where the new listing now shows.
+    return { ...success(message), redirectTo: "/admin/stock" };
   }
   return success(style.status === "active" ? "Listing saved and shown on the stock pages." : "Listing saved.");
 }
