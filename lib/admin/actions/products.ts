@@ -3,7 +3,7 @@
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminApi } from "@/lib/admin/session";
-import { checked, errorState, failure, firstColor, firstColorField, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
+import { checked, errorState, failure, firstColor, firstColorField, firstColorProblems, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
 import type { AdminColor, AdminProduct } from "@/lib/admin/types";
 
 /*
@@ -55,8 +55,11 @@ export async function saveProduct(_previous: FormState, form: FormData): Promise
   const id = number(form, "id");
   const price = cents(text(form, "price"));
   const samplePrice = cents(text(form, "sample_price"));
-  if (Number.isNaN(price) || Number.isNaN(samplePrice)) {
+  // A new style is shown in the shop as soon as it is created, so it needs its first color with a photo.
+  const colorProblems = id ? null : firstColorProblems(form);
+  if (Number.isNaN(price) || Number.isNaN(samplePrice) || colorProblems) {
     return failure("Please check the highlighted fields.", {
+      ...colorProblems,
       ...(Number.isNaN(price) ? { price: "Enter a price like 5.20" } : {}),
       ...(Number.isNaN(samplePrice) ? { sample_price: "Enter a price like 50.00" } : {}),
     });
@@ -113,7 +116,8 @@ export async function saveProduct(_previous: FormState, form: FormData): Promise
   if (previousSlug && previousSlug !== product.slug) updateTag(`product:${previousSlug}`);
 
   if (!id) {
-    const message = product.colors.length > 0 ? "Style created with its first color. Add any other colors, then show it in the shop." : "Style created. Now add its colors and photos.";
+    const message =
+      product.status === "active" ? "Style created and shown in the shop. Add any other colors below." : "Style created as a draft. Add a color with a photo, then show it in the shop.";
     return { ...success(message), redirectTo: `/admin/products/${product.id}` };
   }
   return success(product.status === "active" ? "Style saved and shown in the shop." : "Style saved.");

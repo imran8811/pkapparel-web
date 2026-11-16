@@ -76,7 +76,7 @@ function StockStyleEditor({ style, copyOf, specs, onSaved }: StockStyleFormProps
       <div className="grid min-w-0 gap-6">
         {style ? null : (
           <FirstColorPanel
-            description="The listing's photos, its color and the sets in stock, saved with it. The color code is made automatically."
+            description="Required: the listing's photos and its color, saved with it, and the sets in stock. The color code is made automatically."
             folder="stock"
             setsInStock
           />
@@ -134,7 +134,7 @@ function StockStyleEditor({ style, copyOf, specs, onSaved }: StockStyleFormProps
             {style ? (
               <SelectField label="Status" name="status" defaultValue={style.status} options={STATUS_OPTIONS} hint="A listing needs its color with a photo before it can be shown." />
             ) : (
-              <p className="text-sm text-muted-foreground">New listings start as drafts. Add the color, its photos and stock, then show the listing.</p>
+              <p className="text-sm text-muted-foreground">The listing is shown on the stock pages as soon as it is created. Hide it later with Status if needed.</p>
             )}
             <SwitchField label="Featured" name="is_featured" defaultChecked={values?.is_featured ?? false} hint="Shown first." />
             <FormError />

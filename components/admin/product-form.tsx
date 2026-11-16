@@ -107,7 +107,7 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
       <div className="grid min-w-0 gap-6">
         {product ? null : (
           <FirstColorPanel
-            description="The photos of the first color, saved with the style. Its code is made automatically. Add other colors once the style is created."
+            description="Required: the photos of the first color, saved with the style. Its code is made automatically. Add other colors once the style is created."
             folder="products"
           />
         )}
@@ -245,7 +245,7 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
             {product ? (
               <SelectField label="Status" name="status" defaultValue={product.status} options={STATUS_OPTIONS} hint="A style needs a color with a photo before it can be shown." />
             ) : (
-              <p className="text-sm text-muted-foreground">New styles start as drafts. Add colors and photos, then show the style in the shop.</p>
+              <p className="text-sm text-muted-foreground">The style is shown in the shop as soon as it is created. Hide it later with Status if needed.</p>
             )}
             <SwitchField label="Featured" name="is_featured" defaultChecked={values?.is_featured ?? false} hint="Shown first in the shop." />
             <FormError />

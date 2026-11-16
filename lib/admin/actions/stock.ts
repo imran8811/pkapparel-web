@@ -3,7 +3,7 @@
 import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminApi } from "@/lib/admin/session";
-import { checked, errorState, failure, firstColor, firstColorField, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
+import { checked, errorState, failure, firstColor, firstColorField, firstColorProblems, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
 import type { AdminStockColor, AdminStockStyle, StockCopied, StockImportResult, StockListingImportResult } from "@/lib/admin/types";
 import { setsInStock } from "@/lib/stock";
 
@@ -45,8 +45,14 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
   const id = number(form, "id");
   // Prices are per piece; the API makes the set's price from its pieces.
   const price = paisa(text(form, "piece_price"));
-  if (price === null || Number.isNaN(price)) {
-    return failure("Please check the highlighted fields.", { piece_price: "Enter the price of one piece in rupees, like 980." });
+  const badPrice = price === null || Number.isNaN(price);
+  // A new listing is shown on the stock pages as soon as it is created, so it needs its color with a photo.
+  const colorProblems = id ? null : firstColorProblems(form);
+  if (badPrice || colorProblems) {
+    return failure("Please check the highlighted fields.", {
+      ...colorProblems,
+      ...(badPrice ? { piece_price: "Enter the price of one piece in rupees, like 980." } : {}),
+    });
   }
 
   const body = {
@@ -76,7 +82,8 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
 
   refreshStock(style.slug, text(form, "original_slug"));
   if (!id) {
-    const message = style.colors.length > 0 ? "Listing created with its color. Show it on the stock pages when it is ready." : "Listing created. Now add its color, photos and stock.";
+    const message =
+      style.status === "active" ? "Listing created and shown on the stock pages." : "Listing created as a draft. Add its color with a photo, then show it on the stock pages.";
     return { ...success(message), redirectTo: `/admin/stock/${style.id}` };
   }
   return success(style.status === "active" ? "Listing saved and shown on the stock pages." : "Listing saved.");

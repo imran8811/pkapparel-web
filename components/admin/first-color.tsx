@@ -8,8 +8,8 @@ import type { UploadFolder } from "@/components/admin/image-field";
 /**
  * The first thing on the add form: the photos of the first color, with its name, saved together with the new style or
  * listing (the API checks the color first, so nothing is half saved). The color's code is made by the API; the code and
- * swatch can be changed in the color's dialog afterwards. Left empty, the color is added on the style's page instead.
- * The fields are called "color_*" (see firstColor in lib/admin/forms).
+ * swatch can be changed in the color's dialog afterwards. A photo and the name are required: the new style or listing
+ * is shown as soon as it is created. The fields are called "color_*" (see firstColor in lib/admin/forms).
  */
 export function FirstColorPanel({
   description,
