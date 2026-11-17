@@ -120,7 +120,9 @@ export async function saveProduct(_previous: FormState, form: FormData): Promise
       product.status === "active" ? "Style created and shown in the shop. Add any other colors below." : "Style created as a draft. Add a color with a photo, then show it in the shop.";
     return { ...success(message), redirectTo: `/admin/products/${product.id}` };
   }
-  return success(product.status === "active" ? "Style saved and shown in the shop." : "Style saved.");
+  // Renamed: a web address made from the name follows it.
+  const moved = previousSlug && previousSlug !== product.slug ? ` New web address: ${product.slug}.` : "";
+  return success(`${product.status === "active" ? "Style saved and shown in the shop." : "Style saved."}${moved}`);
 }
 
 export async function deleteProduct(id: number, slug: string): Promise<FormState> {

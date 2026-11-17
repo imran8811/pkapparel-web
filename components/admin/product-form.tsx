@@ -135,7 +135,11 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
               name="slug"
               defaultValue={values?.slug}
               placeholder="made-from-the-name"
-              hint={product ? "Changing it breaks links people saved." : "Leave empty to make it from the name."}
+              hint={
+                product
+                  ? "If it was made from the name, it changes when you rename the style. The old address of a style in the shop leads to the new one."
+                  : "Leave empty to make it from the name. It follows the name if you rename the style later."
+              }
             />
             <TextField label="Style no." name="style_no" defaultValue={values?.style_no ?? ""} placeholder="Optional" maxLength={40} />
           </div>

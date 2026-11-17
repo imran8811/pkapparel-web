@@ -110,7 +110,11 @@ function StockStyleEditor({ style, copyOf, departments, categories, onSaved }: S
               name="slug"
               defaultValue={values?.slug}
               placeholder="made-from-the-name"
-              hint={style ? "Changing it breaks links people saved (a shown style's old address redirects)." : "Leave empty to make it from the name (numbered if another listing has it)."}
+              hint={
+                style
+                  ? "If it was made from the name, it changes when you rename the listing. The old address of a shown listing leads to the new one."
+                  : "Leave empty to make it from the name (numbered if another listing has it). It follows the name if you rename the listing later."
+              }
               fieldClassName="sm:col-span-2"
             />
           </div>

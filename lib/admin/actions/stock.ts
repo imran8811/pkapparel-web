@@ -90,7 +90,10 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
     // Back to the stock list, where the new listing now shows.
     return { ...success(message), redirectTo: "/admin/stock" };
   }
-  return success(style.status === "active" ? "Listing saved and shown on the stock pages." : "Listing saved.");
+  // Renamed: a web address made from the name follows it.
+  const previousSlug = text(form, "original_slug");
+  const moved = previousSlug && previousSlug !== style.slug ? ` New web address: ${style.slug}.` : "";
+  return success(`${style.status === "active" ? "Listing saved and shown on the stock pages." : "Listing saved."}${moved}`);
 }
 
 export async function deleteStockStyle(id: number, slug: string): Promise<FormState> {
