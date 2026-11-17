@@ -5,8 +5,8 @@ import { StockStyleForm } from "@/components/admin/stock-style-form";
 import { ApiError } from "@/lib/api";
 import { can } from "@/lib/admin/permissions";
 import { adminApi, getStaff } from "@/lib/admin/session";
-import type { AdminStockStyle, CatalogDefinitions } from "@/lib/admin/types";
-import { stockSpecs } from "@/lib/stock";
+import { getStockSectionsAdmin } from "@/lib/admin/stock-sections";
+import type { AdminStockStyle } from "@/lib/admin/types";
 
 export const metadata: Metadata = { title: "New stock listing" };
 
@@ -17,8 +17,8 @@ export default async function NewStockStylePage({ searchParams }: PageProps<"/ad
 
   const { copy } = await searchParams;
   const copyId = typeof copy === "string" && /^\d+$/.test(copy) ? copy : null;
-  const [catalog, original] = await Promise.all([
-    adminApi<CatalogDefinitions>("/v1/admin/product-types"),
+  const [{ departments, categories }, original] = await Promise.all([
+    getStockSectionsAdmin(),
     copyId
       ? adminApi<AdminStockStyle>(`/v1/admin/stock/styles/${copyId}`).catch((error: unknown) => {
           if (error instanceof ApiError && error.status === 404) notFound();
@@ -26,7 +26,6 @@ export default async function NewStockStylePage({ searchParams }: PageProps<"/ad
         })
       : null,
   ]);
-  const specs = stockSpecs(catalog);
   const originalName = original && original.colors.length === 1 ? `${original.name}, ${original.colors[0].name.toLowerCase()}` : original?.name;
 
   return (
@@ -37,10 +36,10 @@ export default async function NewStockStylePage({ searchParams }: PageProps<"/ad
         description={
           original
             ? `A copy of “${originalName}”. Change what is different, then create it as a new listing. The color, its photos and stock are not copied: add the new color below.`
-            : "A listing is one color of jeans: its details, its color with photos, and the sets in stock."
+            : "A listing is one color of a style: its department and category, its details, its color with photos, and the sets in stock."
         }
       />
-      <StockStyleForm key={original?.id ?? "new"} style={null} copyOf={original} specs={specs} />
+      <StockStyleForm key={original?.id ?? "new"} style={null} copyOf={original} departments={departments} categories={categories} />
     </>
   );
 }

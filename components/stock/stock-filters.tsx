@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { XIcon } from "lucide-react";
-import { STOCK_SORTS, stockSegments, stockUrl, type StockFilters, type StockSegment } from "@/lib/stock";
+import { STOCK_SORTS, stockUrl, type StockFilters, type StockSection } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 const FABRICS = [
@@ -15,11 +15,13 @@ export function stockFiltersFrom(params: Record<string, string | string[] | unde
     const value = params[key];
     return (Array.isArray(value) ? value[0] : value)?.trim() || undefined;
   };
+  const category = one("category");
   const size = one("size");
   const stretch = one("stretch");
   const sort = one("sort");
 
   return {
+    category: category && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(category) && category.length <= 40 ? category : undefined,
     size: size && /^\d{2}$/.test(size) ? size : undefined,
     fit: one("fit")?.slice(0, 60),
     stretch: stretch === "stretch" || stretch === "non-stretch" ? stretch : undefined,
@@ -37,39 +39,63 @@ export function stockHref(path: string, current: StockFilters, changes: Partial<
   return `${path}${params.size ? `?${params}` : ""}`;
 }
 
-/** Size, fit and fabric chosen (the sort order is not a filter). */
+/** Category, size, fit and fabric chosen (the sort order is not a filter). */
 export function activeFilterCount(filters: StockFilters): number {
-  return [filters.size, filters.fit, filters.stretch].filter(Boolean).length;
+  return [filters.category, filters.size, filters.fit, filters.stretch].filter(Boolean).length;
 }
 
+type Counted = StockSection & { count: number };
+
 /**
- * The filter sidebar: the two jeans sections, then size, fit and fabric. Every option is a link, so filtering works
- * without JavaScript. Changing the section starts without filters (the sizes differ).
+ * The filter sidebar: the departments, the department's categories, then size, fit and fabric. Every option is a
+ * link, so filtering works without JavaScript. Changing the department starts without filters (the sizes differ).
  */
 export function StockFilterPanel({
   segment,
   filters,
   sizes,
   fits,
-  counts,
+  departments,
+  categories,
 }: {
-  segment: StockSegment;
+  segment: string;
   filters: StockFilters;
   /** The sizes and fits of the styles in stock. */
   sizes: string[];
   fits: string[];
-  /** Styles in each section, shown beside the section links. */
-  counts: Record<StockSegment, number>;
+  /** The departments with styles, with their number of styles. */
+  departments: Counted[];
+  /** The categories this department has styles in, with their number of styles. */
+  categories: Counted[];
 }) {
   const path = stockUrl(segment);
+  const total = categories.reduce((sum, category) => sum + category.count, 0);
 
   return (
     <div className="grid gap-7">
-      <FilterGroup title="Jeans">
-        {stockSegments.map((section) => (
-          <Option key={section.slug} href={stockUrl(section.slug)} active={section.slug === segment} label={section.title} count={counts[section.slug]} />
-        ))}
-      </FilterGroup>
+      {departments.length > 1 ? (
+        <FilterGroup title="Department">
+          {departments.map((department) => (
+            <Option key={department.slug} href={stockUrl(department.slug)} active={department.slug === segment} label={department.name} count={department.count} />
+          ))}
+        </FilterGroup>
+      ) : null}
+
+      {categories.length > 1 || filters.category ? (
+        <FilterGroup title="Category">
+          <Option href={stockHref(path, filters, { category: undefined })} active={!filters.category} label="All" count={total} filter />
+          {categories.map((category) => (
+            <Option
+              key={category.slug}
+              href={stockHref(path, filters, { category: category.slug })}
+              active={filters.category === category.slug}
+              label={category.name}
+              count={category.count}
+              filter
+            />
+          ))}
+        </FilterGroup>
+      ) : null}
 
       {sizes.length > 1 ? (
         <FilterGroup title="Size" chips>
@@ -109,8 +135,21 @@ export function StockFilterPanel({
 }
 
 /** The chosen filters above the styles, each removable, and "Clear all" when there are several. */
-export function ActiveFilters({ path, filters, fits, className }: { path: string; filters: StockFilters; fits: string[]; className?: string }) {
-  const chosen: { key: "size" | "fit" | "stretch"; label: string }[] = [];
+export function ActiveFilters({
+  path,
+  filters,
+  fits,
+  categories,
+  className,
+}: {
+  path: string;
+  filters: StockFilters;
+  fits: string[];
+  categories: StockSection[];
+  className?: string;
+}) {
+  const chosen: { key: "category" | "size" | "fit" | "stretch"; label: string }[] = [];
+  if (filters.category) chosen.push({ key: "category", label: categories.find((category) => category.slug === filters.category)?.name ?? filters.category });
   if (filters.size) chosen.push({ key: "size", label: `Size ${filters.size}` });
   if (filters.fit) chosen.push({ key: "fit", label: fits.find((fit) => fit.toLowerCase() === filters.fit?.toLowerCase()) ?? filters.fit });
   if (filters.stretch) chosen.push({ key: "stretch", label: filters.stretch === "stretch" ? "Stretch" : "Rigid" });

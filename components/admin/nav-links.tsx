@@ -8,6 +8,7 @@ import {
   ChartColumnIcon,
   FactoryIcon,
   FileTextIcon,
+  FolderTreeIcon,
   RulerIcon,
   ShirtIcon,
   TagsIcon,
@@ -60,6 +61,7 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
     title: "Stock",
     items: [
       { href: "/admin/stock", label: "Stock listings", icon: PackageIcon, area: "content" },
+      { href: "/admin/stock/categories", label: "Stock categories", icon: FolderTreeIcon, area: "content" },
       { href: "/admin/stock/report", label: "Stock report", icon: ChartColumnIcon, area: "stock_report" },
     ],
   },
@@ -87,6 +89,10 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
 
 export function NavLinks({ role, onNavigate }: { role: Role; onNavigate?: () => void }) {
   const pathname = usePathname();
+  // The most specific item for the address: /admin/stock/report is the stock report, not the stock listings.
+  const current = SECTIONS.flatMap((section) => section.items)
+    .filter((item) => (item.href === "/admin" ? pathname === "/admin" : pathname === item.href || pathname.startsWith(`${item.href}/`)))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
     <nav aria-label="Admin" className="grid gap-5">
@@ -99,7 +105,7 @@ export function NavLinks({ role, onNavigate }: { role: Role; onNavigate?: () => 
               <p className="px-3 pb-1 font-mono text-[10px] tracking-[0.2em] text-cotton-50/60 uppercase">{section.title}</p>
             ) : null}
             {items.map((item) => {
-              const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+              const active = item.href === current;
               return (
                 <Link
                   key={item.href}

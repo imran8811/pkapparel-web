@@ -3,8 +3,8 @@ import { getProducts, getShopCategories } from "@/lib/catalog";
 import { getPosts } from "@/lib/content";
 import { absoluteUrl } from "@/lib/seo";
 import { productUrl } from "@/lib/shop";
-import { DEFAULT_STOCK_SEGMENT, stockSegments, stockUrl } from "@/lib/stock";
-import { getStockStyles } from "@/lib/stock-catalog";
+import { DEFAULT_STOCK_SEGMENT, stockUrl } from "@/lib/stock";
+import { getStockDepartments, getStockStyles } from "@/lib/stock-catalog";
 
 const PAGES: { path: string; priority: number }[] = [
   { path: "/", priority: 1 },
@@ -34,14 +34,22 @@ const STOCK_PAGES: { path: string; priority: number }[] = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [posts, categories, { items: products }, stock] = await Promise.all([getPosts(100), getShopCategories(), getProducts(), getStockStyles()]);
+  const [posts, categories, { items: products }, stock, stockDepartments] = await Promise.all([
+    getPosts(100),
+    getShopCategories(),
+    getProducts(),
+    getStockStyles(),
+    getStockDepartments(),
+  ]);
 
   return [
     ...PAGES.map((page) => ({ url: absoluteUrl(page.path), priority: page.priority })),
     // The stock pages (only reachable from the stock countries, but crawlers may index them: owner decision 2026-11-09).
     ...STOCK_PAGES.map((page) => ({ url: absoluteUrl(page.path), priority: page.priority })),
-    // The men's jeans are /stock itself (listed above).
-    ...stockSegments.filter((segment) => segment.slug !== DEFAULT_STOCK_SEGMENT).map((segment) => ({ url: absoluteUrl(stockUrl(segment.slug)), priority: 0.8 })),
+    // The departments with styles shown; the men's are /stock itself (listed above).
+    ...stockDepartments
+      .filter((department) => department.slug !== DEFAULT_STOCK_SEGMENT && department.styles > 0)
+      .map((department) => ({ url: absoluteUrl(department.href), priority: 0.8 })),
     ...stock.map((style) => ({ url: absoluteUrl(stockUrl(style.segment, style.slug)), priority: 0.7 })),
     // Shop pages without styles online are "made to order" pages, kept out of search results.
     ...categories

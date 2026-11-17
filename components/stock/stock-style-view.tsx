@@ -7,7 +7,7 @@ import { StockGallery } from "@/components/stock/stock-gallery";
 import { Button } from "@/components/ui/button";
 import { addToStockCart } from "@/lib/account/actions/stock";
 import { notifyUiChange } from "@/lib/account/use-ui-state";
-import { formatPiecePrice, formatRupees, RETURN_DAYS, setsInStock, stockSegmentInfo, type StockStyle } from "@/lib/stock";
+import { formatPiecePrice, formatRupees, RETURN_DAYS, sectionTitle, setsInStock, type StockStyle } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 const noSubscription = () => () => {};
@@ -68,7 +68,7 @@ export function StockStyleView({ style }: { style: StockStyle }) {
 
       <div className="grid min-w-0 grid-cols-1 content-start gap-7 lg:col-span-5">
         <div>
-          <p className="font-mono text-[11px] tracking-[0.18em] text-denim-600 uppercase">{stockSegmentInfo(style.segment).title} · in stock</p>
+          <p className="font-mono text-[11px] tracking-[0.18em] text-denim-600 uppercase">{sectionTitle(style.department_name, style.category_name)} · in stock</p>
           <h1 className="mt-3 text-4xl leading-[1.04] font-bold tracking-[-0.03em] sm:text-5xl">{style.name}</h1>
           <p className="mt-5 flex flex-wrap items-baseline gap-x-2">
             <span className="font-heading text-3xl font-semibold tabular-nums">{formatPiecePrice(style.piece_price_cents)}</span>

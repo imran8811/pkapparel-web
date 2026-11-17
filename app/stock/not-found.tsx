@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { stockSegments, stockUrl } from "@/lib/stock";
+import { DEFAULT_STOCK_SEGMENT } from "@/lib/stock";
+import { getStockDepartments } from "@/lib/stock-catalog";
 
-/** 404 inside the stock pages (keeps the stock header and footer). */
-export default function StockNotFound() {
+/** 404 inside the stock pages (keeps the stock header and footer), with a way into each department. */
+export default async function StockNotFound() {
+  const departments = await getStockDepartments();
+
   return (
     <div className="relative overflow-hidden bg-denim-900 text-cotton-50">
       <div aria-hidden className="absolute inset-0 twill-texture" />
@@ -14,9 +17,9 @@ export default function StockNotFound() {
         </h1>
         <p className="mt-6 text-lg text-cotton-50/70">The page you&apos;re looking for doesn&apos;t exist or has moved. See what is in stock now.</p>
         <div className="mt-10 flex flex-wrap justify-center gap-3">
-          {stockSegments.map((segment) => (
-            <Button key={segment.slug} asChild variant={segment.slug === "men" ? "accent" : "outline-inverse"} size="lg">
-              <Link href={stockUrl(segment.slug)}>{segment.title}</Link>
+          {departments.map((department) => (
+            <Button key={department.slug} asChild variant={department.slug === DEFAULT_STOCK_SEGMENT ? "accent" : "outline-inverse"} size="lg">
+              <Link href={department.href}>{department.title}</Link>
             </Button>
           ))}
         </div>

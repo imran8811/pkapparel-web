@@ -11,8 +11,11 @@ import { mediaSrc } from "@/lib/media";
 import { formatRupees, setContents, stockUrl, type StockCart } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
-/** The stock cart: sets per color (never more than in stock), what blocks the checkout, and the total. */
-export function StockCartView({ initialCart, signedIn }: { initialCart: StockCart; signedIn: boolean }) {
+/**
+ * The stock cart: sets per color (never more than in stock), what blocks the checkout, and the total. An empty cart
+ * leads to the departments (`shop`: their titles and addresses).
+ */
+export function StockCartView({ initialCart, signedIn, shop }: { initialCart: StockCart; signedIn: boolean; shop: { href: string; title: string }[] }) {
   const [cart, setCart] = useState(initialCart);
   const [error, setError] = useState<string | null>(null);
   const [busyColor, setBusyColor] = useState<number | null>(null);
@@ -41,12 +44,11 @@ export function StockCartView({ initialCart, signedIn }: { initialCart: StockCar
         <p className="font-heading text-xl font-semibold">Your cart is empty</p>
         <p className="mx-auto mt-2 max-w-md text-muted-foreground">Choose a style, pick a color and add the sets you need.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Button asChild>
-            <Link href={stockUrl("men")}>Men&apos;s jeans</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href={stockUrl("boys")}>Boys&apos; jeans</Link>
-          </Button>
+          {shop.map((department, index) => (
+            <Button key={department.href} asChild variant={index === 0 ? "default" : "outline"}>
+              <Link href={department.href}>{department.title}</Link>
+            </Button>
+          ))}
         </div>
       </div>
     );

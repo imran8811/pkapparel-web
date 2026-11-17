@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Panel, Pill } from "@/components/admin/page-parts";
 import { copyFromWholesale } from "@/lib/admin/actions/stock";
 import type { StockCopied, StockFromWholesaleRow } from "@/lib/admin/types";
-import { isStockSegment, setContents, stockSegmentInfo } from "@/lib/stock";
+import { sectionTitle, setContents } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
@@ -112,7 +112,7 @@ export function StockFromWholesale({ rows }: { rows: StockFromWholesaleRow[] }) 
                     {row.color} <span className="font-mono text-xs text-muted-foreground">{row.code}</span>
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {isStockSegment(row.segment) ? stockSegmentInfo(row.segment).title : row.segment}
+                    {row.category_name ? sectionTitle(row.department_name, row.category_name) : row.department_name}
                     {" · "}
                     {plural(row.photos, "photo")}
                     {row.set_sizes.length > 0 ? ` · set of ${pieces}: ${setContents(row.set_sizes)}` : ""}

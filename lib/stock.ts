@@ -1,5 +1,6 @@
 /*
- * Stock: ready jeans from stock on hand, sold by set (one set per style), priced per set.
+ * Stock: ready clothes from stock on hand, sold by set (one set per style), priced per set. Every style is in a
+ * department (Men, Women, Boys…) and a category (Jeans, Cotton pants…), both kept by staff in Admin → Stock categories.
  * Types and helpers shared by server and client components. Amounts are in paisa (rupees × 100), like every amount
  * from the API.
  */
@@ -8,26 +9,62 @@ import type { Address } from "@/lib/account/types";
 import type { CatalogDefinitions, CatalogSpec } from "@/lib/admin/types";
 import type { ProductImage, SpecField, Specs } from "@/lib/shop";
 
-export const stockSegments = [
-  { slug: "men", label: "Men", title: "Men's jeans" },
-  { slug: "boys", label: "Boys", title: "Boys' jeans" },
-] as const;
+/** A stock department (Men, Women, Boys…) or category (Jeans, Cotton pants…). Styles name theirs by slug. */
+export type StockSection = { slug: string; name: string };
 
-export type StockSegment = (typeof stockSegments)[number]["slug"];
+/** The departments and categories in staff order (GET /v1/stock/sections). */
+export type StockSections = { departments: StockSection[]; categories: StockSection[] };
 
-export function isStockSegment(value: string): value is StockSegment {
-  return stockSegments.some((segment) => segment.slug === value);
-}
+/**
+ * The department listed at /stock itself: the stock pages open on the men's (owner decision 2026-11-09). Mirrors the
+ * API's StockDepartment::HOME, which staff cannot delete.
+ */
+export const DEFAULT_STOCK_SEGMENT = "men";
 
-export const stockSegmentInfo = (slug: StockSegment) => stockSegments.find((segment) => segment.slug === slug)!;
-
-/** The section listed at /stock itself: the stock pages open on the men's jeans (owner decision 2026-11-09). */
-export const DEFAULT_STOCK_SEGMENT: StockSegment = "men";
-
-/** A section's listing (/stock for the men's jeans, /stock/boys) or a style (/stock/men/{style}). */
+/** A department's listing (/stock for the men's, /stock/boys) or a style (/stock/men/{style}). */
 export function stockUrl(segment?: string, slug?: string): string {
   if (!slug && (!segment || segment === DEFAULT_STOCK_SEGMENT)) return "/stock";
   return ["/stock", segment, slug].filter(Boolean).join("/");
+}
+
+/** A department's listing of one category: /stock/boys?category=cotton-pants. */
+export function stockCategoryUrl(segment: string, category?: string): string {
+  return category ? `${stockUrl(segment)}?category=${encodeURIComponent(category)}` : stockUrl(segment);
+}
+
+/** "Men's", "Women's", "Boys'": a department's name before what it sells. */
+export function possessive(name: string): string {
+  return /s$/i.test(name) ? `${name}'` : `${name}'s`;
+}
+
+/** A name inside a sentence: "cotton pants", but "T-shirts" keeps its capital. */
+export function inSentence(name: string): string {
+  return /^\p{Lu}\p{Ll}/u.test(name) ? name.charAt(0).toLowerCase() + name.slice(1) : name;
+}
+
+/** "Men's cotton pants": a category in a department. */
+export function sectionTitle(department: string, category: string): string {
+  return `${possessive(department)} ${inSentence(category)}`;
+}
+
+/** "jeans", "jeans and cotton pants", "jeans, shorts and cotton pants" */
+function joinNames(names: string[]): string {
+  return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+/**
+ * A department's title, from the categories it has styles in (all of them while it has none): "Men's jeans", "Men's
+ * jeans and cotton pants", or "Men's clothing" beyond three categories.
+ */
+export function departmentTitle(department: StockSection, categories: StockSection[], styles: { segment: string; category: string }[]): string {
+  const stocked = categories.filter((category) => styles.some((style) => style.segment === department.slug && style.category === category.slug));
+  const names = (stocked.length > 0 ? stocked : categories).map((category) => inSentence(category.name));
+  return `${possessive(department.name)} ${names.length > 0 && names.length <= 3 ? joinNames(names) : "clothing"}`;
+}
+
+/** What a department's listing says under its title, and the start of its search description. */
+export function stockIntro(title: string): string {
+  return `${title} ready in stock, in sets of the sizes shown on each style. See the sets in stock for every color, then order online or on WhatsApp.`;
 }
 
 export const stockInfoLinks = [
@@ -40,15 +77,15 @@ export const stockLegalLinks = [
   { href: "/stock/privacy", label: "Privacy" },
 ] as const;
 
-/** Stock is jeans only: its specs (labels and suggestions) are those of the wholesale shop's jeans pants. */
-export const STOCK_PRODUCT_TYPE = "jeans-pant";
-
-/** Details only stock listings have, after the jeans specs. Mirrors the API's StockStyle::OWN_SPECS. */
+/** Details only stock listings have, after their category's specs. Mirrors the API's StockStyle::OWN_SPECS. */
 const STOCK_OWN_SPECS: CatalogSpec[] = [{ key: "label", label: "Label", max: 80, suggestions: [], per_color: false }];
 
-/** The specs of the stock listing form, in display order: the jeans specs, then the stock's own (the label). */
-export function stockSpecs(catalog: CatalogDefinitions): CatalogSpec[] {
-  return [...(catalog.types.find((type) => type.slug === STOCK_PRODUCT_TYPE)?.specs ?? []), ...STOCK_OWN_SPECS];
+/**
+ * The specs of a stock listing, in display order: those of its category's product type (as in the wholesale shop:
+ * jeans pants for jeans, chino pants for cotton pants), then the stock's own (the label).
+ */
+export function stockSpecs(catalog: CatalogDefinitions, productType: string): CatalogSpec[] {
+  return [...(catalog.types.find((type) => type.slug === productType)?.specs ?? []), ...STOCK_OWN_SPECS];
 }
 
 /** Days after delivery to report an issue and return goods (owner decision 2026-11-09). */
@@ -70,7 +107,11 @@ export type StockCard = {
   slug: string;
   name: string;
   style_no: string | null;
-  segment: StockSegment;
+  /** The slugs of its department and category, and their names. */
+  segment: string;
+  category: string;
+  department_name: string;
+  category_name: string;
   fit: string | null;
   stretch: "stretch" | "non-stretch" | null;
   /** The sizes of the set, smallest first. */
@@ -98,7 +139,10 @@ export type StockStyle = {
   slug: string;
   name: string;
   style_no: string | null;
-  segment: StockSegment;
+  segment: string;
+  category: string;
+  department_name: string;
+  category_name: string;
   specs: Specs;
   spec_fields: SpecField[];
   description_html: string;
@@ -116,6 +160,8 @@ export type StockStyle = {
 };
 
 export type StockFilters = {
+  /** A category's slug. */
+  category?: string;
   size?: string;
   fit?: string;
   stretch?: "stretch" | "non-stretch";
@@ -163,6 +209,7 @@ export function setsInStock(sets: number): string {
 export function filterStock(styles: StockCard[], filters: StockFilters): StockCard[] {
   const matching = styles.filter(
     (style) =>
+      (!filters.category || style.category === filters.category) &&
       (!filters.size || style.sizes.includes(filters.size)) &&
       (!filters.fit || style.fit?.toLowerCase() === filters.fit.toLowerCase()) &&
       (!filters.stretch || style.stretch === filters.stretch),
@@ -190,7 +237,7 @@ export type StockCartLine = {
   slug: string;
   hex: string | null;
   image: ProductImage | null;
-  style: { slug: string; name: string; style_no: string | null; segment: StockSegment };
+  style: { slug: string; name: string; style_no: string | null; segment: string; category: string };
   set: { sizes: StockSetSize[]; pieces: number };
   piece_price_cents: number;
   set_price_cents: number;

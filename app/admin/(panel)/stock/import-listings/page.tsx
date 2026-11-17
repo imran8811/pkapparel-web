@@ -4,22 +4,32 @@ import { Button } from "@/components/ui/button";
 import { NoAccess, PageHeader, Panel } from "@/components/admin/page-parts";
 import { StockListingImport } from "@/components/admin/stock-listing-import";
 import { can } from "@/lib/admin/permissions";
-import { adminApi, getStaff } from "@/lib/admin/session";
-import type { CatalogDefinitions } from "@/lib/admin/types";
-import { stockSpecs } from "@/lib/stock";
+import { getStaff } from "@/lib/admin/session";
+import { getStockSectionsAdmin } from "@/lib/admin/stock-sections";
 
 export const metadata: Metadata = { title: "Import stock listings" };
 
 export default async function StockListingImportPage() {
   const staff = await getStaff();
   if (!can(staff.role, "content")) return <NoAccess />;
-  const specs = stockSpecs(await adminApi<CatalogDefinitions>("/v1/admin/product-types"));
+  const { departments, categories, catalog } = await getStockSectionsAdmin();
+  // The template's spec columns (the API's StockListingImport): every spec of the categories once, by its first label,
+  // then the label. A spec named differently by two categories is read under either name.
+  const specNames = new Map<string, string[]>();
+  for (const category of categories) {
+    for (const spec of catalog.types.find((type) => type.slug === category.product_type)?.specs ?? []) {
+      const names = specNames.get(spec.key) ?? [];
+      if (!names.includes(spec.label)) specNames.set(spec.key, [...names, spec.label]);
+    }
+  }
+  const specColumns = [...[...specNames.values()].map((names) => (names.length > 1 ? `${names[0]} (or ${names.slice(1).join(", ")})` : names[0])), "Label"];
 
   // The template's columns (the API's StockListingImport), what to write in each, and whether it must be filled in.
   const columns: { name: string; required?: boolean; help: string }[] = [
     { name: "Name", required: true, help: "The listing's name, e.g. Men's slim stretch jeans." },
     { name: "Style no.", help: "Optional, e.g. PK-1051." },
-    { name: "For", required: true, help: "Men or Boys." },
+    { name: "For", required: true, help: `The department: ${orList(departments.map((department) => department.name))}.` },
+    { name: "Category", required: true, help: `${orList(categories.map((category) => category.name))}. Each category has its own specifications.` },
     { name: "Color", required: true, help: "e.g. Sky blue. Each color is a listing of its own: one line per color." },
     {
       name: "Color code",
@@ -31,8 +41,8 @@ export default async function StockListingImportPage() {
     { name: "Price per piece (Rs)", required: true, help: "e.g. 980. The set's price is its pieces times this." },
     { name: "Sets in stock", help: "Optional, recorded as received. Empty means none yet." },
     {
-      name: specs.map((spec) => spec.label).join(", "),
-      help: "Optional, as in the listing form. Stretch is Stretch or Rigid.",
+      name: specColumns.join(", "),
+      help: "Optional, as in the listing form: each line keeps those of its category. Stretch is Stretch or Rigid.",
     },
     { name: "Description", help: "Optional plain text. An empty line starts a new paragraph." },
   ];
@@ -81,4 +91,9 @@ export default async function StockListingImportPage() {
       </div>
     </>
   );
+}
+
+/** "Men, Women or Boys" */
+function orList(names: string[]): string {
+  return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} or ${names[names.length - 1]}`;
 }

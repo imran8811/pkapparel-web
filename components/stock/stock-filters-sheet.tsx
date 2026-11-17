@@ -21,7 +21,7 @@ export function StockFiltersSheet({ active, children, className }: { active: num
       <SheetContent side="left" className="w-full gap-0 overflow-y-auto bg-cotton-50 p-0 sm:max-w-sm">
         <div className="border-b border-border px-5 py-4">
           <SheetTitle className="font-heading text-lg font-semibold">Filters</SheetTitle>
-          <SheetDescription className="sr-only">Choose the jeans section, the size, the fit and the fabric.</SheetDescription>
+          <SheetDescription className="sr-only">Choose the department, the category, the size, the fit and the fabric.</SheetDescription>
         </div>
         {/* Every option is a link: following one closes the panel to show its styles. */}
         <div

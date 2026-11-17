@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ColorDots } from "@/components/shop/product-card";
 import { mediaSrc } from "@/lib/media";
-import { formatPiecePrice, formatRupees, sizeRange, stockSegmentInfo, stockUrl, type StockCard as Card } from "@/lib/stock";
+import { formatPiecePrice, formatRupees, sectionTitle, sizeRange, stockUrl, type StockCard as Card } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 /** A stock listing in a grid (one color each): photo (second photo on hover), its color and code, sizes of the set, price per set, and whether it is sold out. */
@@ -47,7 +47,7 @@ export function StockCard({ style, preload = false }: { style: Card; preload?: b
       </div>
       <div className="mt-4 flex flex-1 flex-col px-1">
         <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
-          {stockSegmentInfo(style.segment).title} · sizes {sizeRange(style.sizes)}
+          {sectionTitle(style.department_name, style.category_name)} · sizes {sizeRange(style.sizes)}
         </p>
         <h3 className="mt-1.5 font-heading text-lg leading-snug font-semibold tracking-tight transition-colors group-hover:text-denim-600">
           {style.name}

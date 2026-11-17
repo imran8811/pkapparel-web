@@ -6,15 +6,17 @@ import { StockAccountLink, StockCartLink } from "@/components/stock/stock-accoun
 import { Button } from "@/components/ui/button";
 import { whatsappUrl } from "@/lib/links";
 import type { Site } from "@/lib/site";
-import { stockInfoLinks, stockSegments, stockUrl } from "@/lib/stock";
+import { stockInfoLinks } from "@/lib/stock";
+import { getStockDepartments } from "@/lib/stock-catalog";
 
 export const STOCK_TAGLINE = ["Jeans in stock", "Sold by set"] as const;
 
 export const STOCK_WHATSAPP_MESSAGE = "Hello PK Apparel, I'd like to order jeans from your stock.";
 
-/** Sticky header of the stock pages: logo, the two jeans sections, how to order, contact, WhatsApp, account and cart. */
-export function StockHeader({ site }: { site: Site }) {
-  const links = [...stockSegments.map((segment) => ({ href: stockUrl(segment.slug), label: segment.title })), ...stockInfoLinks];
+/** Sticky header of the stock pages: logo, the departments with styles, how to order, contact, WhatsApp, account and cart. */
+export async function StockHeader({ site }: { site: Site }) {
+  const departments = await getStockDepartments();
+  const links = [...departments.map((department) => ({ href: department.href, label: department.name })), ...stockInfoLinks];
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-cotton-50/85 backdrop-blur-md supports-[backdrop-filter]:bg-cotton-50/70">

@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { CopyIcon, DownloadIcon, FileSpreadsheetIcon, ImageIcon, PlusIcon, SearchIcon, UploadIcon } from "lucide-react";
+import { CopyIcon, DownloadIcon, FileSpreadsheetIcon, ImageIcon, PlusIcon, SearchIcon, UploadIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, NoAccess, PageHeader, Pill } from "@/components/admin/page-parts";
 import { inputClass } from "@/components/admin/styles";
 import { can } from "@/lib/admin/permissions";
-import { adminApiWithMeta, getStaff } from "@/lib/admin/session";
-import type { AdminStockStyleSummary, Pagination, ProductStatus } from "@/lib/admin/types";
-import { formatRupees, isStockSegment, stockSegmentInfo } from "@/lib/stock";
+import { adminApi, adminApiWithMeta, getStaff } from "@/lib/admin/session";
+import type { AdminStockCategory, AdminStockDepartment, AdminStockStyleSummary, Pagination, ProductStatus } from "@/lib/admin/types";
+import { formatRupees } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Stock" };
@@ -23,12 +23,20 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
   const staff = await getStaff();
   if (!can(staff.role, "content")) return <NoAccess />;
 
-  const search = (await searchParams) as { status?: string; q?: string };
+  const search = (await searchParams) as { status?: string; q?: string; segment?: string; category?: string };
   const status = search.status && search.status in STATUS ? (search.status as ProductStatus) : undefined;
   const q = search.q?.trim() || undefined;
+  // Only the listings of a department or category, e.g. from Stock categories (unknown ones are ignored).
+  const [departments, categories] = await Promise.all([
+    adminApi<AdminStockDepartment[]>("/v1/admin/stock/departments"),
+    adminApi<AdminStockCategory[]>("/v1/admin/stock/categories"),
+  ]);
+  const department = departments.find((option) => option.slug === search.segment);
+  const category = categories.find((option) => option.slug === search.category);
+  const sections = { ...(department ? { segment: department.slug } : {}), ...(category ? { category: category.slug } : {}) };
   const { data: styles, meta } = await adminApiWithMeta<AdminStockStyleSummary[], { pagination: Pagination; counts: Record<ProductStatus, number> }>(
     "/v1/admin/stock/styles",
-    { query: { status, q, per_page: 100 } },
+    { query: { status, q, ...sections, per_page: 100 } },
   );
   const total = Object.values(meta.counts).reduce((sum, count) => sum + count, 0);
   const tabs: { value?: ProductStatus; label: string; count: number }[] = [
@@ -40,7 +48,7 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
     <>
       <PageHeader
         title="Stock"
-        description="Ready men's and boys' jeans, sold by set on the stock pages. Each listing is one color, with its own details, set, price per set and sets in stock."
+        description="Ready stock sold by set on the stock pages, by department and category. Each listing is one color, with its own details, set, price per set and sets in stock."
         actions={
           <>
             <Button asChild size="sm" variant="outline">
@@ -82,7 +90,7 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
         {tabs.map((tab) => (
           <Link
             key={tab.label}
-            href={`/admin/stock${tab.value || q ? `?${new URLSearchParams({ ...(tab.value ? { status: tab.value } : {}), ...(q ? { q } : {}) })}` : ""}`}
+            href={listHref({ ...(tab.value ? { status: tab.value } : {}), ...sections, ...(q ? { q } : {}) })}
             className={cn(
               "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm",
               tab.value === status ? "border-denim-900 bg-denim-900 text-white" : "bg-white hover:border-denim-300",
@@ -92,17 +100,30 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
             <span className={cn("text-xs tabular-nums", tab.value === status ? "text-cotton-50/70" : "text-muted-foreground")}>{tab.count}</span>
           </Link>
         ))}
+        {department || category ? (
+          <Link
+            href={listHref({ ...(status ? { status } : {}), ...(q ? { q } : {}) })}
+            aria-label="Show every department and category"
+            className="inline-flex items-center gap-1.5 rounded-full bg-cotton-100 py-1.5 pr-2.5 pl-3 text-sm hover:bg-cotton-200"
+          >
+            {[department?.name, category?.name].filter(Boolean).join(" · ")}
+            <XIcon className="size-3.5" aria-hidden />
+          </Link>
+        ) : null}
         <form action="/admin/stock" className="relative ml-auto w-full sm:w-72">
           {status ? <input type="hidden" name="status" value={status} /> : null}
+          {Object.entries(sections).map(([name, value]) => (
+            <input key={name} type="hidden" name={name} value={value} />
+          ))}
           <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <input name="q" defaultValue={q} placeholder="Name, style no. or color code" aria-label="Search stock listings" className={cn(inputClass, "pl-9")} />
         </form>
       </div>
 
       {styles.length === 0 ? (
-        <EmptyState title={q ? "No listings match" : "No stock listings yet"}>
-          {q ? (
-            "Try another search."
+        <EmptyState title={q || department || category ? "No listings match" : "No stock listings yet"}>
+          {q || department || category ? (
+            "Try another search, or show every department and category."
           ) : (
             <>
               Add the first one with “New listing”, or{" "}
@@ -141,7 +162,7 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
                       <span className="text-stitch-700">No color yet</span>
                     )}
                     {" · "}
-                    {isStockSegment(style.segment) ? stockSegmentInfo(style.segment).title : style.segment} · sets of {style.set_pieces}
+                    {style.department_name} · {style.category_name} · sets of {style.set_pieces}
                     {style.style_no ? ` · ${style.style_no}` : ""}
                   </span>
                 </p>
@@ -172,4 +193,10 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
       )}
     </>
   );
+}
+
+/** The stock list with these filters. */
+function listHref(params: Record<string, string>): string {
+  const query = new URLSearchParams(params).toString();
+  return `/admin/stock${query ? `?${query}` : ""}`;
 }

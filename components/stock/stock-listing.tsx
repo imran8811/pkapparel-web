@@ -8,27 +8,22 @@ import { ActiveFilters, activeFilterCount, StockFilterPanel, stockFiltersFrom, s
 import { StockFiltersSheet } from "@/components/stock/stock-filters-sheet";
 import { StockSortSelect } from "@/components/stock/stock-sort-select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { filterStock, stockFacets, stockSegmentInfo, stockSegments, stockUrl, type StockSegment } from "@/lib/stock";
-import { getStockStyles } from "@/lib/stock-catalog";
+import { filterStock, stockFacets, stockIntro, stockUrl } from "@/lib/stock";
+import { getStockDepartment, getStockSections, getStockStyles } from "@/lib/stock-catalog";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
-
-/** What a section's listing says under its title, and the start of its search description. */
-export const STOCK_INTROS: Record<StockSegment, string> = {
-  men: "Men's jeans ready in stock, in sets of the waist sizes shown on each style. See the sets in stock for every color, then order online or on WhatsApp.",
-  boys: "Boys' jeans ready in stock, in sets of the sizes shown on each style. See the sets in stock for every color, then order online or on WhatsApp.",
-};
 
 const GRID = "lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start lg:gap-10 xl:grid-cols-[16rem_minmax(0,1fr)] xl:gap-12";
 
 /**
- * A jeans section's listing (/stock for men's jeans, /stock/boys): the filters in a sidebar, behind a "Filters" button
- * on phones, and the styles beside them. The heading is prerendered; the list follows the filters in the address and
+ * A department's listing (/stock for the men's, /stock/boys): the filters in a sidebar, behind a "Filters" button on
+ * phones, and the styles beside them. The heading is prerendered, titled by the categories the department has styles
+ * in ("Men's jeans and cotton pants"); the list follows the filters in the address (the category among them) and
  * renders on request. On the stock home only a breadcrumb is shown above the list, without a title or intro (owner
  * request 2026-11-09); its title stays for screen readers.
  */
-export function StockListingPage({ segment, searchParams, home = false }: { segment: StockSegment; searchParams: SearchParams; home?: boolean }) {
-  const title = stockSegmentInfo(segment).title;
+export async function StockListingPage({ segment, searchParams, home = false }: { segment: string; searchParams: SearchParams; home?: boolean }) {
+  const title = (await getStockDepartment(segment))?.title ?? segment;
   const listing = (
     <Suspense fallback={<ListingSkeleton />}>
       <Listing segment={segment} searchParams={searchParams} />
@@ -53,7 +48,7 @@ export function StockListingPage({ segment, searchParams, home = false }: { segm
         <Container className="py-8 sm:py-10">
           <Eyebrow>Ready stock, sold by set</Eyebrow>
           <h1 className="mt-3 text-3xl leading-tight font-bold tracking-[-0.02em] sm:text-4xl">{title}</h1>
-          <p className="mt-3 max-w-2xl text-muted-foreground">{STOCK_INTROS[segment]}</p>
+          <p className="mt-3 max-w-2xl text-muted-foreground">{stockIntro(title)}</p>
         </Container>
       </section>
       <section className="pt-8 pb-16 sm:pt-10 sm:pb-20">
@@ -63,18 +58,25 @@ export function StockListingPage({ segment, searchParams, home = false }: { segm
   );
 }
 
-async function Listing({ segment, searchParams }: { segment: StockSegment; searchParams: SearchParams }) {
-  const filters = stockFiltersFrom(await searchParams);
-  const all = await getStockStyles();
-  const styles = all.filter((style) => style.segment === segment);
-  const counts = Object.fromEntries(stockSegments.map((section) => [section.slug, all.filter((style) => style.segment === section.slug).length])) as Record<
-    StockSegment,
-    number
-  >;
+async function Listing({ segment, searchParams }: { segment: string; searchParams: SearchParams }) {
+  const [params, all, sections] = await Promise.all([searchParams, getStockStyles(), getStockSections()]);
+  const parsed = stockFiltersFrom(params);
+  // A category that does not exist (any more) is ignored.
+  const filters = { ...parsed, category: sections.categories.some((category) => category.slug === parsed.category) ? parsed.category : undefined };
+  const inDepartment = all.filter((style) => style.segment === segment);
+  // The departments with styles (and this one), and the categories this department has styles in (and the one chosen).
+  const departments = sections.departments
+    .map((department) => ({ ...department, count: all.filter((style) => style.segment === department.slug).length }))
+    .filter((department) => department.count > 0 || department.slug === segment);
+  const categories = sections.categories
+    .map((category) => ({ ...category, count: inDepartment.filter((style) => style.category === category.slug).length }))
+    .filter((category) => category.count > 0 || category.slug === filters.category);
+  // Sizes and fits of the chosen category's styles in stock.
+  const styles = filters.category ? inDepartment.filter((style) => style.category === filters.category) : inDepartment;
   const { sizes, fits } = stockFacets(styles.filter((style) => style.sets_in_stock > 0));
   const shown = filterStock(styles, filters);
   const path = stockUrl(segment);
-  const panel = <StockFilterPanel segment={segment} filters={filters} sizes={sizes} fits={fits} counts={counts} />;
+  const panel = <StockFilterPanel segment={segment} filters={filters} sizes={sizes} fits={fits} departments={departments} categories={categories} />;
 
   return (
     <div className={GRID}>
@@ -97,9 +99,9 @@ async function Listing({ segment, searchParams }: { segment: StockSegment; searc
           </p>
           {styles.length > 1 ? <StockSortSelect value={filters.sort ?? "stock"} className="ml-auto" /> : null}
         </div>
-        <ActiveFilters path={path} filters={filters} fits={fits} className="mt-4" />
+        <ActiveFilters path={path} filters={filters} fits={fits} categories={sections.categories} className="mt-4" />
 
-        {styles.length === 0 ? (
+        {inDepartment.length === 0 ? (
           <Notice title="New stock is on its way">Ask us on WhatsApp what is ready now.</Notice>
         ) : shown.length > 0 ? (
           <StockGrid styles={shown} className="mt-6 xl:grid-cols-3" />

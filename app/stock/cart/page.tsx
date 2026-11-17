@@ -4,6 +4,7 @@ import { Container } from "@/components/layout/container";
 import { StockCartView } from "@/components/stock/stock-cart-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getStockCart, sessionToken } from "@/lib/account/session";
+import { getStockDepartments } from "@/lib/stock-catalog";
 import { privatePageMetadata } from "@/lib/seo";
 
 export const metadata = privatePageMetadata("Your cart", "/stock/cart");
@@ -25,9 +26,10 @@ export default function StockCartPage() {
 }
 
 async function CartContent() {
-  const [cart, token] = await Promise.all([getStockCart(), sessionToken()]);
+  const [cart, token, departments] = await Promise.all([getStockCart(), sessionToken(), getStockDepartments()]);
+  const shop = departments.map(({ href, title }) => ({ href, title }));
   // Keyed by the cart, so a page kept alive by the router shows the current cart when it comes back.
-  return <StockCartView key={JSON.stringify(cart)} initialCart={cart} signedIn={Boolean(token)} />;
+  return <StockCartView key={JSON.stringify(cart)} initialCart={cart} signedIn={Boolean(token)} shop={shop} />;
 }
 
 function CartSkeleton() {

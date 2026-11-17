@@ -7,7 +7,8 @@ import { Container } from "@/components/layout/container";
 import { STOCK_TAGLINE } from "@/components/stock/stock-header";
 import { whatsappUrl } from "@/lib/links";
 import type { Site } from "@/lib/site";
-import { stockInfoLinks, stockLegalLinks, stockSegments, stockUrl } from "@/lib/stock";
+import { stockInfoLinks, stockLegalLinks } from "@/lib/stock";
+import { getStockDepartments } from "@/lib/stock-catalog";
 
 async function CurrentYear() {
   "use cache";
@@ -33,9 +34,9 @@ function FooterColumn({ title, links }: { title: string; links: readonly { href:
 }
 
 /** Footer of the stock pages: only stock links, and the contacts (addresses without the country). */
-export function StockFooter({ site }: { site: Site }) {
+export async function StockFooter({ site }: { site: Site }) {
   const { company, contact, addresses } = site;
-  const jeansLinks = stockSegments.map((segment) => ({ href: stockUrl(segment.slug), label: segment.title }));
+  const departmentLinks = (await getStockDepartments()).map((department) => ({ href: department.href, label: department.title }));
 
   return (
     <footer className="relative mt-auto overflow-hidden bg-denim-950 text-cotton-50">
@@ -50,7 +51,7 @@ export function StockFooter({ site }: { site: Site }) {
             </p>
           </div>
 
-          <FooterColumn title="Jeans" links={jeansLinks} />
+          <FooterColumn title="In stock" links={departmentLinks} />
           <FooterColumn title="Buying" links={[...stockInfoLinks, ...stockLegalLinks]} />
 
           <div className="col-span-2 lg:col-span-1">

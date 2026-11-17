@@ -2,13 +2,15 @@
 
 import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { ApiError } from "@/lib/api";
 import { adminApi } from "@/lib/admin/session";
 import { checked, errorState, failure, firstColor, firstColorField, firstColorProblems, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
-import type { AdminStockColor, AdminStockStyle, StockCopied, StockImportResult, StockListingImportResult } from "@/lib/admin/types";
+import type { AdminStockColor, AdminStockDepartment, AdminStockStyle, StockCopied, StockImportResult, StockListingImportResult } from "@/lib/admin/types";
 import { setsInStock } from "@/lib/stock";
 
 /*
- * Stock listings (one color each), their color and its stock. Prices are typed in rupees and sent in paisa (rupees × 100).
+ * Stock listings (one color each), their color and its stock, and the departments and categories they are in. Prices
+ * are typed in rupees and sent in paisa (rupees × 100).
  */
 
 /** "6,000" → 600000, "" → null */
@@ -60,6 +62,7 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
     slug: optional(form, "slug"),
     style_no: optional(form, "style_no"),
     segment: text(form, "segment"),
+    category: text(form, "category"),
     specs: specFields(form),
     description_html: text(form, "description_html"),
     set_sizes: jsonList<{ size: string; pcs: number }>(form, "set_sizes"),
@@ -246,4 +249,56 @@ export async function copyFromWholesale(colorIds: number[]): Promise<StockCopyOu
     const state = errorState(error);
     return { ok: false, message: Object.values(state.fields ?? {})[0] ?? state.message ?? "The colors could not be copied." };
   }
+}
+
+/* ----- Departments and categories ----- */
+
+type SectionKind = "departments" | "categories";
+
+/** Adds a department or category (its web address is made from the name unless one is typed), or renames one. */
+async function saveSection(kind: SectionKind, form: FormData, fields: Record<string, unknown>): Promise<FormState> {
+  const id = number(form, "id");
+  const body = { name: text(form, "name"), ...(id ? {} : { slug: optional(form, "slug") }), sort_order: number(form, "sort_order"), ...fields };
+
+  let saved: AdminStockDepartment;
+  try {
+    saved = await adminApi<AdminStockDepartment>(id ? `/v1/admin/stock/${kind}/${id}` : `/v1/admin/stock/${kind}`, { method: id ? "PUT" : "POST", body });
+  } catch (error) {
+    return errorState(error);
+  }
+  // The stock pages' menus, titles and filters change with it.
+  updateTag("stock");
+  refresh();
+  return success(`${saved.name} ${id ? "saved" : "added"}.`);
+}
+
+async function deleteSection(kind: SectionKind, id: number): Promise<FormState> {
+  if (!Number.isInteger(id) || id <= 0) return failure("Not found.");
+  try {
+    await adminApi(`/v1/admin/stock/${kind}/${id}`, { method: "DELETE" });
+  } catch (error) {
+    // 409: it has listings, it is the stock home page, or it is the last one.
+    if (error instanceof ApiError && error.status === 409) return failure(error.message);
+    return errorState(error);
+  }
+  updateTag("stock");
+  refresh();
+  return success(kind === "departments" ? "Department deleted." : "Category deleted.");
+}
+
+export async function saveStockDepartment(_previous: FormState, form: FormData): Promise<FormState> {
+  return saveSection("departments", form, {});
+}
+
+export async function deleteStockDepartment(id: number): Promise<FormState> {
+  return deleteSection("departments", id);
+}
+
+/** A category also has the product type whose specs its listings have. */
+export async function saveStockCategory(_previous: FormState, form: FormData): Promise<FormState> {
+  return saveSection("categories", form, { product_type: text(form, "product_type") });
+}
+
+export async function deleteStockCategory(id: number): Promise<FormState> {
+  return deleteSection("categories", id);
 }

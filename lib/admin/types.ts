@@ -427,14 +427,34 @@ export type AdminAddon = {
 
 export type BankSettings = BankDetails;
 
-/* ----- Stock: ready jeans sold by set (amounts in paisa, rupees × 100) ----- */
+/* ----- Stock: ready clothes sold by set, by department and category (amounts in paisa, rupees × 100) ----- */
+
+/** A stock department (Men, Women, Boys…) with the number of listings in it, whatever their status. */
+export type AdminStockDepartment = {
+  id: number;
+  /** Its web address (/stock/{slug}): made from the name when it is added, never changed. */
+  slug: string;
+  name: string;
+  sort_order: number;
+  styles: number;
+};
+
+/** A stock category (Jeans, Cotton pants…): its listings have the specs of a wholesale product type (`product_type`). */
+export type AdminStockCategory = AdminStockDepartment & { product_type: string };
+
+/** A category in the listing form, with the specs its listings have (those of its product type, then the label). */
+export type StockFormCategory = AdminStockCategory & { specs: CatalogSpec[] };
 
 export type AdminStockStyleSummary = {
   id: number;
   slug: string;
   name: string;
   style_no: string | null;
+  /** The slugs of its department and category, and their names. */
   segment: string;
+  category: string;
+  department_name: string;
+  category_name: string;
   /** Prices are per piece; a set costs its pieces times this (set_price_cents). 0: no price yet. */
   piece_price_cents: number;
   set_price_cents: number;
@@ -471,7 +491,12 @@ export type AdminStockStyle = {
   name: string;
   style_no: string | null;
   segment: string;
-  /** The jeans specs by key; null when not set. */
+  category: string;
+  department_name: string;
+  category_name: string;
+  /** Its category's product type, whose specs it has. */
+  product_type: string;
+  /** The specs of its category by key; null when not set. */
   specs: Record<string, string | null>;
   description_html: string;
   set_sizes: { size: string; pcs: number }[];
@@ -504,7 +529,10 @@ export type StockListingImportRow = {
   id: number | null;
   name: string;
   style_no: string | null;
-  segment: "men" | "boys";
+  segment: string;
+  category: string;
+  department_name: string;
+  category_name: string;
   slug: string;
   color: string;
   code: string;
@@ -524,6 +552,9 @@ export type StockReportRow = {
   style_name: string;
   style_no: string | null;
   segment: string;
+  category: string;
+  department_name: string;
+  category_name: string;
   shown: boolean;
   code: string;
   color: string;
@@ -558,8 +589,11 @@ export type StockFromWholesaleRow = {
   slug: string;
   style_no: string | null;
   wholesale_status: ProductStatus;
-  /** The stock segment of the copy: "men" or "boys". */
+  /** The stock department of the copy ("men" or "boys") and its category (the stock's jeans; null when there is none). */
   segment: string;
+  category: string | null;
+  department_name: string;
+  category_name: string | null;
   set_sizes: { size: string; pcs: number }[];
   photos: number;
   thumbnail: string | null;

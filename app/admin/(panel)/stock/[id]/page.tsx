@@ -10,8 +10,9 @@ import { StockStyleForm } from "@/components/admin/stock-style-form";
 import { ApiError } from "@/lib/api";
 import { can } from "@/lib/admin/permissions";
 import { adminApi, adminApiWithMeta, getStaff } from "@/lib/admin/session";
-import type { AdminStockMovement, AdminStockStyle, CatalogDefinitions, Pagination } from "@/lib/admin/types";
-import { stockSpecs, stockUrl } from "@/lib/stock";
+import { getStockSectionsAdmin } from "@/lib/admin/stock-sections";
+import type { AdminStockMovement, AdminStockStyle, Pagination } from "@/lib/admin/types";
+import { stockUrl } from "@/lib/stock";
 
 export const metadata: Metadata = { title: "Edit stock listing" };
 
@@ -22,15 +23,14 @@ export default async function EditStockStylePage({ params, searchParams }: PageP
   const { id } = await params;
   if (!/^\d+$/.test(id)) notFound();
   const page = Math.max(1, Number((await searchParams).page) || 1);
-  const [style, catalog, history] = await Promise.all([
+  const [style, { departments, categories }, history] = await Promise.all([
     adminApi<AdminStockStyle>(`/v1/admin/stock/styles/${id}`).catch((error: unknown) => {
       if (error instanceof ApiError && error.status === 404) notFound();
       throw error;
     }),
-    adminApi<CatalogDefinitions>("/v1/admin/product-types"),
+    getStockSectionsAdmin(),
     adminApiWithMeta<AdminStockMovement[], { pagination: Pagination }>("/v1/admin/stock/movements", { query: { style_id: id, page, per_page: 20 } }),
   ]);
-  const specs = stockSpecs(catalog);
 
   return (
     <>
@@ -56,7 +56,7 @@ export default async function EditStockStylePage({ params, searchParams }: PageP
       />
       <div className="grid gap-6">
         <StockColorManager style={style} />
-        <StockStyleForm key={style.updated_at} style={style} specs={specs} />
+        <StockStyleForm key={style.updated_at} style={style} departments={departments} categories={categories} />
         <Panel title="Stock history" description="Every change to this listing's stock, newest first.">
           <StockHistory
             movements={history.data}

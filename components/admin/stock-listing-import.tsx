@@ -7,7 +7,7 @@ import { CsvFileInput, CsvProblems, useCsvImport } from "@/components/admin/csv-
 import { Panel } from "@/components/admin/page-parts";
 import { applyStockListingImport, previewStockListingImport } from "@/lib/admin/actions/stock";
 import type { StockListingImportRow } from "@/lib/admin/types";
-import { formatRupees, stockSegmentInfo } from "@/lib/stock";
+import { formatRupees } from "@/lib/stock";
 
 const listings = (count: number) => `${count} ${count === 1 ? "listing" : "listings"}`;
 
@@ -101,7 +101,7 @@ function ListingRow({ listing }: { listing: StockListingImportRow }) {
           {listing.name}, {listing.color}
         </p>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          <span className="font-mono">{listing.code}</span> · {stockSegmentInfo(listing.segment).label}
+          <span className="font-mono">{listing.code}</span> · {listing.department_name} · {listing.category_name}
           {listing.style_no ? ` · ${listing.style_no}` : ""} · line {listing.line}
           {listing.specs > 0 ? ` · ${listing.specs} specification${listing.specs === 1 ? "" : "s"}` : ""}
         </p>

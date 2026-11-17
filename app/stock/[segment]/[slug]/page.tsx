@@ -10,7 +10,7 @@ import { StockStyleView } from "@/components/stock/stock-style-view";
 import { mediaSrc } from "@/lib/media";
 import { findRedirect } from "@/lib/redirects";
 import { absoluteUrl, pageMetadata } from "@/lib/seo";
-import { setContents, sizeRange, stockSegmentInfo, stockUrl, type StockStyle } from "@/lib/stock";
+import { inSentence, sectionTitle, setContents, sizeRange, stockCategoryUrl, stockUrl, type StockStyle } from "@/lib/stock";
 import { getStockStyle, getStockStyles } from "@/lib/stock-catalog";
 
 /**
@@ -53,7 +53,9 @@ export default async function StockStylePage({ params }: PageProps<"/stock/[segm
   }
   if (style.segment !== segment) permanentRedirect(stockUrl(style.segment, style.slug));
 
-  const info = stockSegmentInfo(style.segment);
+  // "Men's jeans", leading to the men's jeans; the related styles are of its category first, then of its department.
+  const section = sectionTitle(style.department_name, style.category_name);
+  const more = style.related.every((card) => card.category === style.category) ? `More ${inSentence(section)}` : `More for ${style.department_name.toLowerCase()}`;
 
   return (
     <>
@@ -62,7 +64,7 @@ export default async function StockStylePage({ params }: PageProps<"/stock/[segm
           <Breadcrumbs
             tone="dark"
             className="mb-8"
-            root={{ label: info.title, href: stockUrl(style.segment) }}
+            root={{ label: section, href: stockCategoryUrl(style.segment, style.category) }}
             items={[{ label: listingName(style), href: stockUrl(style.segment, style.slug) }]}
           />
           <StockStyleView style={style} />
@@ -74,7 +76,7 @@ export default async function StockStylePage({ params }: PageProps<"/stock/[segm
       {style.related.length > 0 ? (
         <section className="border-t border-border py-16 sm:py-20">
           <Container>
-            <SectionHeading eyebrow="More in stock" title={`More ${info.title.toLowerCase()}`} align="stack" />
+            <SectionHeading eyebrow="More in stock" title={more} align="stack" />
             <StockGrid styles={style.related} className="mt-10" />
           </Container>
         </section>

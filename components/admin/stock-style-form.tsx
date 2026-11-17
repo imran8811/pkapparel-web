@@ -9,8 +9,8 @@ import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { inputClass } from "@/components/admin/styles";
 import { deleteStockStyle, saveStockStyle } from "@/lib/admin/actions/stock";
 import { closureSelect, isFlyClosure } from "@/lib/admin/labels";
-import type { AdminStockStyle, CatalogSpec } from "@/lib/admin/types";
-import { formatRupees, stockSegments } from "@/lib/stock";
+import type { AdminStockDepartment, AdminStockStyle, CatalogSpec, StockFormCategory } from "@/lib/admin/types";
+import { DEFAULT_STOCK_SEGMENT, formatRupees } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 const STATUS_OPTIONS = [
@@ -38,7 +38,8 @@ type StockStyleFormProps = {
   style: AdminStockStyle | null;
   /** For a new listing: the listing it is a duplicate of, whose details fill the form. */
   copyOf?: AdminStockStyle | null;
-  specs: CatalogSpec[];
+  departments: AdminStockDepartment[];
+  categories: StockFormCategory[];
 };
 
 export function StockStyleForm(props: StockStyleFormProps) {
@@ -56,9 +57,13 @@ function asCopy(original: AdminStockStyle): AdminStockStyle {
   return { ...original, slug: "", seo_title: null, seo_description: null, status: "draft", is_featured: false, colors: [], sets_in_stock: 0 };
 }
 
-function StockStyleEditor({ style, copyOf, specs, onSaved }: StockStyleFormProps & { onSaved?: () => void }) {
+function StockStyleEditor({ style, copyOf, departments, categories, onSaved }: StockStyleFormProps & { onSaved?: () => void }) {
   // The values the fields start with: the listing's own, or those of the listing it duplicates.
   const values = style ?? (copyOf ? asCopy(copyOf) : null);
+  // The category decides which specifications the listing has (jeans have a wash, cotton pants a finish…).
+  const [category, setCategory] = useState(values?.category ?? categories[0]?.slug ?? "");
+  const specs = categories.find((option) => option.slug === category)?.specs ?? [];
+  const firstDepartment = departments.some((department) => department.slug === DEFAULT_STOCK_SEGMENT) ? DEFAULT_STOCK_SEGMENT : departments[0]?.slug;
   // The set and the price per piece, so the price panel shows what one set costs.
   const [pieces, setPieces] = useState<Record<string, number>>(() => Object.fromEntries((values?.set_sizes ?? []).map(({ size, pcs }) => [size, pcs])));
   const [price, setPrice] = useState(rupees(values?.piece_price_cents));
@@ -85,7 +90,20 @@ function StockStyleEditor({ style, copyOf, specs, onSaved }: StockStyleFormProps
         <Panel>
           <div className="grid gap-4 sm:grid-cols-2">
             <TextField label="Name" name="name" defaultValue={values?.name} placeholder="e.g. Men's slim stretch jeans" fieldClassName="sm:col-span-2" className="h-12 text-lg font-medium" />
-            <SelectField label="For" name="segment" defaultValue={values?.segment ?? "men"} options={stockSegments.map((s) => ({ value: s.slug, label: s.title }))} />
+            <SelectField
+              label="Department"
+              name="segment"
+              defaultValue={values?.segment ?? firstDepartment}
+              options={departments.map((department) => ({ value: department.slug, label: department.name }))}
+            />
+            <SelectField
+              label="Category"
+              name="category"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              options={categories.map((option) => ({ value: option.slug, label: option.name }))}
+              hint="Its specifications follow the category."
+            />
             <TextField label="Style no." name="style_no" defaultValue={values?.style_no ?? ""} placeholder="Optional" maxLength={40} />
             <TextField
               label="Web address"
