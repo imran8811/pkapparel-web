@@ -10,6 +10,7 @@ import { inputClass } from "@/components/admin/styles";
 import { deleteStockStyle, saveStockStyle } from "@/lib/admin/actions/stock";
 import { closureSelect, isFlyClosure } from "@/lib/admin/labels";
 import type { AdminStockDepartment, AdminStockStyle, CatalogSpec, StockFormCategory } from "@/lib/admin/types";
+import { slugify } from "@/lib/slug";
 import { DEFAULT_STOCK_SEGMENT, formatRupees } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
@@ -60,11 +61,13 @@ function asCopy(original: AdminStockStyle): AdminStockStyle {
 function StockStyleEditor({ style, copyOf, departments, categories, onSaved }: StockStyleFormProps & { onSaved?: () => void }) {
   // The values the fields start with: the listing's own, or those of the listing it duplicates.
   const values = style ?? (copyOf ? asCopy(copyOf) : null);
-  // The web address follows the name as it is typed (for a saved listing, from its saved address). A saved address
-  // that ends with the listing's color (copied from the wholesale shop, or imported) keeps the color after a new name.
+  // The web address follows the name and style no. as they are typed (for a saved listing, from its saved address).
+  // A saved address with the listing's color after the name (copied from the wholesale shop, or imported) keeps it.
   const colorSlug = style?.colors[0]?.slug;
-  const suffix = style && colorSlug && new RegExp(`.-${colorSlug}(?:-\\d+)?$`).test(style.slug) ? `-${colorSlug}` : "";
-  const naming = useNameAndAddress(values?.name ?? "", values?.slug ?? "", Boolean(style), suffix);
+  const number = slugify(style?.style_no ?? "");
+  const colorEnding = colorSlug ? new RegExp(`.-${colorSlug}${number ? `(?:-${number})?` : ""}(?:-\\d+)?$`) : null;
+  const suffix = style && colorSlug && colorEnding?.test(style.slug) ? `-${colorSlug}` : "";
+  const naming = useNameAndAddress({ name: values?.name ?? "", styleNo: values?.style_no ?? "", address: values?.slug ?? "" }, Boolean(style), suffix);
   // The category decides which specifications the listing has (jeans have a wash, cotton pants a finish…).
   const [category, setCategory] = useState(values?.category ?? categories[0]?.slug ?? "");
   const specs = categories.find((option) => option.slug === category)?.specs ?? [];
@@ -117,7 +120,14 @@ function StockStyleEditor({ style, copyOf, departments, categories, onSaved }: S
               options={categories.map((option) => ({ value: option.slug, label: option.name }))}
               hint="Its specifications follow the category."
             />
-            <TextField label="Style no." name="style_no" defaultValue={values?.style_no ?? ""} placeholder="Optional" maxLength={40} />
+            <TextField
+              label="Style no."
+              name="style_no"
+              value={naming.styleNo}
+              onChange={(event) => naming.changeStyleNo(event.target.value)}
+              placeholder="Optional"
+              maxLength={40}
+            />
             <TextField
               label="Web address"
               name="slug"
@@ -126,8 +136,8 @@ function StockStyleEditor({ style, copyOf, departments, categories, onSaved }: S
               placeholder="made-from-the-name"
               hint={
                 style
-                  ? "Follows the name when you rename the listing, and numbered if another listing has it; you can type another one. A shown listing keeps its old address working."
-                  : "Made from the name as you type it, and numbered if another listing has it. You can change it."
+                  ? "Follows the name and style no. when you change them, numbered if another listing has it; you can type another one. A shown listing keeps its old address working."
+                  : "Made from the name and style no. as you type them, and numbered if another listing has it. You can change it."
               }
               fieldClassName="sm:col-span-2"
             />

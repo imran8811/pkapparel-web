@@ -6,7 +6,7 @@ import { ApiError } from "@/lib/api";
 import { adminApi } from "@/lib/admin/session";
 import { checked, errorState, failure, firstColor, firstColorField, firstColorProblems, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
 import type { AdminStockColor, AdminStockDepartment, AdminStockStyle, StockCopied, StockImportResult, StockListingImportResult } from "@/lib/admin/types";
-import { slugify } from "@/lib/slug";
+import { styleAddress } from "@/lib/slug";
 import { setsInStock } from "@/lib/stock";
 
 /*
@@ -62,9 +62,9 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
   const slug = optional(form, "slug");
   const body = {
     name,
-    // An address that is just the name's is left to the API, which numbers it when another listing has it (a duplicate
-    // keeps the name of the listing it copies); a listing keeps its own.
-    slug: slug === slugify(name) ? null : slug,
+    // An address made from the name and style no. is left to the API, which makes it the same way and numbers it when
+    // another listing has it (a duplicate keeps the name and style no. of the listing it copies); a listing keeps its own.
+    slug: slug === styleAddress({ name, styleNo: text(form, "style_no") }) ? null : slug,
     style_no: optional(form, "style_no"),
     segment: text(form, "segment"),
     category: text(form, "category"),

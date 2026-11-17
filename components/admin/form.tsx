@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { inputClass } from "@/components/admin/styles";
 import { idle, type FormState } from "@/lib/admin/form-state";
-import { addressForName, nameAddress, type SavedAddress } from "@/lib/slug";
+import { addressFor, nameAddress, type AddressParts, type SavedAddress } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 
 /*
@@ -32,18 +32,24 @@ export function useAdminForm() {
 }
 
 /**
- * The Name and Web address fields of a style or listing: the address is made from the name as it is typed and follows
- * every change of the name, until staff type an address of their own (clearing it makes it follow again). In an edit
- * form (`saved`), it starts from the saved address, which comes back if the saved name does; `suffix` is kept after the
- * name (a stock listing's color).
+ * The Name, Style no. and Web address fields of a style or listing: the address is made from the name and style no. as
+ * they are typed ("men-s-sky-blue-stretch-jeans-1051") and follows every change of them, until staff type an address
+ * of their own (clearing it makes it follow again). In an edit form (`saved`), it starts from the saved address, which
+ * comes back if the saved name and style no. do; `suffix` comes after the name (a stock listing's color).
  */
-export function useNameAndAddress(name: string, address: string, saved: boolean, suffix = "") {
-  const [original] = useState<SavedAddress | null>(() => (saved ? { name, address } : null));
-  const [fields, setFields] = useState(() => ({ name, address: address || nameAddress(name, null, suffix) }));
+export function useNameAndAddress(initial: AddressParts & { address: string }, saved: boolean, suffix = "") {
+  const [original] = useState<SavedAddress | null>(() => (saved ? initial : null));
+  const [fields, setFields] = useState(() => ({ ...initial, address: initial.address || nameAddress(initial, null, suffix) }));
+  const change = (next: Partial<AddressParts>) =>
+    setFields((current) => {
+      const parts = { name: next.name ?? current.name, styleNo: next.styleNo ?? current.styleNo };
+      return { ...parts, address: addressFor(current.address, current, parts, original, suffix) };
+    });
   return {
     ...fields,
-    changeName: (next: string) => setFields((current) => ({ name: next, address: addressForName(current.address, current.name, next, original, suffix) })),
-    changeAddress: (next: string) => setFields((current) => ({ ...current, address: next })),
+    changeName: (name: string) => change({ name }),
+    changeStyleNo: (styleNo: string) => change({ styleNo }),
+    changeAddress: (address: string) => setFields((current) => ({ ...current, address })),
   };
 }
 
