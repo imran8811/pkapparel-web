@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { inputClass } from "@/components/admin/styles";
 import { idle, type FormState } from "@/lib/admin/form-state";
+import { addressForName, slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 
 /*
@@ -28,6 +29,21 @@ const FormContext = createContext<{ state: FormState; pending: boolean }>({ stat
 
 export function useAdminForm() {
   return use(FormContext);
+}
+
+/**
+ * The Name and Web address fields of a style or listing. In a new one's form (`follows`), the address is made from the
+ * name as it is typed and follows every change of the name, until staff type an address of their own (clearing it
+ * makes it follow again). An edit form keeps the saved address whatever the name.
+ */
+export function useNameAndAddress(name: string, address: string, follows: boolean) {
+  const [fields, setFields] = useState(() => ({ name, address: address || (follows ? slugify(name) : "") }));
+  return {
+    ...fields,
+    changeName: (next: string) =>
+      setFields((current) => ({ name: next, address: follows ? addressForName(current.address, current.name, next) : current.address })),
+    changeAddress: (next: string) => setFields((current) => ({ ...current, address: next })),
+  };
 }
 
 type AdminFormProps = Omit<ComponentProps<"form">, "action" | "onSubmit"> & {

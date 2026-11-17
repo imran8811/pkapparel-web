@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { PlusIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AdminForm, Field, FormError, SelectField, SubmitButton, SwitchField, TextAreaField, TextField, useAdminForm } from "@/components/admin/form";
+import { AdminForm, Field, FormError, SelectField, SubmitButton, SwitchField, TextAreaField, TextField, useAdminForm, useNameAndAddress } from "@/components/admin/form";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { FirstColorPanel } from "@/components/admin/first-color";
 import { Panel } from "@/components/admin/page-parts";
@@ -68,6 +68,8 @@ function savedSpec(product: AdminProduct | null, key: string): string {
 function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: ProductFormProps & { onSaved?: () => void }) {
   // The values the fields start with: the style's own, or those of the style it duplicates.
   const values = product ?? (copyOf ? asCopy(copyOf) : null);
+  // A new style's web address is made from its name as it is typed; a saved style keeps its address.
+  const naming = useNameAndAddress(values?.name ?? "", values?.slug ?? "", !product);
   const [segment, setSegment] = useState<Segment>((values?.segment as Segment) ?? "men");
   const [type, setType] = useState<string>(values?.product_type ?? "jeans-pant");
   const types = typesFor(segment);
@@ -114,7 +116,15 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
 
         <Panel>
           <div className="grid gap-4 sm:grid-cols-2">
-            <TextField label="Name" name="name" defaultValue={values?.name} placeholder="e.g. Men's slim stretch jeans" fieldClassName="sm:col-span-2" className="h-12 text-lg font-medium" />
+            <TextField
+              label="Name"
+              name="name"
+              value={naming.name}
+              onChange={(event) => naming.changeName(event.target.value)}
+              placeholder="e.g. Men's slim stretch jeans"
+              fieldClassName="sm:col-span-2"
+              className="h-12 text-lg font-medium"
+            />
             <SelectField
               label="For"
               name="segment"
@@ -133,13 +143,10 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
             <TextField
               label="Web address"
               name="slug"
-              defaultValue={values?.slug}
+              value={naming.address}
+              onChange={(event) => naming.changeAddress(event.target.value)}
               placeholder="made-from-the-name"
-              hint={
-                product
-                  ? "If it was made from the name, it changes when you rename the style. The old address of a style in the shop leads to the new one."
-                  : "Leave empty to make it from the name. It follows the name if you rename the style later."
-              }
+              hint={product ? "Changing it breaks links people saved." : "Made from the name as you type it. You can change it."}
             />
             <TextField label="Style no." name="style_no" defaultValue={values?.style_no ?? ""} placeholder="Optional" maxLength={40} />
           </div>

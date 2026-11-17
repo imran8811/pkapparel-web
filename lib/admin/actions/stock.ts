@@ -6,6 +6,7 @@ import { ApiError } from "@/lib/api";
 import { adminApi } from "@/lib/admin/session";
 import { checked, errorState, failure, firstColor, firstColorField, firstColorProblems, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
 import type { AdminStockColor, AdminStockDepartment, AdminStockStyle, StockCopied, StockImportResult, StockListingImportResult } from "@/lib/admin/types";
+import { slugify } from "@/lib/slug";
 import { setsInStock } from "@/lib/stock";
 
 /*
@@ -57,9 +58,13 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
     });
   }
 
+  const name = text(form, "name");
+  const slug = optional(form, "slug");
   const body = {
-    name: text(form, "name"),
-    slug: optional(form, "slug"),
+    name,
+    // A new listing's address made from its name is left to the API, which numbers it when another listing has it (a
+    // duplicate keeps the name of the listing it copies).
+    slug: !id && slug === slugify(name) ? null : slug,
     style_no: optional(form, "style_no"),
     segment: text(form, "segment"),
     category: text(form, "category"),
@@ -90,10 +95,7 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
     // Back to the stock list, where the new listing now shows.
     return { ...success(message), redirectTo: "/admin/stock" };
   }
-  // Renamed: a web address made from the name follows it.
-  const previousSlug = text(form, "original_slug");
-  const moved = previousSlug && previousSlug !== style.slug ? ` New web address: ${style.slug}.` : "";
-  return success(`${style.status === "active" ? "Listing saved and shown on the stock pages." : "Listing saved."}${moved}`);
+  return success(style.status === "active" ? "Listing saved and shown on the stock pages." : "Listing saved.");
 }
 
 export async function deleteStockStyle(id: number, slug: string): Promise<FormState> {

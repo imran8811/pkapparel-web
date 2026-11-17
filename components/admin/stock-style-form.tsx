@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { AdminForm, FormError, SelectField, SubmitButton, SwitchField, TextAreaField, TextField, useAdminForm } from "@/components/admin/form";
+import { AdminForm, FormError, SelectField, SubmitButton, SwitchField, TextAreaField, TextField, useAdminForm, useNameAndAddress } from "@/components/admin/form";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { FirstColorPanel } from "@/components/admin/first-color";
 import { Panel } from "@/components/admin/page-parts";
@@ -60,6 +60,8 @@ function asCopy(original: AdminStockStyle): AdminStockStyle {
 function StockStyleEditor({ style, copyOf, departments, categories, onSaved }: StockStyleFormProps & { onSaved?: () => void }) {
   // The values the fields start with: the listing's own, or those of the listing it duplicates.
   const values = style ?? (copyOf ? asCopy(copyOf) : null);
+  // A new listing's web address is made from its name as it is typed; a saved listing keeps its address.
+  const naming = useNameAndAddress(values?.name ?? "", values?.slug ?? "", !style);
   // The category decides which specifications the listing has (jeans have a wash, cotton pants a finish…).
   const [category, setCategory] = useState(values?.category ?? categories[0]?.slug ?? "");
   const specs = categories.find((option) => option.slug === category)?.specs ?? [];
@@ -89,7 +91,15 @@ function StockStyleEditor({ style, copyOf, departments, categories, onSaved }: S
 
         <Panel>
           <div className="grid gap-4 sm:grid-cols-2">
-            <TextField label="Name" name="name" defaultValue={values?.name} placeholder="e.g. Men's slim stretch jeans" fieldClassName="sm:col-span-2" className="h-12 text-lg font-medium" />
+            <TextField
+              label="Name"
+              name="name"
+              value={naming.name}
+              onChange={(event) => naming.changeName(event.target.value)}
+              placeholder="e.g. Men's slim stretch jeans"
+              fieldClassName="sm:col-span-2"
+              className="h-12 text-lg font-medium"
+            />
             <SelectField
               label="Department"
               name="segment"
@@ -108,12 +118,13 @@ function StockStyleEditor({ style, copyOf, departments, categories, onSaved }: S
             <TextField
               label="Web address"
               name="slug"
-              defaultValue={values?.slug}
+              value={naming.address}
+              onChange={(event) => naming.changeAddress(event.target.value)}
               placeholder="made-from-the-name"
               hint={
                 style
-                  ? "If it was made from the name, it changes when you rename the listing. The old address of a shown listing leads to the new one."
-                  : "Leave empty to make it from the name (numbered if another listing has it). It follows the name if you rename the listing later."
+                  ? "Changing it breaks links people saved (a shown style's old address redirects)."
+                  : "Made from the name as you type it, and numbered if another listing has it. You can change it."
               }
               fieldClassName="sm:col-span-2"
             />
