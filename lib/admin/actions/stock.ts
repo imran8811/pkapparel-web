@@ -62,9 +62,9 @@ export async function saveStockStyle(_previous: FormState, form: FormData): Prom
   const slug = optional(form, "slug");
   const body = {
     name,
-    // A new listing's address made from its name is left to the API, which numbers it when another listing has it (a
-    // duplicate keeps the name of the listing it copies).
-    slug: !id && slug === slugify(name) ? null : slug,
+    // An address that is just the name's is left to the API, which numbers it when another listing has it (a duplicate
+    // keeps the name of the listing it copies); a listing keeps its own.
+    slug: slug === slugify(name) ? null : slug,
     style_no: optional(form, "style_no"),
     segment: text(form, "segment"),
     category: text(form, "category"),

@@ -68,8 +68,8 @@ function savedSpec(product: AdminProduct | null, key: string): string {
 function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: ProductFormProps & { onSaved?: () => void }) {
   // The values the fields start with: the style's own, or those of the style it duplicates.
   const values = product ?? (copyOf ? asCopy(copyOf) : null);
-  // A new style's web address is made from its name as it is typed; a saved style keeps its address.
-  const naming = useNameAndAddress(values?.name ?? "", values?.slug ?? "", !product);
+  // The web address follows the name as it is typed (for a saved style, from its saved address).
+  const naming = useNameAndAddress(values?.name ?? "", values?.slug ?? "", Boolean(product));
   const [segment, setSegment] = useState<Segment>((values?.segment as Segment) ?? "men");
   const [type, setType] = useState<string>(values?.product_type ?? "jeans-pant");
   const types = typesFor(segment);
@@ -146,7 +146,11 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
               value={naming.address}
               onChange={(event) => naming.changeAddress(event.target.value)}
               placeholder="made-from-the-name"
-              hint={product ? "Changing it breaks links people saved." : "Made from the name as you type it. You can change it."}
+              hint={
+                product
+                  ? "Follows the name when you rename the style; you can type another one. A style in the shop keeps its old address working."
+                  : "Made from the name as you type it. You can change it."
+              }
             />
             <TextField label="Style no." name="style_no" defaultValue={values?.style_no ?? ""} placeholder="Optional" maxLength={40} />
           </div>

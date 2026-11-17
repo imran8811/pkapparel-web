@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { inputClass } from "@/components/admin/styles";
 import { idle, type FormState } from "@/lib/admin/form-state";
-import { addressForName, slugify } from "@/lib/slug";
+import { addressForName, nameAddress, type SavedAddress } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 
 /*
@@ -32,16 +32,17 @@ export function useAdminForm() {
 }
 
 /**
- * The Name and Web address fields of a style or listing. In a new one's form (`follows`), the address is made from the
- * name as it is typed and follows every change of the name, until staff type an address of their own (clearing it
- * makes it follow again). An edit form keeps the saved address whatever the name.
+ * The Name and Web address fields of a style or listing: the address is made from the name as it is typed and follows
+ * every change of the name, until staff type an address of their own (clearing it makes it follow again). In an edit
+ * form (`saved`), it starts from the saved address, which comes back if the saved name does; `suffix` is kept after the
+ * name (a stock listing's color).
  */
-export function useNameAndAddress(name: string, address: string, follows: boolean) {
-  const [fields, setFields] = useState(() => ({ name, address: address || (follows ? slugify(name) : "") }));
+export function useNameAndAddress(name: string, address: string, saved: boolean, suffix = "") {
+  const [original] = useState<SavedAddress | null>(() => (saved ? { name, address } : null));
+  const [fields, setFields] = useState(() => ({ name, address: address || nameAddress(name, null, suffix) }));
   return {
     ...fields,
-    changeName: (next: string) =>
-      setFields((current) => ({ name: next, address: follows ? addressForName(current.address, current.name, next) : current.address })),
+    changeName: (next: string) => setFields((current) => ({ name: next, address: addressForName(current.address, current.name, next, original, suffix) })),
     changeAddress: (next: string) => setFields((current) => ({ ...current, address: next })),
   };
 }

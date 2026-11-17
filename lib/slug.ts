@@ -1,5 +1,5 @@
 /*
- * Web addresses made from names, the way the API makes them (App\Core\Text::slug), so the admin's new style and listing
+ * Web addresses made from names, the way the API makes them (App\Core\Text::slug), so the admin's style and listing
  * forms can show the address while the name is typed.
  */
 
@@ -20,10 +20,23 @@ export function slugify(text: string, maxLength = 190): string {
     .replace(/-+$/, "");
 }
 
+/** A saved style or listing: its name, and the web address it has (made from the name or not). */
+export type SavedAddress = { name: string; address: string };
+
 /**
- * The web address once the name changed: made from the new name while it was empty or made from the old name. An
+ * The web address a name gives: the name's own, followed by `suffix` (a stock listing's color, e.g. "-sky-blue").
+ * For the saved name, the saved address, whatever it is (numbered, or typed by staff).
+ */
+export function nameAddress(name: string, saved: SavedAddress | null = null, suffix = ""): string {
+  const slug = slugify(name, 190 - suffix.length);
+  if (saved && saved.address !== "" && slug === slugify(saved.name, 190 - suffix.length)) return saved.address;
+  return slug === "" ? "" : `${slug}${suffix}`;
+}
+
+/**
+ * The web address once the name changed: what the new name gives, while it was empty or what the old name gave. An
  * address staff typed themselves stays.
  */
-export function addressForName(address: string, oldName: string, newName: string): string {
-  return address === "" || address === slugify(oldName) ? slugify(newName) : address;
+export function addressForName(address: string, oldName: string, newName: string, saved: SavedAddress | null = null, suffix = ""): string {
+  return address === "" || address === nameAddress(oldName, saved, suffix) ? nameAddress(newName, saved, suffix) : address;
 }
