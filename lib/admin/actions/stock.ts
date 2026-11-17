@@ -1,11 +1,13 @@
 "use server";
 
 import { refresh, updateTag } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ApiError } from "@/lib/api";
 import { adminApi } from "@/lib/admin/session";
 import { checked, errorState, failure, firstColor, firstColorField, firstColorProblems, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
 import type { AdminStockColor, AdminStockDepartment, AdminStockStyle, StockCopied, StockImportResult, StockListingImportResult } from "@/lib/admin/types";
+import { STOCK_VIEW_COOKIE, type StockView } from "@/lib/admin/stock-view";
 import { styleAddress } from "@/lib/slug";
 import { setsInStock } from "@/lib/stock";
 
@@ -306,4 +308,16 @@ export async function saveStockCategory(_previous: FormState, form: FormData): P
 
 export async function deleteStockCategory(id: number): Promise<FormState> {
   return deleteSection("categories", id);
+}
+
+/** Shows the stock list as rows or as cards in this browser from now on: the page is shown again that way. */
+export async function setStockView(form: FormData): Promise<void> {
+  const view: StockView = form.get("view") === "cards" ? "cards" : "list";
+  (await cookies()).set(STOCK_VIEW_COOKIE, view, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/admin",
+    maxAge: 365 * 24 * 60 * 60,
+  });
 }
