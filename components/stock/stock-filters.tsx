@@ -47,7 +47,8 @@ export function activeFilterCount(filters: StockFilters): number {
 type Counted = StockSection & { count: number };
 
 /**
- * The filter sidebar: the departments, the department's categories, then size, fit and fabric. Every option is a
+ * The filter sidebar: the departments, every category (with 0 for those the department has no styles in), then size,
+ * fit and fabric. Every option is a
  * link, so filtering works without JavaScript. Changing the department starts without filters (the sizes differ).
  */
 export function StockFilterPanel({
@@ -65,7 +66,7 @@ export function StockFilterPanel({
   fits: string[];
   /** The departments with styles, with their number of styles. */
   departments: Counted[];
-  /** The categories this department has styles in, with their number of styles. */
+  /** Every category, with its number of styles in this department (0 when it has none). */
   categories: Counted[];
 }) {
   const path = stockUrl(segment);
@@ -81,7 +82,7 @@ export function StockFilterPanel({
         </FilterGroup>
       ) : null}
 
-      {categories.length > 1 || filters.category ? (
+      {categories.length > 0 ? (
         <FilterGroup title="Category">
           <Option href={stockHref(path, filters, { category: undefined })} active={!filters.category} label="All" count={total} filter />
           {categories.map((category) => (

@@ -64,13 +64,11 @@ async function Listing({ segment, searchParams }: { segment: string; searchParam
   // A category that does not exist (any more) is ignored.
   const filters = { ...parsed, category: sections.categories.some((category) => category.slug === parsed.category) ? parsed.category : undefined };
   const inDepartment = all.filter((style) => style.segment === segment);
-  // The departments with styles (and this one), and the categories this department has styles in (and the one chosen).
+  // The departments with styles (and this one), and every category with its number of styles here (0 when it has none).
   const departments = sections.departments
     .map((department) => ({ ...department, count: all.filter((style) => style.segment === department.slug).length }))
     .filter((department) => department.count > 0 || department.slug === segment);
-  const categories = sections.categories
-    .map((category) => ({ ...category, count: inDepartment.filter((style) => style.category === category.slug).length }))
-    .filter((category) => category.count > 0 || category.slug === filters.category);
+  const categories = sections.categories.map((category) => ({ ...category, count: inDepartment.filter((style) => style.category === category.slug).length }));
   // Sizes and fits of the chosen category's styles in stock.
   const styles = filters.category ? inDepartment.filter((style) => style.category === filters.category) : inDepartment;
   const { sizes, fits } = stockFacets(styles.filter((style) => style.sets_in_stock > 0));
@@ -101,7 +99,8 @@ async function Listing({ segment, searchParams }: { segment: string; searchParam
         </div>
         <ActiveFilters path={path} filters={filters} fits={fits} categories={sections.categories} className="mt-4" />
 
-        {inDepartment.length === 0 ? (
+        {/* Nothing in the department, or in the chosen category, yet. */}
+        {styles.length === 0 ? (
           <Notice title="New stock is on its way">Ask us on WhatsApp what is ready now.</Notice>
         ) : shown.length > 0 ? (
           <StockGrid styles={shown} className="mt-6 xl:grid-cols-3" />
