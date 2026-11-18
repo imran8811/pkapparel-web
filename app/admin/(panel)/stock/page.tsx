@@ -126,7 +126,7 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
             <>
               Add the first one with “New listing”, or{" "}
               <Link href="/admin/stock/from-wholesale" className="font-medium text-denim-600 hover:underline">
-                copy the wholesale shop&apos;s jeans
+                copy styles from the wholesale shop
               </Link>
               .
             </>

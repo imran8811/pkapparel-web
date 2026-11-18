@@ -579,8 +579,10 @@ export type StockReport = {
   totals: { sets_in_stock: number; value_cents: number; sold_sets: number; sold_cents: number; received_sets: number; returned_sets: number };
 };
 
-/** A wholesale jeans style and what copying it into the stock makes (GET /v1/admin/stock/from-wholesale). */
-/** A wholesale jeans color and the stock listing it makes: each color is a listing of its own. */
+/**
+ * A wholesale color and the stock listing it makes: each color is a listing of its own (GET /v1/admin/stock/from-wholesale).
+ * Only the types a stock category has the specs of are listed (jeans, chino pants…), by the category they go in.
+ */
 export type StockFromWholesaleRow = {
   /** The wholesale color (what is chosen and copied). */
   color_id: number;
@@ -593,11 +595,13 @@ export type StockFromWholesaleRow = {
   slug: string;
   style_no: string | null;
   wholesale_status: ProductStatus;
-  /** The stock department of the copy ("men" or "boys") and its category (the stock's jeans; null when there is none). */
+  /** The wholesale type (jeans-pant, chino-pant…). */
+  product_type: string;
+  /** The stock department of the copy ("men" or "boys") and its category: the one with the specs of its type. */
   segment: string;
-  category: string | null;
+  category: string;
   department_name: string;
-  category_name: string | null;
+  category_name: string;
   set_sizes: { size: string; pcs: number }[];
   photos: number;
   thumbnail: string | null;
