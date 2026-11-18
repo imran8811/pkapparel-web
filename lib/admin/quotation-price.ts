@@ -6,7 +6,8 @@ import type { QuotationCostKey } from "@/lib/admin/types";
  * floating-point error creeps in:
  *
  *   fabric = rate × consumption · cost = fabric + the other costs · profit = % of the cost, or an amount
- *   price = cost + profit → in rupees to the rupee, or ÷ the exchange rate to the cent
+ *   price = cost + profit + shipping (no profit on the shipping) → in rupees to the rupee, or ÷ the exchange rate to
+ *   the cent
  */
 
 export const QUOTATION_COST_KEYS: QuotationCostKey[] = ["cutting", "stitching", "washing", "packing", "printing", "embroidery", "accessories", "overhead", "extra"];
@@ -40,6 +41,8 @@ export type StylePriceInput = {
   profitType: "percent" | "amount";
   profitPercent: string;
   profitCents: number;
+  /** Per piece, added after the profit. */
+  shippingCents: number;
 };
 
 export type StylePrice = { fabricCostCents: number; costCents: number; profitCents: number; priceCents: number; unitPriceCents: number };
@@ -48,7 +51,7 @@ export function stylePrice(style: StylePriceInput, currency: string, exchangeRat
   const fabric = Math.floor((style.fabricRateCents * scaled(style.fabricConsumption, 3) + 500) / 1000);
   const cost = QUOTATION_COST_KEYS.reduce((sum, key) => sum + (style.costs[key] || 0), fabric);
   const profit = style.profitType === "amount" ? style.profitCents : Math.floor((cost * scaled(style.profitPercent, 2) + 5000) / 10000);
-  const price = cost + profit;
+  const price = cost + profit + style.shippingCents;
   let unit: number;
   if (currency === "PKR") {
     unit = Math.floor((price + 50) / 100) * 100;

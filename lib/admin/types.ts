@@ -761,12 +761,14 @@ export type QuotationStyle = {
   fabric_consumption: string;
   fabric_cost_cents: number;
   extra_label: string | null;
+  /** Shipping per piece, added after the profit (no profit is charged on it). */
+  shipping_cents: number;
   cost_cents: number;
   profit_type: "percent" | "amount";
   /** "15" when the profit is a percentage of the cost. */
   profit_percent: string | null;
   profit_cents: number;
-  /** Cost + profit, in paisa. */
+  /** Cost + profit + shipping, in paisa. */
   price_cents: number;
   /** Per piece in the quotation's currency (rupees: to the rupee). */
   unit_price_cents: number;
@@ -796,10 +798,6 @@ export type Quotation = {
   /** The styles with a quantity: their pieces and amount in the quotation's currency. */
   total_qty: number;
   total_cents: number;
-  /** The shipping charge for the whole order, in the quotation's currency (0: none). Not in the prices per piece. */
-  shipping_cents: number;
-  /** total_cents + shipping_cents: what the buyer pays for the order. */
-  grand_total_cents: number;
   styles_count: number;
   /** Not in the list (it has article_nos instead). */
   styles?: QuotationStyle[];

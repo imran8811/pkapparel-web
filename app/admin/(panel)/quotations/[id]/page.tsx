@@ -39,7 +39,7 @@ export default async function QuotationPage({ params }: PageProps<"/admin/quotat
             <QuotationStagePill quotation={quotation} />
           </span>
         }
-        description={`Quotation for ${buyerName} · ${styles}${quotation.total_qty > 0 ? ` · ${formatMoney(quotation.grand_total_cents, quotation.currency)}` : ""} · ${formatDay(quotation.issue_date)}`}
+        description={`Quotation for ${buyerName} · ${styles}${quotation.total_qty > 0 ? ` · ${formatMoney(quotation.total_cents, quotation.currency)}` : ""} · ${formatDay(quotation.issue_date)}`}
         actions={
           <>
             <Button asChild variant="outline" size="sm">

@@ -129,7 +129,7 @@ export default async function QuotationsPage({ searchParams }: PageProps<"/admin
                 <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-1">
                   <QuotationStagePill quotation={quotation} />
                   {quotation.total_qty > 0 ? (
-                    <span className="text-sm font-medium tabular-nums">{formatMoney(quotation.grand_total_cents, quotation.currency)}</span>
+                    <span className="text-sm font-medium tabular-nums">{formatMoney(quotation.total_cents, quotation.currency)}</span>
                   ) : (
                     <span className="text-sm text-muted-foreground">Per piece, {quotation.currency}</span>
                   )}

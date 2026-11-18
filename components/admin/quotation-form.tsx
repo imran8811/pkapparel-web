@@ -51,6 +51,7 @@ function emptyRow(): StyleRow {
     profit_type: "percent",
     profit_percent: "",
     profit_amount: "",
+    shipping: "",
   };
 }
 
@@ -72,6 +73,7 @@ function rowFromStyle(style: QuotationStyle): StyleRow {
     profit_type: style.profit_type,
     profit_percent: style.profit_percent ?? "",
     profit_amount: style.profit_type === "amount" ? centsToText(style.profit_cents) : "",
+    shipping: centsToText(style.shipping_cents),
   };
 }
 
@@ -91,6 +93,7 @@ function rowPrice(row: StyleRow, currency: string, rate: string): StylePrice {
       profitType: row.profit_type,
       profitPercent: row.profit_percent,
       profitCents: amountToCents(row.profit_amount) ?? 0,
+      shippingCents: amountToCents(row.shipping) ?? 0,
     },
     currency,
     cleanRate(rate),
@@ -108,11 +111,9 @@ export function QuotationForm({ quotation, defaults, countries, start }: { quota
   const [rates, setRates] = useState<Record<string, string>>(() => ({ ...defaults.exchange_rates, ...(quotation?.exchange_rate ? { [quotation.currency]: quotation.exchange_rate } : {}) }));
   const rate = rates[currency] ?? "";
   const [incoterm, setIncoterm] = useState(quotation ? (quotation.incoterm ?? "") : "FOB");
-  const [shipping, setShipping] = useState(quotation ? centsToText(quotation.shipping_cents) : "");
-  const shippingCents = amountToCents(shipping) ?? 0;
-  // With these the buyer pays the freight, so a shipping charge contradicts the price basis.
-  const buyerPaysFreight = ["EXW", "FCA", "FOB"].includes(incoterm);
   const [rows, setRows] = useState<StyleRow[]>(() => (quotation?.styles?.length ? quotation.styles.map(rowFromStyle) : [emptyRow()]));
+  // With EXW, FCA and FOB the buyer pays the freight, which contradicts prices that include shipping.
+  const freightClash = ["EXW", "FCA", "FOB"].includes(incoterm) && rows.some((row) => (amountToCents(row.shipping) ?? 0) > 0);
   const action = saveQuotation.bind(null, quotation?.id ?? null);
 
   return (
@@ -151,20 +152,11 @@ export function QuotationForm({ quotation, defaults, countries, start }: { quota
             value={incoterm}
             onChange={(event) => setIncoterm(event.target.value)}
             options={[{ value: "", label: "Not printed" }, ...defaults.incoterms.map((code) => ({ value: code, label: code }))]}
-            hint="What the price includes, e.g. FOB."
-          />
-          <TextField
-            label={`Shipping (${currency})`}
-            name="shipping"
-            inputMode="decimal"
-            value={shipping}
-            onChange={(event) => setShipping(event.target.value)}
-            placeholder="0.00"
             hint={
-              shippingCents > 0 && buyerPaysFreight ? (
-                <span className="text-stitch-700">With {incoterm} the buyer pays the freight. Choose CFR, CIF, DAP or DDP if this shipping is included.</span>
+              freightClash ? (
+                <span className="text-stitch-700">With {incoterm} the buyer pays the freight, but some prices include shipping. Choose CFR, CIF, DAP or DDP.</span>
               ) : (
-                "For the whole order: added to the total, not to the prices per piece."
+                "What the price includes, e.g. FOB."
               )
             }
           />
@@ -173,7 +165,7 @@ export function QuotationForm({ quotation, defaults, countries, start }: { quota
             name="delivery_time"
             defaultValue={quotation ? (quotation.delivery_time ?? "") : defaults.delivery_time}
             maxLength={160}
-            fieldClassName={currency === "PKR" ? "sm:col-span-2 lg:col-span-3" : "sm:col-span-2"}
+            fieldClassName="sm:col-span-2 lg:col-span-3"
           />
         </div>
       </Panel>
@@ -182,7 +174,7 @@ export function QuotationForm({ quotation, defaults, countries, start }: { quota
         title="Styles"
         description="Each style has its own costs per piece, in rupees. The buyer's PDF shows only the price per piece; the costing sheet shows staff how it was made."
       >
-        <StylesEditor rows={rows} setRows={setRows} currency={currency} rate={rate} shippingCents={shippingCents} defaults={defaults} />
+        <StylesEditor rows={rows} setRows={setRows} currency={currency} rate={rate} defaults={defaults} />
       </Panel>
 
       <Panel title="Notes and terms">
@@ -259,14 +251,12 @@ function StylesEditor({
   setRows,
   currency,
   rate,
-  shippingCents,
   defaults,
 }: {
   rows: StyleRow[];
   setRows: Dispatch<SetStateAction<StyleRow[]>>;
   currency: string;
   rate: string;
-  shippingCents: number;
   defaults: QuotationDefaults;
 }) {
   const { state } = useAdminForm();
@@ -319,12 +309,8 @@ function StylesEditor({
           {quantity > 0 ? (
             <>
               {" · "}
-              {quantity.toLocaleString("en-US")} pcs ·{" "}
-              {shippingCents > 0 ? `${formatMoney(total, currency)} + ${formatMoney(shippingCents, currency)} shipping = ` : null}
-              <strong className="font-semibold text-foreground">{formatMoney(total + shippingCents, currency)}</strong>
+              {quantity.toLocaleString("en-US")} pcs · <strong className="font-semibold text-foreground">{formatMoney(total, currency)}</strong>
             </>
-          ) : shippingCents > 0 ? (
-            ` · ${formatMoney(shippingCents, currency)} shipping for the order`
           ) : null}
         </p>
       </div>
@@ -466,6 +452,14 @@ function StyleCard({
                 )}
               </div>
             </fieldset>
+
+            <fieldset>
+              <legend className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Shipping</legend>
+              <div className="mt-2 flex flex-wrap items-start gap-3">
+                <Cell label="Rs per piece" placeholder="0" inputMode="decimal" className="w-32" {...field("shipping")} />
+                <p className="max-w-xs pt-6 text-xs text-muted-foreground">Added to the price after the profit, so no profit is charged on it.</p>
+              </div>
+            </fieldset>
           </div>
 
           <PriceSummary price={price} row={row} currency={currency} rate={rate} error={error("price")} />
@@ -481,6 +475,7 @@ function PriceSummary({ price, row, currency, rate, error }: { price: StylePrice
   const qty = pieces(row.qty);
   const missingRate = currency !== "PKR" && scaled(cleanRate(rate), 4) === 0;
   const share = profitShare(price.profitCents, price.costCents);
+  const shipping = price.priceCents - price.costCents - price.profitCents;
 
   return (
     <div className="grid h-fit gap-3 rounded-xl bg-white p-4 shadow-[inset_0_0_0_1px_var(--color-cotton-200)] lg:sticky lg:top-4">
@@ -491,6 +486,7 @@ function PriceSummary({ price, row, currency, rate, error }: { price: StylePrice
           <SummaryRow label="Total cost" value={rupees(price.costCents)} strong />
         </div>
         <SummaryRow label={share ? `Profit (${share})` : "Profit"} value={rupees(price.profitCents)} />
+        {shipping > 0 ? <SummaryRow label="Shipping" value={rupees(shipping)} /> : null}
         <SummaryRow label="Price" value={rupees(price.priceCents)} strong />
       </dl>
       {price.costCents > 0 && price.profitCents === 0 ? (

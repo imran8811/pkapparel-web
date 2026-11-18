@@ -26,6 +26,8 @@ export type QuotationStyleInput = {
   profit_type: "percent" | "amount";
   profit_percent: string;
   profit_amount: string;
+  /** Rupees per piece, added after the profit. */
+  shipping: string;
 } & Record<QuotationCostKey, string>;
 
 function buyer(form: FormData): Record<string, string | null> {
@@ -41,9 +43,8 @@ function buyer(form: FormData): Record<string, string | null> {
   };
 }
 
-/** The API's name of a field → the form's (shipping_cents → shipping, styles.0.cutting_cents → styles.0.cutting). */
+/** The API's name of a style field → the form's (styles.0.cutting_cents → styles.0.cutting). */
 function formField(name: string): string {
-  if (name === "shipping_cents") return "shipping";
   return name.replace(/^(styles\.\d+)\.profit_cents$/, "$1.profit_amount").replace(/^(styles\.\d+\.[a-z_]+)_cents$/, "$1");
 }
 
@@ -76,11 +77,10 @@ export async function saveQuotation(id: number | null, _previous: FormState, for
       profit_type: style.profit_type,
       profit_percent: style.profit_type === "percent" ? cleanText(style.profit_percent) : null,
       profit_cents: style.profit_type === "amount" ? rupees(style.profit_amount, at("profit_amount")) : 0,
+      shipping_cents: rupees(style.shipping, at("shipping")),
     };
   });
   const currency = text(form, "currency");
-  const shipping = amountToCents(text(form, "shipping"));
-  if (shipping === null) fieldErrors.shipping = "Enter the shipping cost, e.g. 850 or 850.50, or leave it empty.";
   const body = {
     customer_id: number(form, "customer_id"),
     inquiry_id: number(form, "inquiry_id"),
@@ -92,7 +92,6 @@ export async function saveQuotation(id: number | null, _previous: FormState, for
     buyer_reference: optional(form, "buyer_reference"),
     incoterm: optional(form, "incoterm"),
     delivery_time: optional(form, "delivery_time"),
-    shipping_cents: shipping ?? 0,
     styles,
     notes: optional(form, "notes"),
     terms: optional(form, "terms"),
