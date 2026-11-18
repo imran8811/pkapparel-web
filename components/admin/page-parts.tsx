@@ -53,6 +53,26 @@ export function Panel({ title, description, children, className }: { title?: Rea
   );
 }
 
+/**
+ * The heading over one group of a list (a category's listings…): its name and size, then a line that separates it from
+ * the group above. `marker`: the background class of a colored bar before the name (the category's color).
+ */
+export function GroupHeading({ id, title, count, noun, marker }: { id: string; title: ReactNode; count: number; noun: string; marker?: string }) {
+  return (
+    <div className="mb-3 flex items-center gap-3">
+      {marker ? <span aria-hidden className={cn("h-5 w-1 shrink-0 rounded-full", marker)} /> : null}
+      <h2 id={id} className="min-w-0 font-heading text-lg font-semibold tracking-tight text-denim-950">
+        {title}
+      </h2>
+      <span className="shrink-0 text-sm text-muted-foreground tabular-nums">
+        {count} {noun}
+        {count === 1 ? "" : "s"}
+      </span>
+      <span aria-hidden className="h-px min-w-6 flex-1 bg-border" />
+    </div>
+  );
+}
+
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div className="rounded-2xl border border-dashed bg-white/60 px-6 py-14 text-center">

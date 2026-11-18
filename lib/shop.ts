@@ -154,9 +154,10 @@ export function priceRange(fromCents: number, toCents: number): string {
   return `${formatMoney(fromCents)}–${formatMoney(toCents).replace("$", "")}`;
 }
 
-/** "Men's jeans pants" */
+/** "Men's jeans pants", but "Men's T-shirts": the type's capital stays when it is more than a first letter. */
 export function categoryLabel(segment: Segment, type: ProductType): string {
-  return `${segmentInfo(segment).possessive} ${typeInfo(type).label.toLowerCase()}`;
+  const label = typeInfo(type).label;
+  return `${segmentInfo(segment).possessive} ${/^\p{Lu}\p{Ll}/u.test(label) ? label.charAt(0).toLowerCase() + label.slice(1) : label}`;
 }
 
 export function specValue(key: string, value: string | null | undefined): string | null {

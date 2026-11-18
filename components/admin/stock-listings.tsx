@@ -2,11 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { CopyIcon, ImageIcon, LayoutGridIcon, ListIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Pill } from "@/components/admin/page-parts";
+import { GroupHeading, Pill } from "@/components/admin/page-parts";
 import { setStockView } from "@/lib/admin/actions/stock";
+import { inGroups, placeIn } from "@/lib/admin/list-groups";
 import type { StockView } from "@/lib/admin/stock-view";
 import { formatDay } from "@/lib/admin/time";
-import type { AdminStockCategory, AdminStockStyleSummary, ProductStatus } from "@/lib/admin/types";
+import type { AdminStockCategory, AdminStockDepartment, AdminStockStyleSummary, ProductStatus } from "@/lib/admin/types";
 import { formatRupees } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
@@ -18,17 +19,18 @@ export const STOCK_STATUS: Record<ProductStatus, { label: string; tone: "green" 
 
 /**
  * A color for each category, in the order the categories were added (Jeans: the denim blue, Cotton pants: amber), so
- * the listings of different categories are told apart at a glance. Whole class names, for Tailwind to find them.
+ * the listings of different categories are told apart at a glance: the tag on each listing, its left edge and the bar
+ * before its group's heading. Whole class names, for Tailwind to find them.
  */
 const CATEGORY_TONES = [
-  { tag: "bg-denim-600 text-white", edge: "border-l-denim-600" },
-  { tag: "bg-amber-400 text-amber-950", edge: "border-l-amber-400" },
-  { tag: "bg-violet-600 text-white", edge: "border-l-violet-600" },
-  { tag: "bg-teal-700 text-white", edge: "border-l-teal-700" },
-  { tag: "bg-rose-700 text-white", edge: "border-l-rose-700" },
-  { tag: "bg-lime-400 text-lime-950", edge: "border-l-lime-400" },
-  { tag: "bg-fuchsia-700 text-white", edge: "border-l-fuchsia-700" },
-  { tag: "bg-slate-600 text-white", edge: "border-l-slate-600" },
+  { tag: "bg-denim-600 text-white", edge: "border-l-denim-600", bar: "bg-denim-600" },
+  { tag: "bg-amber-400 text-amber-950", edge: "border-l-amber-400", bar: "bg-amber-400" },
+  { tag: "bg-violet-600 text-white", edge: "border-l-violet-600", bar: "bg-violet-600" },
+  { tag: "bg-teal-700 text-white", edge: "border-l-teal-700", bar: "bg-teal-700" },
+  { tag: "bg-rose-700 text-white", edge: "border-l-rose-700", bar: "bg-rose-700" },
+  { tag: "bg-lime-400 text-lime-950", edge: "border-l-lime-400", bar: "bg-lime-400" },
+  { tag: "bg-fuchsia-700 text-white", edge: "border-l-fuchsia-700", bar: "bg-fuchsia-700" },
+  { tag: "bg-slate-600 text-white", edge: "border-l-slate-600", bar: "bg-slate-600" },
 ] as const;
 
 type CategoryTone = (typeof CATEGORY_TONES)[number];
@@ -40,25 +42,63 @@ function categoryTones(categories: AdminStockCategory[]): Map<string, CategoryTo
 }
 
 /**
- * The listings as rows or as cards, the newest first (as the API sends them, owner request 2026-11-18). Each shows its
- * department and category in the category's color.
+ * The listings by department and category, in staff order (Men · Jeans, Men · Cotton pants, then Boys · Jeans…), each
+ * group under a heading with a line that separates it from the one above (owner request 2026-11-18), the newest first
+ * in each (as the API sends them). As rows or as cards; each shows its department and category in the category's color.
  */
-export function StockListings({ styles, categories, view }: { styles: AdminStockStyleSummary[]; categories: AdminStockCategory[]; view: StockView }) {
+export function StockListings({
+  styles,
+  departments,
+  categories,
+  view,
+}: {
+  styles: AdminStockStyleSummary[];
+  departments: AdminStockDepartment[];
+  categories: AdminStockCategory[];
+  view: StockView;
+}) {
   const tones = categoryTones(categories);
   const toneOf = (style: AdminStockStyleSummary) => tones.get(style.category) ?? CATEGORY_TONES[CATEGORY_TONES.length - 1];
+  // The API sends both in staff order.
+  const departmentOrder = departments.map((department) => department.slug);
+  const categoryOrder = categories.map((category) => category.slug);
+  const groups = inGroups(
+    styles,
+    (style) => `${style.segment}/${style.category}`,
+    (a, b) => placeIn(departmentOrder, a.segment) - placeIn(departmentOrder, b.segment) || placeIn(categoryOrder, a.category) - placeIn(categoryOrder, b.category),
+  );
 
-  return view === "cards" ? (
-    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
-      {styles.map((style) => (
-        <ListingCard key={style.id} style={style} tone={toneOf(style)} />
-      ))}
-    </ul>
-  ) : (
-    <ul className="overflow-hidden rounded-2xl border bg-white">
-      {styles.map((style) => (
-        <ListingRow key={style.id} style={style} tone={toneOf(style)} />
-      ))}
-    </ul>
+  // A column, not a grid: grid items would widen to their one-line (truncated) text on phones.
+  return (
+    <div className="flex flex-col gap-8">
+      {groups.map(({ key, items }, index) => {
+        const tone = toneOf(items[0]);
+        return (
+          <section key={key} aria-labelledby={`listings-${index}`}>
+            <GroupHeading
+              id={`listings-${index}`}
+              title={`${items[0].department_name} · ${items[0].category_name}`}
+              count={items.length}
+              noun="listing"
+              marker={tone.bar}
+            />
+            {view === "cards" ? (
+              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+                {items.map((style) => (
+                  <ListingCard key={style.id} style={style} tone={tone} />
+                ))}
+              </ul>
+            ) : (
+              <ul className="overflow-hidden rounded-2xl border bg-white">
+                {items.map((style) => (
+                  <ListingRow key={style.id} style={style} tone={tone} />
+                ))}
+              </ul>
+            )}
+          </section>
+        );
+      })}
+    </div>
   );
 }
 

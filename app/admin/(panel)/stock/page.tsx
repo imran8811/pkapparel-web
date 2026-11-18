@@ -43,7 +43,7 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
     <>
       <PageHeader
         title="Stock"
-        description="Ready stock sold by set on the stock pages, by department and category. Each listing is one color, with its own details, set, price per set and sets in stock. The newest are listed first."
+        description="Ready stock sold by set on the stock pages. Each listing is one color, with its own details, set, price per set and sets in stock. Listed by department and category, the newest first in each."
         actions={
           <>
             <Button asChild size="sm" variant="outline">
@@ -133,7 +133,15 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
           )}
         </EmptyState>
       ) : (
-        <StockListings styles={styles} categories={categories} view={view} />
+        <>
+          <StockListings styles={styles} departments={departments} categories={categories} view={view} />
+          {/* The API sends at most 100 (the newest), so a group can be missing older listings. */}
+          {meta.pagination.total > styles.length ? (
+            <p className="mt-6 text-sm text-muted-foreground">
+              Only the newest {styles.length} of the {meta.pagination.total} listings are shown: search to find the others.
+            </p>
+          ) : null}
+        </>
       )}
     </>
   );

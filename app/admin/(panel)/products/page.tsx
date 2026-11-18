@@ -3,14 +3,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { CopyIcon, ImageIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EmptyState, NoAccess, PageHeader, Pill } from "@/components/admin/page-parts";
+import { EmptyState, GroupHeading, NoAccess, PageHeader, Pill } from "@/components/admin/page-parts";
 import { inputClass } from "@/components/admin/styles";
+import { inGroups, placeIn } from "@/lib/admin/list-groups";
 import { can } from "@/lib/admin/permissions";
 import { adminApiWithMeta, getStaff } from "@/lib/admin/session";
 import { formatDay } from "@/lib/admin/time";
 import type { AdminProductSummary, Pagination, ProductStatus } from "@/lib/admin/types";
 import { formatMoney } from "@/lib/format";
-import { isProductType, isSegment } from "@/lib/nav";
+import { isProductType, isSegment, productTypes, segments } from "@/lib/nav";
 import { categoryLabel } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,14 @@ const STATUS: Record<ProductStatus, { label: string; tone: "green" | "neutral" |
   draft: { label: "Draft", tone: "neutral" },
   archived: { label: "Archived", tone: "muted" },
 };
+
+// The shop's categories in its menu order: the men's, then the women's, each by type.
+const SEGMENT_ORDER = segments.map((segment) => segment.slug);
+const TYPE_ORDER = productTypes.map((type) => type.slug);
+
+/** "Men's jeans pants": the shop category a style is in. */
+const categoryOf = (product: AdminProductSummary) =>
+  isSegment(product.segment) && isProductType(product.product_type) ? categoryLabel(product.segment, product.product_type) : product.product_type;
 
 export default async function ProductsPage({ searchParams }: PageProps<"/admin/products">) {
   const staff = await getStaff();
@@ -38,12 +47,18 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
     { label: "All", count: total },
     ...(Object.keys(STATUS) as ProductStatus[]).map((value) => ({ value, label: STATUS[value].label, count: meta.counts[value] })),
   ];
+  // By category, each under a heading with a line (owner request 2026-11-18), the newest first in each.
+  const groups = inGroups(
+    products,
+    (product) => `${product.segment}/${product.product_type}`,
+    (a, b) => placeIn(SEGMENT_ORDER, a.segment) - placeIn(SEGMENT_ORDER, b.segment) || placeIn(TYPE_ORDER, a.product_type) - placeIn(TYPE_ORDER, b.product_type),
+  );
 
   return (
     <>
       <PageHeader
         title="Shop styles"
-        description="Each style is one product page in the wholesale shop, with its colors, photos, sizes and price. The newest are listed first."
+        description="Each style is one product page in the wholesale shop, with its colors, photos, sizes and price. Listed by category, the newest first in each."
         actions={
           <Button asChild size="sm">
             <Link href="/admin/products/new">
@@ -77,40 +92,76 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
       {products.length === 0 ? (
         <EmptyState title={q ? "No styles match" : "No styles yet"}>{q ? "Try another search." : "Add the first one with “New style”."}</EmptyState>
       ) : (
-        <ul className="overflow-hidden rounded-2xl border bg-white">
-          {products.map((product) => (
-            <li key={product.id} className="flex items-center gap-4 border-b px-4 py-3 last:border-b-0 sm:px-5">
-              <div className="relative aspect-[3/4] w-12 shrink-0 overflow-hidden rounded-lg bg-cotton-100">
-                {product.thumbnail ? (
-                  <Image src={`/${product.thumbnail}`} alt="" fill sizes="48px" className="object-cover" />
-                ) : (
-                  <ImageIcon className="absolute inset-0 m-auto size-5 text-muted-foreground" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <Link href={`/admin/products/${product.id}`} className="font-medium hover:text-denim-600">
-                  {product.name}
-                </Link>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  {isSegment(product.segment) && isProductType(product.product_type) ? categoryLabel(product.segment, product.product_type) : product.product_type}
-                  {" · "}
-                  {product.color_count} color{product.color_count === 1 ? "" : "s"}
-                  {product.style_no ? ` · ${product.style_no}` : ""}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">Added {formatDay(product.created_at)}</p>
-              </div>
-              <span className="hidden text-sm tabular-nums sm:block">{formatMoney(product.price_cents)}</span>
-              {product.is_featured ? <Pill tone="blue">Featured</Pill> : null}
-              <Pill tone={STATUS[product.status].tone}>{STATUS[product.status].label}</Pill>
-              <Button asChild variant="ghost" size="icon-sm">
-                <Link href={`/admin/products/new?copy=${product.id}`} aria-label={`Duplicate ${product.name}`} title="Duplicate">
-                  <CopyIcon />
-                </Link>
-              </Button>
-            </li>
-          ))}
-        </ul>
+        <>
+          {/* A column, not a grid: grid items would widen to their one-line (truncated) text on phones. */}
+          <div className="flex flex-col gap-8">
+            {groups.map(({ key, items }, index) => (
+              <section key={key} aria-labelledby={`styles-${index}`}>
+                <GroupHeading id={`styles-${index}`} title={categoryOf(items[0])} count={items.length} noun="style" />
+                <ul className="overflow-hidden rounded-2xl border bg-white">
+                  {items.map((product) => (
+                    <ProductRow key={product.id} product={product} />
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+          {/* The API sends at most 100 (the newest), so a group can be missing older styles. */}
+          {meta.pagination.total > products.length ? (
+            <p className="mt-6 text-sm text-muted-foreground">
+              Only the newest {products.length} of the {meta.pagination.total} styles are shown: search to find the others.
+            </p>
+          ) : null}
+        </>
       )}
+    </>
+  );
+}
+
+function ProductRow({ product }: { product: AdminProductSummary }) {
+  return (
+    <li className="flex items-center gap-4 border-b px-4 py-3 last:border-b-0 sm:px-5">
+      <div className="relative aspect-[3/4] w-12 shrink-0 overflow-hidden rounded-lg bg-cotton-100">
+        {product.thumbnail ? (
+          <Image src={`/${product.thumbnail}`} alt="" fill sizes="48px" className="object-cover" />
+        ) : (
+          <ImageIcon className="absolute inset-0 m-auto size-5 text-muted-foreground" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <Link href={`/admin/products/${product.id}`} className="font-medium hover:text-denim-600">
+          {product.name}
+        </Link>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+          {categoryOf(product)}
+          {" · "}
+          {product.color_count} color{product.color_count === 1 ? "" : "s"}
+          {product.style_no ? ` · ${product.style_no}` : ""}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">Added {formatDay(product.created_at)}</p>
+        {/* On a phone the pills go under the name, which then has room (as in the stock list). */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 sm:hidden">
+          <StatusPills product={product} />
+        </div>
+      </div>
+      <span className="hidden text-sm tabular-nums sm:block">{formatMoney(product.price_cents)}</span>
+      <span className="hidden shrink-0 items-center gap-4 sm:flex">
+        <StatusPills product={product} />
+      </span>
+      <Button asChild variant="ghost" size="icon-sm">
+        <Link href={`/admin/products/new?copy=${product.id}`} aria-label={`Duplicate ${product.name}`} title="Duplicate">
+          <CopyIcon />
+        </Link>
+      </Button>
+    </li>
+  );
+}
+
+function StatusPills({ product }: { product: AdminProductSummary }) {
+  return (
+    <>
+      {product.is_featured ? <Pill tone="blue">Featured</Pill> : null}
+      <Pill tone={STATUS[product.status].tone}>{STATUS[product.status].label}</Pill>
     </>
   );
 }
