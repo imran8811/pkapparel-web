@@ -8,7 +8,7 @@ import { ActiveFilters, activeFilterCount, StockFilterPanel, stockFiltersFrom, s
 import { StockFiltersSheet } from "@/components/stock/stock-filters-sheet";
 import { StockSortSelect } from "@/components/stock/stock-sort-select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { filterStock, stockFacets, stockIntro, stockUrl } from "@/lib/stock";
+import { DEFAULT_STOCK_SORT, filterStock, stockFacets, stockIntro, stockUrl } from "@/lib/stock";
 import { getStockDepartment, getStockSections, getStockStyles } from "@/lib/stock-catalog";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -95,7 +95,7 @@ async function Listing({ segment, searchParams }: { segment: string; searchParam
           <p className="text-sm text-muted-foreground" aria-live="polite">
             {shown.length} style{shown.length === 1 ? "" : "s"}
           </p>
-          {styles.length > 1 ? <StockSortSelect value={filters.sort ?? "stock"} className="ml-auto" /> : null}
+          {styles.length > 1 ? <StockSortSelect value={filters.sort ?? DEFAULT_STOCK_SORT} className="ml-auto" /> : null}
         </div>
         <ActiveFilters path={path} filters={filters} fits={fits} categories={sections.categories} className="mt-4" />
 

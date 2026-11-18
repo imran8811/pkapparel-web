@@ -269,7 +269,7 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
             ) : (
               <p className="text-sm text-muted-foreground">The style is shown in the shop as soon as it is created. Hide it later with Status if needed.</p>
             )}
-            <SwitchField label="Featured" name="is_featured" defaultChecked={values?.is_featured ?? false} hint="Shown first in the shop." />
+            <SwitchField label="Featured" name="is_featured" defaultChecked={values?.is_featured ?? false} hint="Shown first when buyers sort the shop by “Featured”. Otherwise the newest come first." />
             <FormError />
             <SubmitButton className="w-full">{product ? "Save style" : "Create style"}</SubmitButton>
           </div>
@@ -297,7 +297,7 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
             <TextField label="Pieces per size in a set" name="set_pcs_per_size" type="number" min={1} defaultValue={values?.set_pcs_per_size ?? ""} placeholder={`${defaults.set_pcs_per_size} (default)`} />
             <TextField label="Production time (days)" name="lead_time_days" type="number" min={1} defaultValue={values?.lead_time_days ?? ""} placeholder={`${defaults.lead_time_days} (default)`} />
             <TextField label="Sample price (USD)" name="sample_price" inputMode="decimal" defaultValue={dollars(values?.sample_price_cents)} placeholder={`${dollars(defaults.sample_price_cents)} (default)`} />
-            <TextField label="Order in lists" name="sort_order" type="number" min={0} defaultValue={values?.sort_order ?? 0} hint="Lower numbers come first." />
+            <TextField label="Order in lists" name="sort_order" type="number" min={0} defaultValue={values?.sort_order ?? 0} hint="For the “Featured” sort: lower numbers come first." />
           </div>
         </Panel>
 

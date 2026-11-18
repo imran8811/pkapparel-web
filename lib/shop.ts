@@ -130,14 +130,18 @@ export type ShopFilters = {
   sort?: ShopSort;
 };
 
+/** The shop's orders. The newest styles come first unless buyers choose another (owner request 2026-11-18). */
 export const SORTS = [
-  { value: "featured", label: "Featured" },
   { value: "newest", label: "Newest" },
+  { value: "featured", label: "Featured" },
   { value: "price-asc", label: "Price: low to high" },
   { value: "price-desc", label: "Price: high to low" },
 ] as const;
 
 export type ShopSort = (typeof SORTS)[number]["value"];
+
+/** The order when none is chosen; it is left out of the address. */
+export const DEFAULT_SORT: ShopSort = "newest";
 
 export function productUrl(product: { segment: string; product_type: string; slug: string }, color?: string): string {
   const url = `/wholesale-shop/${product.segment}/${product.product_type}/${product.slug}`;

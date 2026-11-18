@@ -7,6 +7,7 @@ import { EmptyState, NoAccess, PageHeader, Pill } from "@/components/admin/page-
 import { inputClass } from "@/components/admin/styles";
 import { can } from "@/lib/admin/permissions";
 import { adminApiWithMeta, getStaff } from "@/lib/admin/session";
+import { formatDay } from "@/lib/admin/time";
 import type { AdminProductSummary, Pagination, ProductStatus } from "@/lib/admin/types";
 import { formatMoney } from "@/lib/format";
 import { isProductType, isSegment } from "@/lib/nav";
@@ -42,7 +43,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
     <>
       <PageHeader
         title="Shop styles"
-        description="Each style is one product page in the wholesale shop, with its colors, photos, sizes and price."
+        description="Each style is one product page in the wholesale shop, with its colors, photos, sizes and price. The newest are listed first."
         actions={
           <Button asChild size="sm">
             <Link href="/admin/products/new">
@@ -96,6 +97,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
                   {product.color_count} color{product.color_count === 1 ? "" : "s"}
                   {product.style_no ? ` · ${product.style_no}` : ""}
                 </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">Added {formatDay(product.created_at)}</p>
               </div>
               <span className="hidden text-sm tabular-nums sm:block">{formatMoney(product.price_cents)}</span>
               {product.is_featured ? <Pill tone="blue">Featured</Pill> : null}

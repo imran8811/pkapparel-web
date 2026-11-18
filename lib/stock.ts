@@ -121,7 +121,9 @@ export type StockCard = {
   piece_price_cents: number;
   set_price_cents: number;
   sets_in_stock: number;
+  /** For the "Featured" order: featured first, then lower numbers first. */
   is_featured: boolean;
+  sort_order: number;
   colors: StockColorCard[];
 };
 
@@ -168,13 +170,21 @@ export type StockFilters = {
   sort?: StockSort;
 };
 
+/**
+ * The orders of the stock pages. The newest listings come first unless buyers choose another (owner request
+ * 2026-11-18); listings in stock come before sold-out ones except by price.
+ */
 export const STOCK_SORTS = [
-  { value: "stock", label: "In stock first" },
+  { value: "newest", label: "Newest" },
+  { value: "featured", label: "Featured" },
   { value: "price-asc", label: "Price: low to high" },
   { value: "price-desc", label: "Price: high to low" },
 ] as const;
 
 export type StockSort = (typeof STOCK_SORTS)[number]["value"];
+
+/** The order when none is chosen; it is left out of the address. */
+export const DEFAULT_STOCK_SORT: StockSort = "newest";
 
 const rupees = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 
@@ -205,7 +215,10 @@ export function setsInStock(sets: number): string {
   return `${sets} ${sets === 1 ? "set" : "sets"} in stock`;
 }
 
-/** The styles that match the filters, sorted (in stock first unless sorted by price). */
+/**
+ * The styles that match the filters, sorted. They come from the API in stock first, the newest first in each ("Newest");
+ * "Featured" keeps those in stock first, then puts featured ones first and follows the staff order.
+ */
 export function filterStock(styles: StockCard[], filters: StockFilters): StockCard[] {
   const matching = styles.filter(
     (style) =>
@@ -218,6 +231,11 @@ export function filterStock(styles: StockCard[], filters: StockFilters): StockCa
   const price = (style: StockCard, none: number) => (style.piece_price_cents > 0 ? style.piece_price_cents : none);
   if (filters.sort === "price-asc") return [...matching].sort((a, b) => price(a, Number.MAX_SAFE_INTEGER) - price(b, Number.MAX_SAFE_INTEGER));
   if (filters.sort === "price-desc") return [...matching].sort((a, b) => price(b, -1) - price(a, -1));
+  if (filters.sort === "featured") {
+    const inStock = (style: StockCard) => (style.sets_in_stock > 0 ? 1 : 0);
+    // Sorting is stable: styles that tie stay newest first.
+    return [...matching].sort((a, b) => inStock(b) - inStock(a) || Number(b.is_featured) - Number(a.is_featured) || a.sort_order - b.sort_order);
+  }
   return matching;
 }
 

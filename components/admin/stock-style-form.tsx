@@ -182,7 +182,7 @@ function StockStyleEditor({ style, copyOf, departments, categories, onSaved }: S
             ) : (
               <p className="text-sm text-muted-foreground">The listing is shown on the stock pages as soon as it is created. Hide it later with Status if needed.</p>
             )}
-            <SwitchField label="Featured" name="is_featured" defaultChecked={values?.is_featured ?? false} hint="Shown first." />
+            <SwitchField label="Featured" name="is_featured" defaultChecked={values?.is_featured ?? false} hint="Shown first when buyers sort by “Featured”. Otherwise the newest come first." />
             <FormError />
             <SubmitButton className="w-full">{style ? "Save style" : "Create style"}</SubmitButton>
           </div>
@@ -201,7 +201,7 @@ function StockStyleEditor({ style, copyOf, departments, categories, onSaved }: S
         </Panel>
 
         <Panel>
-          <TextField label="Order in lists" name="sort_order" type="number" min={0} defaultValue={values?.sort_order ?? 0} hint="Lower numbers come first." />
+          <TextField label="Order in lists" name="sort_order" type="number" min={0} defaultValue={values?.sort_order ?? 0} hint="For the “Featured” sort: lower numbers come first." />
         </Panel>
 
         {style ? (

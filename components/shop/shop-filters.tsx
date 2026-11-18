@@ -2,7 +2,7 @@ import Link from "next/link";
 import { SearchIcon } from "lucide-react";
 import { SortSelect } from "@/components/shop/sort-select";
 import { isKnit, isProductType, isSegment, productTypes, segments, typesFor } from "@/lib/nav";
-import type { ShopCategory, ShopFilters } from "@/lib/shop";
+import { DEFAULT_SORT, type ShopCategory, type ShopFilters } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
 /** Builds a shop URL that keeps the other filters. */
@@ -14,7 +14,7 @@ export function shopHref(current: ShopFilters, changes: Partial<Record<keyof Sho
   if (!hasStretch(next.type)) delete next.stretch; // the stretch filter is for denim and twill types only
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(next)) {
-    if (value && !(key === "sort" && value === "featured")) params.set(key, String(value));
+    if (value && !(key === "sort" && value === DEFAULT_SORT)) params.set(key, String(value));
   }
   return `/wholesale-shop${params.size ? `?${params}` : ""}`;
 }
@@ -65,7 +65,7 @@ export function ShopFilterBar({ filters, categories }: { filters: ShopFilters; c
           {filters.segment ? <input type="hidden" name="segment" value={filters.segment} /> : null}
           {filters.type ? <input type="hidden" name="type" value={filters.type} /> : null}
           {filters.stretch ? <input type="hidden" name="stretch" value={filters.stretch} /> : null}
-          {filters.sort && filters.sort !== "featured" ? <input type="hidden" name="sort" value={filters.sort} /> : null}
+          {filters.sort && filters.sort !== DEFAULT_SORT ? <input type="hidden" name="sort" value={filters.sort} /> : null}
           <SearchIcon aria-hidden className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             name="q"
@@ -96,7 +96,7 @@ export function ShopFilterBar({ filters, categories }: { filters: ShopFilters; c
             ))}
           </div>
         ) : null}
-        <SortSelect value={filters.sort ?? "featured"} className="ml-auto" />
+        <SortSelect value={filters.sort ?? DEFAULT_SORT} className="ml-auto" />
       </div>
     </div>
   );

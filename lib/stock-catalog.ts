@@ -8,7 +8,7 @@ import { DEFAULT_STOCK_SEGMENT, departmentTitle, stockUrl, type StockCard, type 
  * changing a department or category refreshes "stock" (and "stock:<slug>" for a style).
  */
 
-/** Every style shown, in stock first; the pages filter and sort them. */
+/** Every style shown, in stock first and the newest first; the pages filter and sort them. */
 export async function getStockStyles(segment?: string): Promise<StockCard[]> {
   "use cache";
   cacheLife("max");

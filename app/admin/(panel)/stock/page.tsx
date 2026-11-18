@@ -43,7 +43,7 @@ export default async function StockStylesPage({ searchParams }: PageProps<"/admi
     <>
       <PageHeader
         title="Stock"
-        description="Ready stock sold by set on the stock pages, by department and category. Each listing is one color, with its own details, set, price per set and sets in stock."
+        description="Ready stock sold by set on the stock pages, by department and category. Each listing is one color, with its own details, set, price per set and sets in stock. The newest are listed first."
         actions={
           <>
             <Button asChild size="sm" variant="outline">

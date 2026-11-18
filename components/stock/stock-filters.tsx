@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { XIcon } from "lucide-react";
-import { STOCK_SORTS, stockUrl, type StockFilters, type StockSection } from "@/lib/stock";
+import { DEFAULT_STOCK_SORT, STOCK_SORTS, stockUrl, type StockFilters, type StockSection } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 const FABRICS = [
@@ -34,7 +34,7 @@ export function stockHref(path: string, current: StockFilters, changes: Partial<
   const next = { ...current, ...changes };
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(next)) {
-    if (value && !(key === "sort" && value === "stock")) params.set(key, String(value));
+    if (value && !(key === "sort" && value === DEFAULT_STOCK_SORT)) params.set(key, String(value));
   }
   return `${path}${params.size ? `?${params}` : ""}`;
 }

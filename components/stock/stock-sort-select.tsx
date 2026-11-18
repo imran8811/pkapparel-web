@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { STOCK_SORTS, type StockSort } from "@/lib/stock";
+import { DEFAULT_STOCK_SORT, STOCK_SORTS, type StockSort } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 /** Changes the order of the stock styles, keeping the other filters in the URL. */
@@ -16,7 +16,7 @@ export function StockSortSelect({ value, className }: { value: StockSort; classN
         value={value}
         onChange={(event) => {
           const params = new URLSearchParams(window.location.search);
-          if (event.target.value === "stock") params.delete("sort");
+          if (event.target.value === DEFAULT_STOCK_SORT) params.delete("sort");
           else params.set("sort", event.target.value);
           router.push(`${pathname}${params.size ? `?${params}` : ""}`, { scroll: false });
         }}

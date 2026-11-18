@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Pill } from "@/components/admin/page-parts";
 import { setStockView } from "@/lib/admin/actions/stock";
 import type { StockView } from "@/lib/admin/stock-view";
+import { formatDay } from "@/lib/admin/time";
 import type { AdminStockCategory, AdminStockStyleSummary, ProductStatus } from "@/lib/admin/types";
 import { formatRupees } from "@/lib/stock";
 import { cn } from "@/lib/utils";
@@ -20,14 +21,14 @@ export const STOCK_STATUS: Record<ProductStatus, { label: string; tone: "green" 
  * the listings of different categories are told apart at a glance. Whole class names, for Tailwind to find them.
  */
 const CATEGORY_TONES = [
-  { dot: "bg-denim-600", tag: "bg-denim-600 text-white", edge: "border-l-denim-600" },
-  { dot: "bg-amber-400", tag: "bg-amber-400 text-amber-950", edge: "border-l-amber-400" },
-  { dot: "bg-violet-600", tag: "bg-violet-600 text-white", edge: "border-l-violet-600" },
-  { dot: "bg-teal-700", tag: "bg-teal-700 text-white", edge: "border-l-teal-700" },
-  { dot: "bg-rose-700", tag: "bg-rose-700 text-white", edge: "border-l-rose-700" },
-  { dot: "bg-lime-400", tag: "bg-lime-400 text-lime-950", edge: "border-l-lime-400" },
-  { dot: "bg-fuchsia-700", tag: "bg-fuchsia-700 text-white", edge: "border-l-fuchsia-700" },
-  { dot: "bg-slate-600", tag: "bg-slate-600 text-white", edge: "border-l-slate-600" },
+  { tag: "bg-denim-600 text-white", edge: "border-l-denim-600" },
+  { tag: "bg-amber-400 text-amber-950", edge: "border-l-amber-400" },
+  { tag: "bg-violet-600 text-white", edge: "border-l-violet-600" },
+  { tag: "bg-teal-700 text-white", edge: "border-l-teal-700" },
+  { tag: "bg-rose-700 text-white", edge: "border-l-rose-700" },
+  { tag: "bg-lime-400 text-lime-950", edge: "border-l-lime-400" },
+  { tag: "bg-fuchsia-700 text-white", edge: "border-l-fuchsia-700" },
+  { tag: "bg-slate-600 text-white", edge: "border-l-slate-600" },
 ] as const;
 
 type CategoryTone = (typeof CATEGORY_TONES)[number];
@@ -38,61 +39,32 @@ function categoryTones(categories: AdminStockCategory[]): Map<string, CategoryTo
   return new Map(byAge.map((category, index) => [category.slug, CATEGORY_TONES[index % CATEGORY_TONES.length]]));
 }
 
-type ListingGroup = { key: string; department: string; category: string; categorySlug: string; listings: AdminStockStyleSummary[] };
-
-/** The listings by department and category, in the order they come (the API sorts them by department, then category). */
-function groupListings(styles: AdminStockStyleSummary[]): ListingGroup[] {
-  const groups = new Map<string, ListingGroup>();
-  for (const style of styles) {
-    const key = `${style.segment}--${style.category}`;
-    const group = groups.get(key) ?? { key, department: style.department_name, category: style.category_name, categorySlug: style.category, listings: [] };
-    group.listings.push(style);
-    groups.set(key, group);
-  }
-  return [...groups.values()];
-}
-
-/** The listings under a heading for each department and category (in its category's color), as rows or as cards. */
+/**
+ * The listings as rows or as cards, the newest first (as the API sends them, owner request 2026-11-18). Each shows its
+ * department and category in the category's color.
+ */
 export function StockListings({ styles, categories, view }: { styles: AdminStockStyleSummary[]; categories: AdminStockCategory[]; view: StockView }) {
   const tones = categoryTones(categories);
+  const toneOf = (style: AdminStockStyleSummary) => tones.get(style.category) ?? CATEGORY_TONES[CATEGORY_TONES.length - 1];
 
-  return (
-    <div className="space-y-8">
-      {groupListings(styles).map((group) => {
-        const tone = tones.get(group.categorySlug) ?? CATEGORY_TONES[CATEGORY_TONES.length - 1];
-        const headingId = `stock-${group.key}`;
-        return (
-          <section key={group.key} aria-labelledby={headingId}>
-            <h2 id={headingId} className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 font-heading text-base font-semibold">
-              <span className={cn("size-3 shrink-0 rounded-full", tone.dot)} aria-hidden />
-              {group.department} · {group.category}
-              <span className="font-sans text-sm font-normal text-muted-foreground tabular-nums">
-                {group.listings.length} listing{group.listings.length === 1 ? "" : "s"}
-              </span>
-            </h2>
-            {view === "cards" ? (
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
-                {group.listings.map((style) => (
-                  <ListingCard key={style.id} style={style} tone={tone} />
-                ))}
-              </ul>
-            ) : (
-              <ul className={cn("overflow-hidden rounded-2xl border border-l-4 bg-white", tone.edge)}>
-                {group.listings.map((style) => (
-                  <ListingRow key={style.id} style={style} />
-                ))}
-              </ul>
-            )}
-          </section>
-        );
-      })}
-    </div>
+  return view === "cards" ? (
+    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+      {styles.map((style) => (
+        <ListingCard key={style.id} style={style} tone={toneOf(style)} />
+      ))}
+    </ul>
+  ) : (
+    <ul className="overflow-hidden rounded-2xl border bg-white">
+      {styles.map((style) => (
+        <ListingRow key={style.id} style={style} tone={toneOf(style)} />
+      ))}
+    </ul>
   );
 }
 
-function ListingRow({ style }: { style: AdminStockStyleSummary }) {
+function ListingRow({ style, tone }: { style: AdminStockStyleSummary; tone: CategoryTone }) {
   return (
-    <li className="flex items-center gap-4 border-b px-4 py-3 last:border-b-0 sm:px-5">
+    <li className={cn("flex items-center gap-4 border-b border-l-4 px-4 py-3 last:border-b-0 sm:px-5", tone.edge)}>
       <div className="relative aspect-[3/4] w-12 shrink-0 overflow-hidden rounded-lg bg-cotton-100">
         <Thumbnail style={style} sizes="48px" iconClassName="size-5" />
       </div>
@@ -107,6 +79,10 @@ function ListingRow({ style }: { style: AdminStockStyleSummary }) {
             {" · "}
             <SetDetails style={style} />
           </span>
+        </p>
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          <CategoryTag style={style} tone={tone} />
+          <Added style={style} />
         </p>
         {/* On a phone the sets and pills go under the name, which then has room. */}
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5 sm:hidden">
@@ -135,9 +111,7 @@ function ListingCard({ style, tone }: { style: AdminStockStyleSummary; tone: Cat
           iconClassName="size-8"
           className="transition-transform duration-300 group-hover:scale-[1.02]"
         />
-        <span className={cn("absolute top-2 left-2 max-w-[calc(100%-1rem)] truncate rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-sm", tone.tag)}>
-          {style.category_name}
-        </span>
+        <CategoryTag style={style} tone={tone} className="absolute top-2 left-2 max-w-[calc(100%-1rem)] truncate px-2 py-0.5 shadow-sm" />
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3">
         <Link
@@ -154,6 +128,9 @@ function ListingCard({ style, tone }: { style: AdminStockStyleSummary; tone: Cat
         </p>
         <p className="truncate text-xs text-muted-foreground">
           <SetDetails style={style} capitalized />
+        </p>
+        <p className="text-xs text-muted-foreground">
+          <Added style={style} />
         </p>
         <div className="mt-auto flex items-end justify-between gap-2 pt-2">
           <Price style={style} />
@@ -176,6 +153,19 @@ function Thumbnail({ style, sizes, iconClassName, className }: { style: AdminSto
   ) : (
     <ImageIcon className={cn("absolute inset-0 m-auto text-muted-foreground", iconClassName)} />
   );
+}
+
+/** "Men · Jeans", in the category's color. */
+function CategoryTag({ style, tone, className }: { style: AdminStockStyleSummary; tone: CategoryTone; className?: string }) {
+  return (
+    <span className={cn("rounded-full px-1.5 py-px text-[11px] font-semibold", tone.tag, className)}>
+      {style.department_name} · {style.category_name}
+    </span>
+  );
+}
+
+function Added({ style }: { style: AdminStockStyleSummary }) {
+  return <span className="tabular-nums">Added {formatDay(style.created_at)}</span>;
 }
 
 function ColorDot({ style }: { style: AdminStockStyleSummary }) {

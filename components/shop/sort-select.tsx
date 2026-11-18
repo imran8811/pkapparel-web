@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { SORTS, type ShopSort } from "@/lib/shop";
+import { DEFAULT_SORT, SORTS, type ShopSort } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
 /** Changes the shop's sort order, keeping the other filters in the URL. */
@@ -15,7 +15,7 @@ export function SortSelect({ value, className }: { value: ShopSort; className?: 
         value={value}
         onChange={(event) => {
           const params = new URLSearchParams(window.location.search);
-          if (event.target.value === "featured") params.delete("sort");
+          if (event.target.value === DEFAULT_SORT) params.delete("sort");
           else params.set("sort", event.target.value);
           router.push(`/wholesale-shop${params.size ? `?${params}` : ""}`, { scroll: false });
         }}

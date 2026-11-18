@@ -247,6 +247,8 @@ export type AdminProductSummary = {
   is_featured: boolean;
   color_count: number;
   thumbnail: string | null;
+  /** The date added: the list is newest first. */
+  created_at: string;
   updated_at: string;
 };
 
@@ -469,6 +471,8 @@ export type AdminStockStyleSummary = {
   color_code: string | null;
   color_hex: string | null;
   thumbnail: string | null;
+  /** The date added: the list is newest first. */
+  created_at: string;
   updated_at: string;
 };
 
