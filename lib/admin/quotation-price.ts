@@ -20,17 +20,17 @@ export function scaled(value: string, places: number): number {
   return digits[places] >= "5" ? whole + 1 : whole;
 }
 
-/** "1,250.50", "Rs 120" or "" → paisa (125050, 12000, 0); null when it is not an amount. */
-export function rupeesToPaisa(value: string): number | null {
-  const clean = value.replace(/rs\.?|[,\s]/gi, "");
+/** "1,250.50", "Rs 120", "$850" or "" → cents or paisa (125050, 12000, 85000, 0); null when it is not an amount. */
+export function amountToCents(value: string): number | null {
+  const clean = value.replace(/rs\.?|[,\s$€£]/gi, "");
   if (clean === "") return 0;
   return /^\d+(\.\d+)?$/.test(clean) ? scaled(clean, 2) : null;
 }
 
-/** Paisa → what staff typed: 125050 → "1250.50", 12000 → "120", 0 → "". */
-export function paisaToRupees(paisa: number): string {
-  if (!paisa) return "";
-  return paisa % 100 === 0 ? String(paisa / 100) : (paisa / 100).toFixed(2);
+/** Cents or paisa → what staff typed: 125050 → "1250.50", 12000 → "120", 0 → "". */
+export function centsToText(cents: number): string {
+  if (!cents) return "";
+  return cents % 100 === 0 ? String(cents / 100) : (cents / 100).toFixed(2);
 }
 
 export type StylePriceInput = {

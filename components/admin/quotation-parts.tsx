@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Pill } from "@/components/admin/page-parts";
 import { formatPaisa, profitShare, QUOTATION_COST_KEYS } from "@/lib/admin/quotation-price";
 import { formatDay } from "@/lib/admin/time";
@@ -126,14 +127,27 @@ export function QuotationStyles({ quotation }: { quotation: Quotation }) {
           );
         })}
       </ol>
-      {quotation.total_qty > 0 ? (
-        <p className="flex items-baseline justify-between gap-3 rounded-xl bg-cotton-50 px-4 py-3 text-sm">
-          <span>
-            Total for {quotation.total_qty.toLocaleString("en-US")} pcs
-            {styles.some((style) => style.qty === null) ? <span className="text-muted-foreground"> (the styles with a quantity)</span> : null}
-          </span>
-          <strong className="font-semibold tabular-nums">{formatMoney(quotation.total_cents, quotation.currency)}</strong>
-        </p>
+      {quotation.total_qty > 0 || quotation.shipping_cents > 0 ? (
+        <dl className="grid gap-1.5 rounded-xl bg-cotton-50 px-4 py-3 text-sm">
+          {quotation.total_qty > 0 ? (
+            <TotalRow
+              label={
+                <>
+                  {quotation.shipping_cents > 0 ? "Styles" : "Total"} for {quotation.total_qty.toLocaleString("en-US")} pcs
+                  {styles.some((style) => style.qty === null) ? <span className="text-muted-foreground"> (the styles with a quantity)</span> : null}
+                </>
+              }
+              value={quoted(quotation.total_cents)}
+              strong={quotation.shipping_cents === 0}
+            />
+          ) : null}
+          {quotation.shipping_cents > 0 ? <TotalRow label="Shipping for the whole order" value={quoted(quotation.shipping_cents)} strong={quotation.total_qty === 0} /> : null}
+          {quotation.total_qty > 0 && quotation.shipping_cents > 0 ? (
+            <div className="border-t border-denim-900/15 pt-1.5">
+              <TotalRow label="Total" value={quoted(quotation.grand_total_cents)} strong />
+            </div>
+          ) : null}
+        </dl>
       ) : null}
     </div>
   );
@@ -172,6 +186,12 @@ export function QuotationSummary({ quotation }: { quotation: Quotation }) {
               </span>
             ) : null}
           </dd>
+          {quotation.shipping_cents > 0 ? (
+            <>
+              <dt className="text-muted-foreground">Shipping</dt>
+              <dd>{formatMoney(quotation.shipping_cents, quotation.currency)} for the whole order</dd>
+            </>
+          ) : null}
           {quotation.delivery_time ? (
             <>
               <dt className="text-muted-foreground">Delivery</dt>
@@ -200,6 +220,15 @@ export function QuotationSummary({ quotation }: { quotation: Quotation }) {
           ) : null}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function TotalRow({ label, value, strong }: { label: ReactNode; value: string; strong?: boolean }) {
+  return (
+    <div className={strong ? "flex items-baseline justify-between gap-3 font-semibold" : "flex items-baseline justify-between gap-3"}>
+      <dt>{label}</dt>
+      <dd className="tabular-nums">{value}</dd>
     </div>
   );
 }

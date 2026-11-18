@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { ApiError } from "@/lib/api";
 import { adminApi } from "@/lib/admin/session";
 import { errorState, failure, jsonList, number, optional, success, text, type FormState } from "@/lib/admin/forms";
-import { QUOTATION_COST_KEYS, rupeesToPaisa } from "@/lib/admin/quotation-price";
+import { QUOTATION_COST_KEYS, amountToCents } from "@/lib/admin/quotation-price";
 import type { FabricUnit, Quotation, QuotationCostKey, QuotationStatus } from "@/lib/admin/types";
 
 /* Admin → Quotations: styles costed per piece for buyers who sent artwork and asked for prices (sales staff and admins). */
@@ -41,8 +41,9 @@ function buyer(form: FormData): Record<string, string | null> {
   };
 }
 
-/** The API's name of a style field → the form's (styles.0.cutting_cents → styles.0.cutting). */
+/** The API's name of a field → the form's (shipping_cents → shipping, styles.0.cutting_cents → styles.0.cutting). */
 function formField(name: string): string {
+  if (name === "shipping_cents") return "shipping";
   return name.replace(/^(styles\.\d+)\.profit_cents$/, "$1.profit_amount").replace(/^(styles\.\d+\.[a-z_]+)_cents$/, "$1");
 }
 
@@ -50,7 +51,7 @@ function formField(name: string): string {
 export async function saveQuotation(id: number | null, _previous: FormState, form: FormData): Promise<FormState> {
   const fieldErrors: Record<string, string> = {};
   const rupees = (value: string | undefined, field: string): number => {
-    const paisa = rupeesToPaisa(value ?? "");
+    const paisa = amountToCents(value ?? "");
     if (paisa === null) fieldErrors[field] = "Enter an amount in rupees, e.g. 120 or 85.50.";
     return paisa ?? 0;
   };
@@ -78,6 +79,8 @@ export async function saveQuotation(id: number | null, _previous: FormState, for
     };
   });
   const currency = text(form, "currency");
+  const shipping = amountToCents(text(form, "shipping"));
+  if (shipping === null) fieldErrors.shipping = "Enter the shipping cost, e.g. 850 or 850.50, or leave it empty.";
   const body = {
     customer_id: number(form, "customer_id"),
     inquiry_id: number(form, "inquiry_id"),
@@ -89,6 +92,7 @@ export async function saveQuotation(id: number | null, _previous: FormState, for
     buyer_reference: optional(form, "buyer_reference"),
     incoterm: optional(form, "incoterm"),
     delivery_time: optional(form, "delivery_time"),
+    shipping_cents: shipping ?? 0,
     styles,
     notes: optional(form, "notes"),
     terms: optional(form, "terms"),

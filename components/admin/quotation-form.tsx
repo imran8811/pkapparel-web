@@ -9,7 +9,7 @@ import { Panel } from "@/components/admin/page-parts";
 import { inputClass } from "@/components/admin/styles";
 import { Button } from "@/components/ui/button";
 import { saveQuotation, type QuotationStyleInput } from "@/lib/admin/actions/quotations";
-import { formatPaisa, paisaToRupees, profitShare, QUOTATION_COST_KEYS, rupeesToPaisa, scaled, stylePrice, type StylePrice } from "@/lib/admin/quotation-price";
+import { amountToCents, centsToText, formatPaisa, profitShare, QUOTATION_COST_KEYS, scaled, stylePrice, type StylePrice } from "@/lib/admin/quotation-price";
 import type { InvoiceParty, Quotation, QuotationCostKey, QuotationDefaults, QuotationStyle } from "@/lib/admin/types";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -64,14 +64,14 @@ function rowFromStyle(style: QuotationStyle): StyleRow {
     sizes: style.sizes ?? "",
     details: style.details ?? "",
     qty: style.qty === null ? "" : String(style.qty),
-    fabric_rate: paisaToRupees(style.fabric_rate_cents),
+    fabric_rate: centsToText(style.fabric_rate_cents),
     fabric_unit: style.fabric_unit,
     fabric_consumption: style.fabric_consumption === "0" ? "" : style.fabric_consumption,
-    ...costs((key) => paisaToRupees(style[`${key}_cents`])),
+    ...costs((key) => centsToText(style[`${key}_cents`])),
     extra_label: style.extra_label ?? "",
     profit_type: style.profit_type,
     profit_percent: style.profit_percent ?? "",
-    profit_amount: style.profit_type === "amount" ? paisaToRupees(style.profit_cents) : "",
+    profit_amount: style.profit_type === "amount" ? centsToText(style.profit_cents) : "",
   };
 }
 
@@ -85,12 +85,12 @@ const pieces = (qty: string) => {
 function rowPrice(row: StyleRow, currency: string, rate: string): StylePrice {
   return stylePrice(
     {
-      fabricRateCents: rupeesToPaisa(row.fabric_rate) ?? 0,
+      fabricRateCents: amountToCents(row.fabric_rate) ?? 0,
       fabricConsumption: row.fabric_consumption,
-      costs: Object.fromEntries(QUOTATION_COST_KEYS.map((key) => [key, rupeesToPaisa(row[key]) ?? 0])) as Record<QuotationCostKey, number>,
+      costs: Object.fromEntries(QUOTATION_COST_KEYS.map((key) => [key, amountToCents(row[key]) ?? 0])) as Record<QuotationCostKey, number>,
       profitType: row.profit_type,
       profitPercent: row.profit_percent,
-      profitCents: rupeesToPaisa(row.profit_amount) ?? 0,
+      profitCents: amountToCents(row.profit_amount) ?? 0,
     },
     currency,
     cleanRate(rate),
@@ -107,6 +107,11 @@ export function QuotationForm({ quotation, defaults, countries, start }: { quota
   // One rate per currency, so switching back and forth keeps what was typed.
   const [rates, setRates] = useState<Record<string, string>>(() => ({ ...defaults.exchange_rates, ...(quotation?.exchange_rate ? { [quotation.currency]: quotation.exchange_rate } : {}) }));
   const rate = rates[currency] ?? "";
+  const [incoterm, setIncoterm] = useState(quotation ? (quotation.incoterm ?? "") : "FOB");
+  const [shipping, setShipping] = useState(quotation ? centsToText(quotation.shipping_cents) : "");
+  const shippingCents = amountToCents(shipping) ?? 0;
+  // With these the buyer pays the freight, so a shipping charge contradicts the price basis.
+  const buyerPaysFreight = ["EXW", "FCA", "FOB"].includes(incoterm);
   const [rows, setRows] = useState<StyleRow[]>(() => (quotation?.styles?.length ? quotation.styles.map(rowFromStyle) : [emptyRow()]));
   const action = saveQuotation.bind(null, quotation?.id ?? null);
 
@@ -143,16 +148,32 @@ export function QuotationForm({ quotation, defaults, countries, start }: { quota
           <SelectField
             label="Incoterm"
             name="incoterm"
-            defaultValue={quotation ? (quotation.incoterm ?? "") : "FOB"}
+            value={incoterm}
+            onChange={(event) => setIncoterm(event.target.value)}
             options={[{ value: "", label: "Not printed" }, ...defaults.incoterms.map((code) => ({ value: code, label: code }))]}
             hint="What the price includes, e.g. FOB."
+          />
+          <TextField
+            label={`Shipping (${currency})`}
+            name="shipping"
+            inputMode="decimal"
+            value={shipping}
+            onChange={(event) => setShipping(event.target.value)}
+            placeholder="0.00"
+            hint={
+              shippingCents > 0 && buyerPaysFreight ? (
+                <span className="text-stitch-700">With {incoterm} the buyer pays the freight. Choose CFR, CIF, DAP or DDP if this shipping is included.</span>
+              ) : (
+                "For the whole order: added to the total, not to the prices per piece."
+              )
+            }
           />
           <TextField
             label="Delivery"
             name="delivery_time"
             defaultValue={quotation ? (quotation.delivery_time ?? "") : defaults.delivery_time}
             maxLength={160}
-            fieldClassName="sm:col-span-2 lg:col-span-3"
+            fieldClassName={currency === "PKR" ? "sm:col-span-2 lg:col-span-3" : "sm:col-span-2"}
           />
         </div>
       </Panel>
@@ -161,7 +182,7 @@ export function QuotationForm({ quotation, defaults, countries, start }: { quota
         title="Styles"
         description="Each style has its own costs per piece, in rupees. The buyer's PDF shows only the price per piece; the costing sheet shows staff how it was made."
       >
-        <StylesEditor rows={rows} setRows={setRows} currency={currency} rate={rate} defaults={defaults} />
+        <StylesEditor rows={rows} setRows={setRows} currency={currency} rate={rate} shippingCents={shippingCents} defaults={defaults} />
       </Panel>
 
       <Panel title="Notes and terms">
@@ -238,12 +259,14 @@ function StylesEditor({
   setRows,
   currency,
   rate,
+  shippingCents,
   defaults,
 }: {
   rows: StyleRow[];
   setRows: Dispatch<SetStateAction<StyleRow[]>>;
   currency: string;
   rate: string;
+  shippingCents: number;
   defaults: QuotationDefaults;
 }) {
   const { state } = useAdminForm();
@@ -296,8 +319,12 @@ function StylesEditor({
           {quantity > 0 ? (
             <>
               {" · "}
-              {quantity.toLocaleString("en-US")} pcs · <strong className="font-semibold text-foreground">{formatMoney(total, currency)}</strong>
+              {quantity.toLocaleString("en-US")} pcs ·{" "}
+              {shippingCents > 0 ? `${formatMoney(total, currency)} + ${formatMoney(shippingCents, currency)} shipping = ` : null}
+              <strong className="font-semibold text-foreground">{formatMoney(total + shippingCents, currency)}</strong>
             </>
+          ) : shippingCents > 0 ? (
+            ` · ${formatMoney(shippingCents, currency)} shipping for the order`
           ) : null}
         </p>
       </div>

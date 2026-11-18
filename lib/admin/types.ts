@@ -796,6 +796,10 @@ export type Quotation = {
   /** The styles with a quantity: their pieces and amount in the quotation's currency. */
   total_qty: number;
   total_cents: number;
+  /** The shipping charge for the whole order, in the quotation's currency (0: none). Not in the prices per piece. */
+  shipping_cents: number;
+  /** total_cents + shipping_cents: what the buyer pays for the order. */
+  grand_total_cents: number;
   styles_count: number;
   /** Not in the list (it has article_nos instead). */
   styles?: QuotationStyle[];
