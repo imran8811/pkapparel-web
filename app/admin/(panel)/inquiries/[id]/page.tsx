@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MailIcon, MessageCircleIcon, PaperclipIcon, PhoneIcon } from "lucide-react";
+import { CalculatorIcon, MailIcon, MessageCircleIcon, PaperclipIcon, PhoneIcon } from "lucide-react";
 import { InquiryFollowUpForm } from "@/components/admin/inquiry-follow-up-form";
 import { NoAccess, PageHeader, Panel, Pill } from "@/components/admin/page-parts";
+import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { detailLabel, INQUIRY_STATUSES, INQUIRY_TYPES } from "@/lib/admin/labels";
 import { can } from "@/lib/admin/permissions";
@@ -41,6 +43,15 @@ export default async function InquiryPage({ params }: PageProps<"/admin/inquirie
           </span>
         }
         description={`${INQUIRY_TYPES[inquiry.type]} ${inquiry.reference} · received ${formatDateTime(inquiry.created_at)}`}
+        actions={
+          can(staff.role, "quotations") && inquiry.status !== "spam" ? (
+            <Button asChild size="sm" variant={inquiry.type === "quote" ? "default" : "outline"}>
+              <Link href={`/admin/quotations/new?inquiry=${inquiry.id}`}>
+                <CalculatorIcon /> Make a quotation
+              </Link>
+            </Button>
+          ) : null
+        }
       />
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">

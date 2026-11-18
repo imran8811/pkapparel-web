@@ -269,13 +269,14 @@ function BuyerFields({ invoice, account, countries }: { invoice?: Invoice; accou
   );
 }
 
-function PartyFields({ prefix, party, countries }: { prefix: "buyer" | "consignee"; party: InvoiceParty; countries: Country[] }) {
+/** The buyer's or consignee's fields (also on the quotation form). */
+export function PartyFields({ prefix, party, countries, document = "invoice" }: { prefix: "buyer" | "consignee"; party: InvoiceParty; countries: Country[]; document?: string }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <TextField label="Company" name={`${prefix}.company`} defaultValue={party.company ?? ""} maxLength={160} autoComplete="off" />
       <TextField label="Contact name" name={`${prefix}.contact_name`} defaultValue={party.contact_name ?? ""} maxLength={120} autoComplete="off" />
       {prefix === "buyer" ? (
-        <TextField label="Email" name="buyer.email" type="email" defaultValue={party.email ?? ""} hint="The invoice is emailed here by default." autoComplete="off" />
+        <TextField label="Email" name="buyer.email" type="email" defaultValue={party.email ?? ""} hint={`The ${document} is emailed here by default.`} autoComplete="off" />
       ) : null}
       <TextField label="Phone" name={`${prefix}.phone`} type="tel" defaultValue={party.phone ?? ""} autoComplete="off" />
       <TextAreaField label="Address" name={`${prefix}.address`} defaultValue={party.address ?? ""} maxLength={500} rows={3} placeholder={"Street and number\nPostcode and city"} fieldClassName="sm:row-span-2" />
@@ -290,8 +291,8 @@ function PartyFields({ prefix, party, countries }: { prefix: "buyer" | "consigne
   );
 }
 
-/** Find a buyer account by company, contact or email, and copy its details into the invoice. */
-function BuyerSearch({ onPick }: { onPick: (picked: { customerId: number; buyer: InvoiceParty; label: string }) => void }) {
+/** Find a buyer account by company, contact or email, and copy its details into the invoice (or quotation). */
+export function BuyerSearch({ onPick }: { onPick: (picked: { customerId: number; buyer: InvoiceParty; label: string }) => void }) {
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<BuyerMatch[]>([]);
   const [open, setOpen] = useState(false);

@@ -733,3 +733,96 @@ export type InvoiceDefaults = {
   bank_ready: boolean;
   company_name: string;
 };
+
+/* Admin → Quotations: styles costed per piece in rupees, quoted in rupees or another currency (/v1/admin/quotations). */
+
+export type QuotationStatus = "open" | "accepted" | "declined";
+
+/** draft: not sent yet; expired: open and past its validity date. */
+export type QuotationStage = "draft" | "sent" | "expired" | "accepted" | "declined";
+
+export type FabricUnit = "m" | "yd" | "kg";
+
+/** The costs per piece after the fabric, in the costing sheet's order. */
+export type QuotationCostKey = "cutting" | "stitching" | "washing" | "packing" | "printing" | "embroidery" | "accessories" | "overhead" | "extra";
+
+/** A style as saved: what staff typed (rupee amounts in paisa) and the prices the API worked out. */
+export type QuotationStyle = {
+  article_no: string | null;
+  description: string | null;
+  fabric: string | null;
+  colors: string | null;
+  sizes: string | null;
+  details: string | null;
+  qty: number | null;
+  fabric_rate_cents: number;
+  fabric_unit: FabricUnit;
+  /** Per piece, as typed: "1.35". */
+  fabric_consumption: string;
+  fabric_cost_cents: number;
+  extra_label: string | null;
+  cost_cents: number;
+  profit_type: "percent" | "amount";
+  /** "15" when the profit is a percentage of the cost. */
+  profit_percent: string | null;
+  profit_cents: number;
+  /** Cost + profit, in paisa. */
+  price_cents: number;
+  /** Per piece in the quotation's currency (rupees: to the rupee). */
+  unit_price_cents: number;
+  amount_cents: number | null;
+} & Record<`${QuotationCostKey}_cents`, number>;
+
+export type Quotation = {
+  id: number;
+  quotation_no: string;
+  status: QuotationStatus;
+  status_label: string;
+  stage: QuotationStage;
+  stage_label: string;
+  customer_id: number | null;
+  customer: { id: number; company_name: string; email: string } | null;
+  inquiry_id: number | null;
+  inquiry: { id: number; reference: string } | null;
+  buyer: InvoiceParty;
+  currency: string;
+  /** Rupees for 1 unit of the currency ("280.5"); null for a quotation in rupees. */
+  exchange_rate: string | null;
+  issue_date: string;
+  valid_until: string | null;
+  buyer_reference: string | null;
+  incoterm: string | null;
+  delivery_time: string | null;
+  /** The styles with a quantity: their pieces and amount in the quotation's currency. */
+  total_qty: number;
+  total_cents: number;
+  styles_count: number;
+  /** Not in the list (it has article_nos instead). */
+  styles?: QuotationStyle[];
+  article_nos?: string | null;
+  notes: string | null;
+  terms: string | null;
+  staff_notes: string | null;
+  sent_at: string | null;
+  sent_to: string | null;
+  decided_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type QuotationCounts = Record<"open" | "expired" | "accepted" | "declined", number>;
+
+export type QuotationDefaults = {
+  today: string;
+  valid_until: string;
+  currencies: string[];
+  incoterms: string[];
+  fabric_units: { value: FabricUnit; label: string }[];
+  costs: { key: QuotationCostKey; label: string }[];
+  /** The latest rate used per foreign currency: {"USD": "280.5"}. */
+  exchange_rates: Record<string, string>;
+  terms: string;
+  delivery_time: string;
+  company_name: string;
+};
