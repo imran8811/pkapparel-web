@@ -60,7 +60,6 @@ export type SizeChart = {
 
 export type OrderRules = {
   moq_per_color: number;
-  set_pcs_per_size: number;
   /** Every size ordered in a color needs at least this many pieces. */
   min_pcs_per_size: number;
   lead_time_days: number;
@@ -170,6 +169,55 @@ export function specValue(key: string, value: string | null | undefined): string
 export function sizesText(system: SizeSystem, sizes: string[]): string {
   const list = sizes.length > 1 ? `${sizes.slice(0, -1).join(", ")} and ${sizes[sizes.length - 1]}` : (sizes[0] ?? "");
   return system === "waist" ? `Waist sizes ${list} (inches)` : `${sizes.length === 1 ? "Size" : "Sizes"} ${list}`;
+}
+
+/*
+ * Sizes a buyer adds beyond a style's own, e.g. 38 for jeans listed in 26–36 (owner request 2026-11-21: the shop no
+ * longer sells by set). The API checks the same (CartService::size) and writes waist and letter sizes the usual way.
+ */
+
+/** Sizes a buyer may add to one color (CartService::MAX_EXTRA_SIZES). */
+export const MAX_ADDED_SIZES = 10;
+
+/** The longest size a buyer may add (CartService::MAX_SIZE_LENGTH). */
+export const MAX_SIZE_LENGTH = 20;
+
+const SIZE_PATTERN = /^[\p{L}\p{N}][\p{L}\p{N} .\/+()'"-]*$/u;
+
+/** A typed size with its spaces tidied: "  one   size " → "one size". */
+export function tidySize(size: string): string {
+  return size.trim().replace(/\s+/g, " ");
+}
+
+/** Why a typed (tidied) size cannot be added next to the sizes already shown, or null when it can. */
+export function addedSizeProblem(size: string, shown: string[]): string | null {
+  if (size === "") return "Enter the size.";
+  if (size.length > MAX_SIZE_LENGTH || !SIZE_PATTERN.test(size)) {
+    return `Write the size with up to ${MAX_SIZE_LENGTH} letters, numbers, spaces and . / - + ( ) ' "`;
+  }
+  const same = shown.find((other) => other.toLowerCase() === size.toLowerCase());
+  return same === undefined ? null : `Size ${same} is already there: enter its pieces in that box.`;
+}
+
+const sizeCollator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+
+/** The sizes of a color's quantities that the style does not list (added by the buyer), in size order: 38 before 40. */
+export function addedSizes(sizeQty: Record<string, number>, listed: string[]): string[] {
+  return Object.keys(sizeQty)
+    .filter((size) => !listed.includes(size))
+    .sort(sizeCollator.compare);
+}
+
+const LETTER_SIZES = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"];
+
+/** A size to suggest when adding one: the next size up, e.g. "38" for waist sizes 26–36 or "XXL" for S–XL. */
+export function nextSizeExample(system: SizeSystem, sizes: string[]): string {
+  if (system === "waist") {
+    const largest = Math.max(...sizes.map(Number).filter(Number.isFinite));
+    return Number.isFinite(largest) ? String(largest + 2) : "38";
+  }
+  const largest = Math.max(...sizes.map((size) => LETTER_SIZES.indexOf(size)));
+  return (largest >= 0 && LETTER_SIZES[largest + 1]) || "XXL";
 }
 
 /** Price per piece for a total quantity of the style, using volume tiers when there are any. */

@@ -98,7 +98,7 @@ export function StockFromWholesale({ rows }: { rows: StockFromWholesaleRow[] }) 
 
       <Panel
         title="Colors in the wholesale shop"
-        description="Each ticked color becomes a stock listing of its own, in the stock category with the details of its type: the style's name and details (with the color's own fabric details), the set (the wholesale sizes and pieces per size), the color and its photos. A color of a style shown in the wholesale shop is shown on the stock pages at once, with “Price on request” until you enter its price per set, and “Sold out” until you enter its sets in stock. Description paragraphs about made-to-order wholesale are left out."
+        description="Each ticked color becomes a stock listing of its own, in the stock category with the details of its type: the style's name and details (with the color's own fabric details), the set (the wholesale waist sizes, 2 pieces of each; change it in the listing), the color and its photos. A color of a style shown in the wholesale shop is shown on the stock pages at once, with “Price on request” until you enter its price per set, and “Sold out” until you enter its sets in stock. Description paragraphs about made-to-order wholesale are left out."
       >
         <div className="grid gap-8">
           {byCategory(rows).map((group) => {

@@ -1,7 +1,7 @@
 /* Buyer accounts, cart, checkout and orders: types and labels shared by server and client components. */
 
 import type { Segment, ProductType } from "@/lib/nav";
-import type { OrderRules, PriceTier, ProductImage } from "@/lib/shop";
+import type { OrderRules, PriceTier, ProductImage, SizeSystem } from "@/lib/shop";
 
 export const BUSINESS_TYPES = [
   { value: "brand", label: "Brand owner" },
@@ -71,6 +71,8 @@ export type CartStyle = {
   style_no: string | null;
   segment: Segment;
   product_type: ProductType;
+  size_system: SizeSystem;
+  /** The style's sizes. A color's size_qty can also have sizes the buyer added. */
   sizes: string[];
   available: boolean;
   rules: OrderRules;

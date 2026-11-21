@@ -2,24 +2,24 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowRight, CircleCheck, LoaderCircle, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { ArrowRight, CircleCheck, LoaderCircle, Minus, ShoppingBag, Trash2 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
+import { AddSize, SizeBoxes } from "@/components/shop/size-quantities";
 import { Button } from "@/components/ui/button";
 import { addToCart } from "@/lib/account/actions/cart";
 import { notifyUiChange } from "@/lib/account/use-ui-state";
 import { formatMoney } from "@/lib/format";
 import { whatsappUrl } from "@/lib/links";
 import { typeInfo } from "@/lib/nav";
-import { unitPrice, type Product, type ProductColor } from "@/lib/shop";
+import { nextSizeExample, unitPrice, type Product, type ProductColor } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
 type Quantities = Record<string, Record<string, number>>;
 
-const MAX_PER_SIZE = 100_000;
-
 /**
- * Quantities per size for each color, with an "add a set" shortcut, the minimums (per color, and per size ordered)
- * and a running total. The pieces go into the cart; a prefilled quote request or WhatsApp message stays available.
+ * Pieces per size for each color, the minimums (per color, and per size ordered) and a running total. Buyers can add
+ * sizes the style does not list, e.g. 38 for jeans listed in 26–36 (owner request 2026-11-21, replacing sets); an added
+ * size is shown for every color. The pieces go into the cart; a prefilled quote request or WhatsApp message stays available.
  */
 export function OrderPanel({
   product,
@@ -33,15 +33,17 @@ export function OrderPanel({
   whatsapp: string;
 }) {
   const [quantities, setQuantities] = useState<Quantities>({});
+  /** Sizes the buyer added, in the order added. */
+  const [added, setAdded] = useState<string[]>([]);
   const [adding, startAdding] = useTransition();
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
-  const { moq_per_color: moq, set_pcs_per_size: perSize, min_pcs_per_size: minPerSize } = product.rules;
-  const setSize = perSize * product.sizes.length;
+  const { moq_per_color: moq, min_pcs_per_size: minPerSize } = product.rules;
+  const sizes = [...product.sizes, ...added];
 
   const current = quantities[color.slug] ?? {};
   const colorTotal = (slug: string) => Object.values(quantities[slug] ?? {}).reduce((sum, qty) => sum + qty, 0);
   /** Sizes of a color ordered below the minimum per size. */
-  const smallSizes = (slug: string) => product.sizes.filter((size) => (quantities[slug]?.[size] ?? 0) > 0 && (quantities[slug]?.[size] ?? 0) < minPerSize);
+  const smallSizes = (slug: string) => sizes.filter((size) => (quantities[slug]?.[size] ?? 0) > 0 && (quantities[slug]?.[size] ?? 0) < minPerSize);
   const chosen = product.colors.filter((c) => colorTotal(c.slug) > 0);
   const totalPieces = chosen.reduce((sum, c) => sum + colorTotal(c.slug), 0);
   const tierPrice = unitPrice(product.price_cents, product.tiers, totalPieces);
@@ -51,16 +53,18 @@ export function OrderPanel({
   const belowMinimum = chosen.filter((c) => colorTotal(c.slug) < moq || smallSizes(c.slug).length > 0);
   const currentSmall = smallSizes(color.slug);
 
-  const update = (size: string, qty: number) =>
-    setQuantities((all) => ({
-      ...all,
-      [color.slug]: { ...all[color.slug], [size]: Math.max(0, Math.min(MAX_PER_SIZE, Math.floor(qty) || 0)) },
-    }));
-  const addSet = () =>
-    setQuantities((all) => ({
-      ...all,
-      [color.slug]: Object.fromEntries(product.sizes.map((size) => [size, Math.min(MAX_PER_SIZE, (all[color.slug]?.[size] ?? 0) + perSize)])),
-    }));
+  const update = (size: string, qty: number) => setQuantities((all) => ({ ...all, [color.slug]: { ...all[color.slug], [size]: qty } }));
+  const addSize = (size: string, qty: number) => {
+    setAdded((list) => [...list, size]);
+    update(size, qty);
+  };
+  /** Removes an added size, with its pieces in every color. */
+  const removeSize = (size: string) => {
+    setAdded((list) => list.filter((other) => other !== size));
+    setQuantities((all) =>
+      Object.fromEntries(Object.entries(all).map(([slug, qty]) => [slug, Object.fromEntries(Object.entries(qty).filter(([key]) => key !== size))])),
+    );
+  };
   const clearColor = (slug: string) =>
     setQuantities((all) => {
       const next = { ...all };
@@ -72,7 +76,7 @@ export function OrderPanel({
     `I'd like a quote for ${product.name}:`,
     ...chosen.map(
       (c) =>
-        `- ${c.name} (${c.code}): ${product.sizes
+        `- ${c.name} (${c.code}): ${sizes
           .filter((size) => (quantities[c.slug]?.[size] ?? 0) > 0)
           .map((size) => `${size}×${quantities[c.slug]?.[size]}`)
           .join(", ")} = ${colorTotal(c.slug)} pcs`,
@@ -114,43 +118,36 @@ export function OrderPanel({
         </p>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-        {product.sizes.map((size) => (
-          <label key={size} className="grid gap-1 rounded-xl bg-cotton-50 p-2 text-center">
-            <span className="font-mono text-xs text-muted-foreground">{size}</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={0}
-              step={1}
-              value={current[size] ? String(current[size]) : ""}
-              placeholder="0"
-              onChange={(event) => update(size, Number(event.target.value))}
-              aria-label={`Size ${size}, pieces of ${color.name}`}
-              aria-invalid={currentSmall.includes(size) || undefined}
-              className="h-9 w-full rounded-lg border border-input bg-white text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 aria-invalid:border-stitch-500 aria-invalid:bg-orange-50"
-            />
-          </label>
-        ))}
-      </div>
+      <SizeBoxes
+        className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4"
+        sizes={sizes}
+        added={added}
+        quantities={current}
+        small={currentSmall}
+        colorName={color.name}
+        onChange={update}
+        onRemove={removeSize}
+      />
       {currentSmall.length > 0 ? (
         <p className="mt-2 text-xs text-stitch-700">
           Each size needs at least {minPerSize} pieces. Raise or clear size {currentSmall.join(", ")}.
         </p>
       ) : null}
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Button type="button" variant="secondary" size="sm" onClick={addSet}>
-          <Plus /> Add a set ({setSize} pcs)
-        </Button>
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <AddSize
+          shown={sizes}
+          addedCount={added.length}
+          example={nextSizeExample(product.size_system, product.sizes)}
+          colorName={color.name}
+          minPerSize={minPerSize}
+          onAdd={addSize}
+        />
         {thisColor > 0 ? (
           <Button type="button" variant="ghost" size="sm" onClick={() => clearColor(color.slug)}>
             <Minus /> Clear {color.name.toLowerCase()}
           </Button>
         ) : null}
-        <p className="w-full text-xs text-muted-foreground">
-          A set is {perSize} pieces of every size ({product.sizes.join(", ")}).
-        </p>
       </div>
 
       <div className="mt-5">

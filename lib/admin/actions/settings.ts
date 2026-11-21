@@ -31,7 +31,6 @@ function bodyFor(group: Group, form: FormData): Record<string, unknown> {
       const samplePrice = number(form, "sample_price");
       return {
         moq_per_color: number(form, "moq_per_color"),
-        set_pcs_per_size: number(form, "set_pcs_per_size"),
         min_pcs_per_size: number(form, "min_pcs_per_size"),
         deposit_percent: number(form, "deposit_percent"),
         lead_time_days: number(form, "lead_time_days"),

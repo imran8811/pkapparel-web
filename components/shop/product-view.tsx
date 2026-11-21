@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Clock, Layers, PackageCheck } from "lucide-react";
+import { Clock, PackageCheck, Ruler } from "lucide-react";
 import { OrderPanel } from "@/components/shop/order-panel";
 import { mediaSrc } from "@/lib/media";
 import { formatMoney } from "@/lib/format";
@@ -129,8 +129,8 @@ export function ProductView({ product, whatsapp }: { product: Product; whatsapp:
             Minimum {rules.moq_per_color} pieces per color, at least {rules.min_pcs_per_size} per size
           </li>
           <li className="flex items-center gap-3">
-            <Layers aria-hidden className="size-4.5 text-denim-600" />
-            Sets of {rules.set_pcs_per_size} pieces per size ({rules.set_pcs_per_size * product.sizes.length} pcs)
+            <Ruler aria-hidden className="size-4.5 text-denim-600" />
+            Need a size that is not listed? Add it to your quantities below.
           </li>
           <li className="flex items-center gap-3">
             <Clock aria-hidden className="size-4.5 text-denim-600" />

@@ -297,7 +297,6 @@ export type AdminProduct = {
   size_chart_id: number | null;
   price_cents: number;
   moq_per_color: number | null;
-  set_pcs_per_size: number | null;
   min_pcs_per_size: number | null;
   lead_time_days: number | null;
   sample_price_cents: number | null;

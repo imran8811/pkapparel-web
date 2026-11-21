@@ -89,14 +89,6 @@ export function SettingsForms({ settings }: { settings: AdminSettings }) {
               defaultValue={commerce.min_pcs_per_size}
               hint="Every size ordered in a color needs at least this many pieces (20: 100 pieces cover up to 5 sizes)."
             />
-            <TextField
-              label="Pieces per size in a set"
-              name="set_pcs_per_size"
-              type="number"
-              min={1}
-              defaultValue={commerce.set_pcs_per_size}
-              hint="A set is every size of a style, this many of each."
-            />
             <TextField label="Deposit (%)" name="deposit_percent" type="number" min={0} max={100} defaultValue={commerce.deposit_percent} />
             <TextField
               label="Production time (days)"

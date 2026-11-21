@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, LoaderCircle, Minus, Plus, ShoppingBag, Trash2, Undo2 } from "lucide-react";
+import { AlertTriangle, ArrowRight, LoaderCircle, Minus, ShoppingBag, Trash2, Undo2 } from "lucide-react";
+import { AddSize, SizeBoxes } from "@/components/shop/size-quantities";
 import { Button } from "@/components/ui/button";
 import { panelClass } from "@/components/forms/styles";
 import { removeCartLine, updateCartLine, type CartResult } from "@/lib/account/actions/cart";
@@ -11,14 +12,12 @@ import { notifyUiChange } from "@/lib/account/use-ui-state";
 import type { Cart, CartColor, CartStyle } from "@/lib/account/types";
 import { formatMoney } from "@/lib/format";
 import { mediaSrc } from "@/lib/media";
-import { productUrl } from "@/lib/shop";
+import { addedSizes, nextSizeExample, productUrl } from "@/lib/shop";
 import { cn } from "@/lib/utils";
-
-const MAX_PER_SIZE = 100_000;
 
 type Quantities = Record<string, number>;
 
-/** The cart: quantities per size for each color, the minimum per color, and the totals. */
+/** The cart: quantities per size for each color (with any sizes the buyer added), the minimum per color, and the totals. */
 export function CartView({ initialCart, signedIn }: { initialCart: Cart; signedIn: boolean }) {
   const [cart, setCart] = useState(initialCart);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +104,7 @@ function StyleCard({ style, apply }: { style: CartStyle; apply: (result: CartRes
         </p>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Minimum {style.rules.moq_per_color} pcs per color and {style.rules.min_pcs_per_size} per size · 1 set = {style.rules.set_pcs_per_size} pcs of every size
+        Minimum {style.rules.moq_per_color} pcs per color and {style.rules.min_pcs_per_size} per size
       </p>
       <ul className="mt-4 divide-y divide-border">
         {style.colors.map((color) => (
@@ -122,18 +121,17 @@ function ColorLine({ style, color, apply }: { style: CartStyle; color: CartColor
   const [pending, startTransition] = useTransition();
   const moq = style.rules.moq_per_color;
   const minPerSize = style.rules.min_pcs_per_size;
-  const draftPcs = style.sizes.reduce((sum, size) => sum + (draft[size] ?? 0), 0);
+  // The style's sizes, then those the buyer added (on the product page or here), in size order.
+  const added = addedSizes(draft, style.sizes);
+  const sizes = [...style.sizes, ...added];
+  const draftPcs = sizes.reduce((sum, size) => sum + (draft[size] ?? 0), 0);
   /** Sizes below the minimum per size (an empty size is fine). */
-  const smallSizes = style.sizes.filter((size) => (draft[size] ?? 0) > 0 && (draft[size] ?? 0) < minPerSize);
-  const changed = style.sizes.some((size) => (draft[size] ?? 0) !== (saved[size] ?? 0));
+  const smallSizes = sizes.filter((size) => (draft[size] ?? 0) > 0 && (draft[size] ?? 0) < minPerSize);
+  const changed = [...new Set([...Object.keys(draft), ...Object.keys(saved)])].some((size) => (draft[size] ?? 0) !== (saved[size] ?? 0));
   const progress = Math.min(100, Math.round((draftPcs / moq) * 100));
 
-  const setSize = (size: string, value: number) =>
-    setDraft((current) => ({ ...current, [size]: Math.max(0, Math.min(MAX_PER_SIZE, Math.floor(value) || 0)) }));
-  const addSet = () =>
-    setDraft((current) =>
-      Object.fromEntries(style.sizes.map((size) => [size, Math.min(MAX_PER_SIZE, (current[size] ?? 0) + style.rules.set_pcs_per_size)])),
-    );
+  const setSize = (size: string, pieces: number) => setDraft((current) => ({ ...current, [size]: pieces }));
+  const removeSize = (size: string) => setDraft((current) => Object.fromEntries(Object.entries(current).filter(([key]) => key !== size)));
   const save = () => startTransition(async () => void apply(await updateCartLine(color.color_id, draft)));
   const remove = () => startTransition(async () => void apply(await removeCartLine(color.color_id)));
 
@@ -164,30 +162,31 @@ function ColorLine({ style, color, apply }: { style: CartStyle; color: CartColor
 
       {color.available ? (
         <>
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
-            {style.sizes.map((size) => (
-              <label key={size} className="grid gap-1 rounded-xl bg-cotton-50 p-2 text-center">
-                <span className="font-mono text-xs text-muted-foreground">{size}</span>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  step={1}
-                  value={draft[size] ? String(draft[size]) : ""}
-                  placeholder="0"
-                  onChange={(event) => setSize(size, Number(event.target.value))}
-                  aria-label={`Size ${size}, pieces of ${color.name}`}
-                  aria-invalid={smallSizes.includes(size) || undefined}
-                  className="h-9 w-full min-w-0 rounded-lg border border-input bg-white text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 aria-invalid:border-stitch-500 aria-invalid:bg-orange-50"
-                />
-              </label>
-            ))}
-          </div>
+          <SizeBoxes
+            className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8"
+            sizes={sizes}
+            added={added}
+            quantities={draft}
+            small={smallSizes}
+            colorName={color.name}
+            onChange={setSize}
+            onRemove={removeSize}
+          />
           {smallSizes.length > 0 ? (
             <p className="-mt-2 text-xs text-stitch-700">
               Each size needs at least {minPerSize} pcs. Raise or clear size {smallSizes.join(", ")}.
             </p>
           ) : null}
+          <div className="-mt-2">
+            <AddSize
+              shown={sizes}
+              addedCount={added.length}
+              example={nextSizeExample(style.size_system, style.sizes)}
+              colorName={color.name}
+              minPerSize={minPerSize}
+              onAdd={setSize}
+            />
+          </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <div className="min-w-48 flex-1">
               <div className="flex items-center justify-between text-xs">
@@ -202,9 +201,6 @@ function ColorLine({ style, color, apply }: { style: CartStyle; color: CartColor
                 <div className={cn("h-full rounded-full transition-all", draftPcs >= moq ? "bg-emerald-600" : "bg-stitch-500")} style={{ width: `${progress}%` }} />
               </div>
             </div>
-            <Button type="button" variant="secondary" size="sm" onClick={addSet} disabled={pending}>
-              <Plus /> Add a set
-            </Button>
             {changed ? (
               <>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setDraft(saved)} disabled={pending}>

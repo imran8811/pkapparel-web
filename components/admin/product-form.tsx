@@ -31,7 +31,7 @@ const STRETCH_OPTIONS = [
 /** Dollars for an input: 520 → "5.20" */
 const dollars = (cents: number | null | undefined) => (cents == null ? "" : (cents / 100).toFixed(2));
 
-export type ShopDefaults = { moq_per_color: number; set_pcs_per_size: number; min_pcs_per_size: number; lead_time_days: number; sample_price_cents: number };
+export type ShopDefaults = { moq_per_color: number; min_pcs_per_size: number; lead_time_days: number; sample_price_cents: number };
 
 type ProductFormProps = {
   /** The style being edited, or null for a new style. */
@@ -294,7 +294,6 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
               placeholder={`${defaults.min_pcs_per_size} (default)`}
               hint="Every size ordered in a color needs at least this many pieces."
             />
-            <TextField label="Pieces per size in a set" name="set_pcs_per_size" type="number" min={1} defaultValue={values?.set_pcs_per_size ?? ""} placeholder={`${defaults.set_pcs_per_size} (default)`} />
             <TextField label="Production time (days)" name="lead_time_days" type="number" min={1} defaultValue={values?.lead_time_days ?? ""} placeholder={`${defaults.lead_time_days} (default)`} />
             <TextField label="Sample price (USD)" name="sample_price" inputMode="decimal" defaultValue={dollars(values?.sample_price_cents)} placeholder={`${dollars(defaults.sample_price_cents)} (default)`} />
             <TextField label="Order in lists" name="sort_order" type="number" min={0} defaultValue={values?.sort_order ?? 0} hint="For the “Featured” sort: lower numbers come first." />

@@ -41,8 +41,8 @@ export function ProductDetails({ product }: { product: Product }) {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Sizes and measurements</h2>
             <p className="mt-3 text-muted-foreground">
-              {sizesText(product.size_system, product.sizes)}. Each size you order needs at least {product.rules.min_pcs_per_size} pieces, and each
-              color at least {product.rules.moq_per_color}.
+              {sizesText(product.size_system, product.sizes)}. Other sizes can be added to your order. Each size you order needs at least{" "}
+              {product.rules.min_pcs_per_size} pieces, and each color at least {product.rules.moq_per_color}.
             </p>
             {product.size_chart ? (
               <div className="mt-5 overflow-x-auto rounded-2xl border border-border">

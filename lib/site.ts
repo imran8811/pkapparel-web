@@ -30,7 +30,6 @@ export type Site = {
   commerce: {
     currency: string;
     moq_per_color: number;
-    set_pcs_per_size: number;
     /** Every size ordered in a color needs at least this many pieces (default 20). */
     min_pcs_per_size: number;
     deposit_percent: number;
