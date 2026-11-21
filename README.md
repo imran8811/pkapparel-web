@@ -113,7 +113,7 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
   - Each product type has its own specs and size system (waist, letter or other). The API sends them labeled (`spec_fields`, `size_system`), and the admin style form gets them from `GET /v1/admin/product-types`, so the website keeps no copy.
   - Old product URLs ending in an article number (`…-1051`) redirect permanently to the style with that color selected.
   - **No sets** (owner request 2026-11-21): the product page's order panel has a box per size for the pieces of each color (`components/shop/size-quantities.tsx`, shared with the cart). *Add another size* opens a size and its pieces for a size the style does not list, e.g. 38 for jeans listed in 26–36; an added size is shown for every color, with a dashed border and a button to remove it. Up to 10 per color; the API checks and writes the size (`CartService::size()`), and `lib/shop.ts` gives the same messages first.
-  - The order panel adds the pieces to the cart; a prefilled quote request and WhatsApp stay available.
+  - The order panel adds the pieces to the cart. It has no *Request a quote* or *WhatsApp* buttons (owner request 2026-11-21); the header's *Request a quote* and the WhatsApp chat button stay.
 - **Buyer accounts, cart and checkout** (`/login`, `/signup`, `/cart`, `/checkout`, `/account/*`):
   - **Cookies:**
     - `pk_session` is the buyer's login token (HttpOnly, 30 days).

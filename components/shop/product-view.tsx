@@ -18,7 +18,7 @@ function useColorParam(): string | null {
 }
 
 /** Gallery, colors, price and order panel of a product page. */
-export function ProductView({ product, whatsapp }: { product: Product; whatsapp: string }) {
+export function ProductView({ product }: { product: Product }) {
   const requested = useColorParam();
   const [chosen, setChosen] = useState<string | null>(null);
   const [photo, setPhoto] = useState(0);
@@ -138,7 +138,7 @@ export function ProductView({ product, whatsapp }: { product: Product; whatsapp:
           </li>
         </ul>
 
-        <OrderPanel product={product} color={color} onColorChange={selectColor} whatsapp={whatsapp} />
+        <OrderPanel product={product} color={color} onColorChange={selectColor} />
 
         <p className="text-sm text-muted-foreground">
           Want to check the fit and fabric first?{" "}

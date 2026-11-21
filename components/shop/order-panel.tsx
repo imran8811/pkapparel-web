@@ -3,14 +3,11 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { ArrowRight, CircleCheck, LoaderCircle, Minus, ShoppingBag, Trash2 } from "lucide-react";
-import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { AddSize, SizeBoxes } from "@/components/shop/size-quantities";
 import { Button } from "@/components/ui/button";
 import { addToCart } from "@/lib/account/actions/cart";
 import { notifyUiChange } from "@/lib/account/use-ui-state";
 import { formatMoney } from "@/lib/format";
-import { whatsappUrl } from "@/lib/links";
-import { typeInfo } from "@/lib/nav";
 import { nextSizeExample, unitPrice, type Product, type ProductColor } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
@@ -19,18 +16,16 @@ type Quantities = Record<string, Record<string, number>>;
 /**
  * Pieces per size for each color, the minimums (per color, and per size ordered) and a running total. Buyers can add
  * sizes the style does not list, e.g. 38 for jeans listed in 26–36 (owner request 2026-11-21, replacing sets); an added
- * size is shown for every color. The pieces go into the cart; a prefilled quote request or WhatsApp message stays available.
+ * size is shown for every color. The pieces go into the cart, with no quote or WhatsApp buttons under it (owner request 2026-11-21).
  */
 export function OrderPanel({
   product,
   color,
   onColorChange,
-  whatsapp,
 }: {
   product: Product;
   color: ProductColor;
   onColorChange: (slug: string) => void;
-  whatsapp: string;
 }) {
   const [quantities, setQuantities] = useState<Quantities>({});
   /** Sizes the buyer added, in the order added. */
@@ -71,23 +66,6 @@ export function OrderPanel({
       delete next[slug];
       return next;
     });
-
-  const summary = [
-    `I'd like a quote for ${product.name}:`,
-    ...chosen.map(
-      (c) =>
-        `- ${c.name} (${c.code}): ${sizes
-          .filter((size) => (quantities[c.slug]?.[size] ?? 0) > 0)
-          .map((size) => `${size}×${quantities[c.slug]?.[size]}`)
-          .join(", ")} = ${colorTotal(c.slug)} pcs`,
-    ),
-    `Total: ${totalPieces} pcs (about ${formatMoney(totalCents)} FOB Pakistan)`,
-  ].join("\n");
-  const quoteHref = `/request-quote?${new URLSearchParams({
-    product: typeInfo(product.product_type).label,
-    quantity: String(totalPieces),
-    message: summary,
-  })}`;
 
   const thisColor = colorTotal(color.slug);
   const progress = Math.min(100, Math.round((thisColor / moq) * 100));
@@ -206,7 +184,7 @@ export function OrderPanel({
           {belowMinimum.length > 0 ? (
             <p className="mt-3 rounded-xl bg-orange-50 px-3 py-2 text-xs text-stitch-700">
               Each color needs at least {moq} pieces, and each size you order at least {minPerSize}, before checkout. You can add them now and
-              complete them in the cart, or ask us for a quote.
+              complete them in the cart.
             </p>
           ) : null}
         </div>
@@ -242,18 +220,6 @@ export function OrderPanel({
           {adding ? <LoaderCircle className="animate-spin" /> : <ShoppingBag />}
           {adding ? "Adding…" : "Add to cart"}
         </Button>
-        <div className="grid grid-cols-2 gap-2">
-          <Button asChild variant="outline" className={cn(chosen.length === 0 && "pointer-events-none opacity-50")} aria-disabled={chosen.length === 0}>
-            <Link href={chosen.length > 0 ? quoteHref : "#"} tabIndex={chosen.length === 0 ? -1 : undefined}>
-              Request a quote
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <a href={whatsappUrl(whatsapp, chosen.length > 0 ? summary : `Hello, I'm interested in ${product.name}.`)} target="_blank" rel="noopener noreferrer">
-              <WhatsAppIcon className="size-4" /> WhatsApp
-            </a>
-          </Button>
-        </div>
         <p className="text-center text-xs text-muted-foreground">Prices per piece, FOB Pakistan. Freight is estimated at checkout and confirmed before shipment.</p>
       </div>
     </div>

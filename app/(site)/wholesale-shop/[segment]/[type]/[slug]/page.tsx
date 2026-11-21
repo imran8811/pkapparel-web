@@ -80,7 +80,7 @@ export default async function ProductPage({ params }: PageProps<"/wholesale-shop
               { label: product.name, href: productUrl(product) },
             ]}
           />
-          <ProductView product={product} whatsapp={site.contact.whatsapp} />
+          <ProductView product={product} />
         </Container>
       </section>
 
