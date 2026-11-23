@@ -1,7 +1,7 @@
 /* Shapes returned by the admin API (/v1/admin/…). */
 
 import type { Address as BuyerAddress, AddonPricing, BankDetails, Customer, Order, OrderSummary, Payment, StockPaymentDetails } from "@/lib/account/types";
-import type { SizeSystem } from "@/lib/shop";
+import type { ShopCategory, ShopDepartment, SizeSystem } from "@/lib/shop";
 import type { Address, Site } from "@/lib/site";
 
 export type Role = "admin" | "editor" | "sales" | "production";
@@ -143,7 +143,7 @@ export type AdminRedirect = {
   from_path: string;
   /** A path of this website (maybe with a query), or a full https:// address. */
   to_path: string;
-  source: "staff" | "style" | "post";
+  source: "staff" | "style" | "post" | "shop";
   source_label: string;
   created_by: string | null;
   created_at: string;
@@ -317,20 +317,26 @@ export type AdminProduct = {
   tiers: { min_qty: number; price_cents: number }[];
 };
 
-/** GET /v1/admin/product-types: what each product type shows and which sizes it uses (App\Models\ProductTypes). */
+/**
+ * GET /v1/admin/product-types: the kinds of garment (`types`: what each shows and which sizes it uses, App\Models\ProductTypes)
+ * and the shop's departments and categories (Admin → Shop categories), each category with its kind.
+ */
 export type CatalogDefinitions = {
-  segments: string[];
   size_systems: { key: SizeSystem; label: string; sizes: string[] | null }[];
   types: CatalogType[];
+  departments: ShopDepartment[];
+  categories: ShopCategory[];
 };
 
+/** A kind of garment (jeans pants, T-shirts…): a category's styles have its specs and sizes. */
 export type CatalogType = {
   slug: string;
   label: string;
-  segments: string[];
   /** The usual one first. */
   size_systems: SizeSystem[];
   specs: CatalogSpec[];
+  /** Denim and twill have a stretch setting; knit tops don't. */
+  stretch: boolean;
 };
 
 /** A detail of a product type, e.g. "neckline" for T-shirts; `per_color`: a color may change it (fabric details). */
@@ -348,7 +354,8 @@ export type AdminSizeChart = {
   product_count: number;
 };
 
-export type AdminShopCategory = {
+/** The text of a department page (product_type "") or a category page in a department (Admin → Category texts). */
+export type AdminShopPage = {
   id: number;
   segment: string;
   product_type: string;
@@ -359,6 +366,12 @@ export type AdminShopCategory = {
   seo_description: string | null;
   updated_at: string;
 };
+
+/** A department of the wholesale shop as the admin lists it (Admin → Shop categories), with its number of styles (any status). */
+export type AdminShopDepartment = ShopDepartment & { id: number; sort_order: number; styles: number };
+
+/** A category of the wholesale shop as the admin lists it, with the departments that sell it and its number of styles. */
+export type AdminShopCategory = Omit<ShopCategory, "stretch"> & { id: number; sort_order: number; styles: number };
 
 /* Orders, customers and checkout settings (Phase 3). The buyer-side shapes live in lib/account/types.ts. */
 
@@ -594,8 +607,9 @@ export type StockFromWholesaleRow = {
   slug: string;
   style_no: string | null;
   wholesale_status: ProductStatus;
-  /** The wholesale type (jeans-pant, chino-pant…). */
+  /** The kind of the wholesale style (jeans-pant, chino-pant…) and its name ("Chino pants"): its stock category has its specs. */
   product_type: string;
+  product_type_name: string;
   /** The stock department of the copy ("men" or "boys") and its category: the one with the specs of its type. */
   segment: string;
   category: string;

@@ -1,11 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { mediaSrc } from "@/lib/content";
-import { categoryLabel, priceRange, productUrl, type ColorCard, type ProductCard as Card } from "@/lib/shop";
+import { priceRange, productUrl, type ColorCard, type ProductCard as Card } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
-/** A style in a grid: photo (second photo on hover), category, name, price per piece and its colors. */
-export function ProductCard({ product, preload = false }: { product: Card; preload?: boolean }) {
+/** A style in a grid: photo (second photo on hover), category (`label`: "Men's jeans pants"), name, price per piece and its colors. */
+export function ProductCard({ product, label, preload = false }: { product: Card; label: string; preload?: boolean }) {
   const cover = product.colors[0];
   const image = cover?.image;
   const hover = cover?.hover_image;
@@ -42,7 +42,7 @@ export function ProductCard({ product, preload = false }: { product: Card; prelo
       </div>
       <div className="mt-4 flex flex-1 flex-col px-1">
         <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
-          {categoryLabel(product.segment, product.product_type)}
+          {label}
         </p>
         <h3 className="mt-1.5 font-heading text-lg leading-snug font-semibold tracking-tight transition-colors group-hover:text-denim-600">
           {product.name}

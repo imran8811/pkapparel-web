@@ -8,12 +8,12 @@ import { ProductDetails } from "@/components/shop/product-details";
 import { ProductGrid } from "@/components/shop/product-grid";
 import { ProductReviews } from "@/components/shop/product-reviews";
 import { ProductView } from "@/components/shop/product-view";
-import { findLegacyProduct, getProduct, getProducts } from "@/lib/catalog";
+import { findLegacyProduct, getProduct, getProducts, getShopSections } from "@/lib/catalog";
 import { mediaSrc } from "@/lib/content";
-import { segmentInfo, shopUrl, typeInfo, type ProductType } from "@/lib/nav";
+import { shopUrl } from "@/lib/nav";
 import { findRedirect } from "@/lib/redirects";
 import { absoluteUrl, pageMetadata } from "@/lib/seo";
-import { productUrl, type Product } from "@/lib/shop";
+import { categoryLabel, findCategory, findDepartment, productUrl, type Product } from "@/lib/shop";
 import { getSite } from "@/lib/site";
 
 /**
@@ -57,14 +57,14 @@ export default async function ProductPage({ params }: PageProps<"/wholesale-shop
     if (target?.slug) {
       permanentRedirect(productUrl({ segment: target.segment, product_type: target.product_type, slug: target.slug }, target.color ?? undefined));
     }
-    if (target) permanentRedirect(shopUrl(target.segment as never, target.product_type as ProductType));
+    if (target) permanentRedirect(shopUrl(target.segment, target.product_type));
     notFound();
   }
   if (product.segment !== segment || product.product_type !== type) permanentRedirect(productUrl(product));
 
-  const site = await getSite();
-  const segmentLabel = segmentInfo(product.segment).label;
-  const typeLabel = typeInfo(product.product_type).label;
+  const [site, sections] = await Promise.all([getSite(), getShopSections()]);
+  const segmentLabel = findDepartment(sections, product.segment)?.name ?? product.segment;
+  const typeLabel = findCategory(sections, product.product_type)?.name ?? product.product_type;
 
   return (
     <>
@@ -80,7 +80,7 @@ export default async function ProductPage({ params }: PageProps<"/wholesale-shop
               { label: product.name, href: productUrl(product) },
             ]}
           />
-          <ProductView product={product} />
+          <ProductView product={product} label={categoryLabel(sections, product.segment, product.product_type)} />
         </Container>
       </section>
 
@@ -92,7 +92,7 @@ export default async function ProductPage({ params }: PageProps<"/wholesale-shop
         <section className="border-t border-border py-16 sm:py-20">
           <Container>
             <SectionHeading eyebrow="More styles" title="You may also like" align="stack" />
-            <ProductGrid products={product.related} className="mt-10" />
+            <ProductGrid products={product.related} sections={sections} className="mt-10" />
           </Container>
         </section>
       ) : null}

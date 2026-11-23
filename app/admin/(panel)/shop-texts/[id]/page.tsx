@@ -7,7 +7,7 @@ import { NoAccess, PageHeader } from "@/components/admin/page-parts";
 import { ShopCategoryForm } from "@/components/admin/shop-category-form";
 import { can } from "@/lib/admin/permissions";
 import { adminApi, getStaff } from "@/lib/admin/session";
-import type { AdminShopCategory } from "@/lib/admin/types";
+import type { AdminShopPage } from "@/lib/admin/types";
 
 export const metadata: Metadata = { title: "Shop category text" };
 
@@ -16,7 +16,7 @@ export default async function ShopTextPage({ params }: PageProps<"/admin/shop-te
   if (!can(staff.role, "content")) return <NoAccess />;
 
   const { id } = await params;
-  const categories = await adminApi<AdminShopCategory[]>("/v1/admin/categories");
+  const categories = await adminApi<AdminShopPage[]>("/v1/admin/categories");
   const category = categories.find((c) => String(c.id) === id);
   if (!category) notFound();
   const url = `/wholesale-shop/${category.segment}${category.product_type ? `/${category.product_type}` : ""}`;

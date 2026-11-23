@@ -53,6 +53,7 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
     title: "Shop",
     items: [
       { href: "/admin/products", label: "Styles", icon: ShirtIcon, area: "content" },
+      { href: "/admin/shop-categories", label: "Categories", icon: FolderTreeIcon, area: "content" },
       { href: "/admin/size-charts", label: "Size charts", icon: RulerIcon, area: "content" },
       { href: "/admin/shop-texts", label: "Category texts", icon: TagsIcon, area: "content" },
       { href: "/admin/shipping", label: "Shipping rates", icon: TruckIcon, area: "commerce" },

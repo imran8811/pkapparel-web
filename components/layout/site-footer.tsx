@@ -7,7 +7,8 @@ import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { whatsappUrl } from "@/lib/links";
-import { buyerLinks, companyLinks, legalLinks, segments, shopUrl } from "@/lib/nav";
+import { buyerLinks, companyLinks, legalLinks, shopUrl } from "@/lib/nav";
+import type { ShopSections } from "@/lib/shop";
 import type { Site, SocialNetwork } from "@/lib/site";
 
 const socialLabels: Record<SocialNetwork, string> = {
@@ -41,10 +42,10 @@ function FooterColumn({ title, links }: { title: string; links: readonly { href:
   );
 }
 
-export function SiteFooter({ site }: { site: Site }) {
+export function SiteFooter({ site, sections }: { site: Site; sections: ShopSections }) {
   const { company, contact, addresses, social } = site;
   const productLinks = [
-    ...segments.map((segment) => ({ href: shopUrl(segment.slug), label: `${segment.possessive} clothing` })),
+    ...sections.departments.map((department) => ({ href: shopUrl(department.slug), label: `${department.possessive} clothing` })),
     { href: "/wholesale-shop", label: "All products" },
   ];
 

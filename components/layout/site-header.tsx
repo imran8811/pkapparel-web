@@ -5,15 +5,16 @@ import { Container } from "@/components/layout/container";
 import { MainNav } from "@/components/layout/main-nav";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Button } from "@/components/ui/button";
+import type { ShopSections } from "@/lib/shop";
 import type { Site } from "@/lib/site";
 
 /** Sticky header: logo, navigation, main actions, account and cart. */
-export function SiteHeader({ site }: { site: Site }) {
+export function SiteHeader({ site, sections }: { site: Site; sections: ShopSections }) {
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-cotton-50/85 backdrop-blur-md supports-[backdrop-filter]:bg-cotton-50/70">
       <Container className="flex h-16 items-center gap-4 lg:h-[72px]">
         <Logo />
-        <MainNav moq={site.commerce.moq_per_color} className="ml-4 hidden lg:flex xl:ml-8" />
+        <MainNav moq={site.commerce.moq_per_color} sections={sections} className="ml-4 hidden lg:flex xl:ml-8" />
 
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
           <Button asChild variant="ghost" size="sm" className="hidden xl:inline-flex">
@@ -24,7 +25,7 @@ export function SiteHeader({ site }: { site: Site }) {
           </Button>
           <AccountLink />
           <CartLink />
-          <MobileNav whatsapp={site.contact.whatsapp} className="lg:hidden" />
+          <MobileNav whatsapp={site.contact.whatsapp} sections={sections} className="lg:hidden" />
         </div>
       </Container>
     </header>

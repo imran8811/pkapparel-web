@@ -1,17 +1,16 @@
 import Link from "next/link";
 import { SearchIcon } from "lucide-react";
 import { SortSelect } from "@/components/shop/sort-select";
-import { isKnit, isProductType, isSegment, productTypes, segments, typesFor } from "@/lib/nav";
-import { DEFAULT_SORT, type ShopCategory, type ShopFilters } from "@/lib/shop";
+import { categoriesIn, DEFAULT_SORT, findCategory, sells, type ShopFilters, type ShopPage, type ShopSections } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
-/** Builds a shop URL that keeps the other filters. */
-export function shopHref(current: ShopFilters, changes: Partial<Record<keyof ShopFilters, string | undefined>>): string {
+/** Builds a shop URL that keeps the other filters (`sections`: the shop's departments and categories, to drop the ones that no longer fit). */
+export function shopHref(current: ShopFilters, changes: Partial<Record<keyof ShopFilters, string | undefined>>, sections?: ShopSections): string {
   const next = { ...current, ...changes };
-  if (changes.segment !== undefined && next.type && next.segment && isSegment(next.segment) && !typesFor(next.segment).some((t) => t.slug === next.type)) {
+  if (changes.segment !== undefined && next.type && next.segment && sections && !sells(sections, next.segment, next.type)) {
     delete next.type; // e.g. skirts for men don't exist
   }
-  if (!hasStretch(next.type)) delete next.stretch; // the stretch filter is for denim and twill types only
+  if (!sections || !hasStretch(sections, next.type)) delete next.stretch; // the stretch filter is for denim and twill only
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(next)) {
     if (value && !(key === "sort" && value === DEFAULT_SORT)) params.set(key, String(value));
@@ -19,43 +18,46 @@ export function shopHref(current: ShopFilters, changes: Partial<Record<keyof Sho
   return `/wholesale-shop${params.size ? `?${params}` : ""}`;
 }
 
-/** The stretch filter shows once a denim or twill type is chosen. Without a type, "Rigid" would hide every T-shirt. */
-export function hasStretch(type: string | undefined): boolean {
-  return Boolean(type && isProductType(type) && !isKnit(type));
+/** The stretch filter shows once a denim or twill category is chosen. Without one, "Rigid" would hide every T-shirt. */
+export function hasStretch(sections: ShopSections, type: string | undefined): boolean {
+  return Boolean(type && findCategory(sections, type)?.stretch);
 }
 
-/** Segment and type chips with style counts, a stretch toggle (denim and twill types), search and sort. All of it works without JavaScript except sorting. */
-export function ShopFilterBar({ filters, categories }: { filters: ShopFilters; categories: ShopCategory[] }) {
+/**
+ * Department and category chips with style counts (from the pages' texts), a stretch toggle (denim and twill), search
+ * and sort. All of it works without JavaScript except sorting.
+ */
+export function ShopFilterBar({ filters, pages, sections }: { filters: ShopFilters; pages: ShopPage[]; sections: ShopSections }) {
   const count = (segment: string | undefined, type: string | undefined) =>
-    categories
+    pages
       .filter((c) => (segment ? c.segment === segment : true) && (type ? c.product_type === type : c.product_type !== ""))
       .reduce((sum, c) => sum + c.style_count, 0);
 
-  const types = filters.segment ? typesFor(filters.segment) : productTypes;
+  const types = filters.segment ? categoriesIn(sections, filters.segment) : sections.categories;
 
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Chip href={shopHref(filters, { segment: undefined })} active={!filters.segment} label="All" count={count(undefined, undefined)} />
-        {segments.map((segment) => (
+        <Chip href={shopHref(filters, { segment: undefined }, sections)} active={!filters.segment} label="All" count={count(undefined, undefined)} />
+        {sections.departments.map((department) => (
           <Chip
-            key={segment.slug}
-            href={shopHref(filters, { segment: segment.slug })}
-            active={filters.segment === segment.slug}
-            label={segment.label}
-            count={count(segment.slug, undefined)}
+            key={department.slug}
+            href={shopHref(filters, { segment: department.slug }, sections)}
+            active={filters.segment === department.slug}
+            label={department.name}
+            count={count(department.slug, undefined)}
           />
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Chip href={shopHref(filters, { type: undefined })} active={!filters.type} label="All products" small />
-        {types.map((type) => (
+        <Chip href={shopHref(filters, { type: undefined }, sections)} active={!filters.type} label="All products" small />
+        {types.map((category) => (
           <Chip
-            key={type.slug}
-            href={shopHref(filters, { type: type.slug })}
-            active={filters.type === type.slug}
-            label={type.label}
-            count={count(filters.segment, type.slug)}
+            key={category.slug}
+            href={shopHref(filters, { type: category.slug }, sections)}
+            active={filters.type === category.slug}
+            label={category.name}
+            count={count(filters.segment, category.slug)}
             small
           />
         ))}
@@ -75,7 +77,7 @@ export function ShopFilterBar({ filters, categories }: { filters: ShopFilters; c
             className="h-11 w-full rounded-full border border-input bg-white pr-4 pl-10 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
           />
         </form>
-        {hasStretch(filters.type) ? (
+        {hasStretch(sections, filters.type) ? (
           <div className="flex items-center gap-1 rounded-full bg-secondary p-1 text-sm">
             {[
               { value: undefined, label: "Any fabric" },
@@ -84,7 +86,7 @@ export function ShopFilterBar({ filters, categories }: { filters: ShopFilters; c
             ].map((option) => (
               <Link
                 key={option.label}
-                href={shopHref(filters, { stretch: option.value })}
+                href={shopHref(filters, { stretch: option.value }, sections)}
                 aria-current={filters.stretch === option.value ? "true" : undefined}
                 className={cn(
                   "rounded-full px-3 py-1.5 transition-colors",

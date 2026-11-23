@@ -7,6 +7,7 @@
 
 import type { Address } from "@/lib/account/types";
 import type { CatalogDefinitions, CatalogSpec } from "@/lib/admin/types";
+import { inSentence, possessive } from "@/lib/format";
 import type { ProductImage, SpecField, Specs } from "@/lib/shop";
 
 /** A stock department (Men, Women, Boys…) or category (Jeans, Cotton pants…). Styles name theirs by slug. */
@@ -32,15 +33,8 @@ export function stockCategoryUrl(segment: string, category?: string): string {
   return category ? `${stockUrl(segment)}?category=${encodeURIComponent(category)}` : stockUrl(segment);
 }
 
-/** "Men's", "Women's", "Boys'": a department's name before what it sells. */
-export function possessive(name: string): string {
-  return /s$/i.test(name) ? `${name}'` : `${name}'s`;
-}
-
-/** A name inside a sentence: "cotton pants", but "T-shirts" keeps its capital. */
-export function inSentence(name: string): string {
-  return /^\p{Lu}\p{Ll}/u.test(name) ? name.charAt(0).toLowerCase() + name.slice(1) : name;
-}
+/** "Men's", "Women's", "Boys'" and "cotton pants", but "T-shirts": shared with the wholesale shop (lib/format.ts). */
+export { inSentence, possessive };
 
 /** "Men's cotton pants": a category in a department. */
 export function sectionTitle(department: string, category: string): string {

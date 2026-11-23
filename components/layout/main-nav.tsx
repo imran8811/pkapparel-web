@@ -9,61 +9,72 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import { isKnit, mainLinks, manufacturingLinks, segments, shopUrl, typesFor } from "@/lib/nav";
+import { mainLinks, manufacturingLinks, shopUrl } from "@/lib/nav";
+import { categoriesIn, type ShopCategory, type ShopSections } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
 const triggerClass = "bg-transparent text-[15px] text-foreground/80 hover:text-foreground data-open:text-foreground";
 
-/** Desktop navigation with a products mega menu. */
-export function MainNav({ moq, className }: { moq: number; className?: string }) {
+/**
+ * Desktop navigation with a products mega menu: a column per department (staff keep them in Admin → Shop categories).
+ * With up to two departments, each lists its denim and twill categories and its knit tops side by side; with more,
+ * one list each. The private label card makes room from four departments.
+ */
+export function MainNav({ moq, sections, className }: { moq: number; sections: ShopSections; className?: string }) {
+  const { departments } = sections;
+  const split = departments.length <= 2;
+  const promo = departments.length <= 3;
+
   return (
     <NavigationMenu className={className}>
       <NavigationMenuList className="gap-0.5">
         <NavigationMenuItem>
           <NavigationMenuTrigger className={triggerClass}>Products</NavigationMenuTrigger>
           <NavigationMenuContent>
-            <div className="grid w-[900px] grid-cols-[repeat(2,minmax(0,1fr))_15rem] gap-1 p-2">
-              {segments.map((segment) => (
-                <div key={segment.slug} className="p-2">
-                  <NavigationMenuLink asChild className="px-2 font-heading text-base font-semibold">
-                    <Link href={shopUrl(segment.slug)}>{segment.label}</Link>
-                  </NavigationMenuLink>
-                  {/* Denim and twill on the left, knit tops on the right. */}
-                  <div className="mt-1 grid grid-cols-2 gap-1">
-                    {[false, true].map((knit) => (
-                      <ul key={String(knit)}>
-                        {typesFor(segment.slug)
-                          .filter((type) => isKnit(type.slug) === knit)
-                          .map((type) => (
-                            <li key={type.slug}>
-                              <NavigationMenuLink asChild className="px-2 py-1.5 text-muted-foreground hover:text-foreground">
-                                <Link href={shopUrl(segment.slug, type.slug)}>{type.label}</Link>
-                              </NavigationMenuLink>
-                            </li>
-                          ))}
-                      </ul>
-                    ))}
+            <div
+              className="grid w-[900px] gap-1 p-2"
+              style={{ gridTemplateColumns: `repeat(${Math.max(departments.length, 1)}, minmax(0, 1fr))${promo ? " 15rem" : ""}` }}
+            >
+              {departments.map((department) => {
+                const categories = categoriesIn(sections, department.slug);
+                return (
+                  <div key={department.slug} className="p-2">
+                    <NavigationMenuLink asChild className="px-2 font-heading text-base font-semibold">
+                      <Link href={shopUrl(department.slug)}>{department.name}</Link>
+                    </NavigationMenuLink>
+                    {split ? (
+                      // Denim and twill on the left, knit tops on the right.
+                      <div className="mt-1 grid grid-cols-2 gap-1">
+                        {[true, false].map((stretch) => (
+                          <CategoryLinks key={String(stretch)} department={department.slug} categories={categories.filter((category) => category.stretch === stretch)} />
+                        ))}
+                      </div>
+                    ) : (
+                      <CategoryLinks department={department.slug} categories={categories} className="mt-1" />
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
-              <NavigationMenuLink
-                asChild
-                className="relative flex-col items-start justify-end gap-0 overflow-hidden rounded-xl bg-denim-900 p-5 text-cotton-50 twill-texture hover:bg-denim-800 focus:bg-denim-800"
-              >
-                <Link href="/private-label">
-                  <span className="font-mono text-[10px] tracking-[0.2em] text-stitch-400 uppercase">Private label</span>
-                  <span className="mt-2 font-heading text-lg leading-tight font-semibold">
-                    Your brand, made in our factory
-                  </span>
-                  <span className="mt-2 text-xs text-cotton-50/70">Custom labels, washes, fits and packaging.</span>
-                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-stitch-300">
-                    Learn more <ArrowRight className="size-3.5" />
-                  </span>
-                </Link>
-              </NavigationMenuLink>
+              {promo ? (
+                <NavigationMenuLink
+                  asChild
+                  className="relative flex-col items-start justify-end gap-0 overflow-hidden rounded-xl bg-denim-900 p-5 text-cotton-50 twill-texture hover:bg-denim-800 focus:bg-denim-800"
+                >
+                  <Link href="/private-label">
+                    <span className="font-mono text-[10px] tracking-[0.2em] text-stitch-400 uppercase">Private label</span>
+                    <span className="mt-2 font-heading text-lg leading-tight font-semibold">
+                      Your brand, made in our factory
+                    </span>
+                    <span className="mt-2 text-xs text-cotton-50/70">Custom labels, washes, fits and packaging.</span>
+                    <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-stitch-300">
+                      Learn more <ArrowRight className="size-3.5" />
+                    </span>
+                  </Link>
+                </NavigationMenuLink>
+              ) : null}
 
-              <div className="col-span-3 mt-1 flex items-center justify-between rounded-xl bg-secondary px-4 py-3 text-sm">
+              <div className="col-span-full mt-1 flex items-center justify-between rounded-xl bg-secondary px-4 py-3 text-sm">
                 <span className="text-muted-foreground">
                   MOQ {moq} pcs per style &amp; color · Made to order · Air or sea shipping
                 </span>
@@ -104,5 +115,19 @@ export function MainNav({ moq, className }: { moq: number; className?: string })
         ))}
       </NavigationMenuList>
     </NavigationMenu>
+  );
+}
+
+function CategoryLinks({ department, categories, className }: { department: string; categories: ShopCategory[]; className?: string }) {
+  return (
+    <ul className={className}>
+      {categories.map((category) => (
+        <li key={category.slug}>
+          <NavigationMenuLink asChild className="px-2 py-1.5 text-muted-foreground hover:text-foreground">
+            <Link href={shopUrl(department, category.slug)}>{category.name}</Link>
+          </NavigationMenuLink>
+        </li>
+      ))}
+    </ul>
   );
 }

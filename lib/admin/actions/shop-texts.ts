@@ -39,7 +39,7 @@ export async function deleteSizeChart(id: number): Promise<FormState> {
   return success("Size chart deleted.");
 }
 
-export async function saveShopCategory(id: number, _previous: FormState, form: FormData): Promise<FormState> {
+export async function saveShopPageText(id: number, _previous: FormState, form: FormData): Promise<FormState> {
   if (!Number.isInteger(id) || id <= 0) return failure("This page does not exist.");
 
   try {

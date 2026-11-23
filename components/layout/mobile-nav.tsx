@@ -8,11 +8,12 @@ import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { whatsappUrl } from "@/lib/links";
-import { mainLinks, manufacturingLinks, productTypes, segments, shopUrl } from "@/lib/nav";
+import { mainLinks, manufacturingLinks, shopUrl } from "@/lib/nav";
+import type { ShopSections } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
 /** Slide-in menu for phones and tablets. */
-export function MobileNav({ whatsapp, className }: { whatsapp: string; className?: string }) {
+export function MobileNav({ whatsapp, sections, className }: { whatsapp: string; sections: ShopSections; className?: string }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
@@ -35,26 +36,26 @@ export function MobileNav({ whatsapp, className }: { whatsapp: string; className
           <section>
             <p className="font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase">Shop by</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              {segments.map((segment) => (
+              {sections.departments.map((department) => (
                 <Link
-                  key={segment.slug}
-                  href={shopUrl(segment.slug)}
+                  key={department.slug}
+                  href={shopUrl(department.slug)}
                   onClick={close}
                   className="rounded-2xl border border-border bg-card px-4 py-3 font-heading text-lg font-semibold transition-colors hover:border-denim-300"
                 >
-                  {segment.label}
+                  {department.name}
                 </Link>
               ))}
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              {productTypes.map((type) => (
+              {sections.categories.map((category) => (
                 <Link
-                  key={type.slug}
-                  href={`/wholesale-shop?type=${type.slug}`}
+                  key={category.slug}
+                  href={`/wholesale-shop?type=${category.slug}`}
                   onClick={close}
                   className="rounded-full bg-secondary px-3 py-1.5 text-sm transition-colors hover:bg-cotton-200"
                 >
-                  {type.label}
+                  {category.name}
                 </Link>
               ))}
             </div>

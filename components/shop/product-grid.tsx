@@ -2,15 +2,16 @@ import Link from "next/link";
 import { ArrowRight, Scissors } from "lucide-react";
 import { ProductCard } from "@/components/shop/product-card";
 import { Button } from "@/components/ui/button";
-import type { ProductCard as Card } from "@/lib/shop";
+import { categoryLabel, type ProductCard as Card, type ShopSections } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
-export function ProductGrid({ products, className }: { products: Card[]; className?: string }) {
+/** Styles in a grid, each under its category's name ("Men's jeans pants", from the shop's departments and categories). */
+export function ProductGrid({ products, sections, className }: { products: Card[]; sections: ShopSections; className?: string }) {
   return (
     <ul className={cn("grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 md:grid-cols-3 xl:grid-cols-4", className)}>
       {products.map((product, index) => (
         <li key={product.slug}>
-          <ProductCard product={product} preload={index === 0} />
+          <ProductCard product={product} label={categoryLabel(sections, product.segment, product.product_type)} preload={index === 0} />
         </li>
       ))}
     </ul>

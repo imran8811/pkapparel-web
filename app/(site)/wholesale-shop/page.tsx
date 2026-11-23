@@ -6,10 +6,9 @@ import { ProductGrid } from "@/components/shop/product-grid";
 import { hasStretch, ShopFilterBar, shopHref } from "@/components/shop/shop-filters";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { getProducts, getShopCategories } from "@/lib/catalog";
-import { isProductType, isSegment } from "@/lib/nav";
+import { getProducts, getShopPages, getShopSections } from "@/lib/catalog";
 import { pageMetadata } from "@/lib/seo";
-import { SORTS, type ShopFilters } from "@/lib/shop";
+import { findCategory, findDepartment, SORTS, type ShopFilters, type ShopSections } from "@/lib/shop";
 import { getSite } from "@/lib/site";
 
 export const metadata = pageMetadata({
@@ -54,7 +53,8 @@ export default async function ShopPage({ searchParams }: PageProps<"/wholesale-s
   );
 }
 
-function filtersFrom(params: Record<string, string | string[] | undefined>): ShopFilters {
+/** The filters in the address that the shop has: a department and a category it keeps (Admin → Shop categories). */
+function filtersFrom(params: Record<string, string | string[] | undefined>, sections: ShopSections): ShopFilters {
   const one = (key: string) => {
     const value = params[key];
     return (Array.isArray(value) ? value[0] : value)?.trim() || undefined;
@@ -65,29 +65,30 @@ function filtersFrom(params: Record<string, string | string[] | undefined>): Sho
   const sort = one("sort");
 
   return {
-    segment: segment && isSegment(segment) ? segment : undefined,
-    type: type && isProductType(type) ? type : undefined,
-    // Only for denim and twill types (knit tops have no stretch setting).
-    stretch: hasStretch(type) && (stretch === "stretch" || stretch === "non-stretch") ? stretch : undefined,
+    segment: findDepartment(sections, segment) ? segment : undefined,
+    type: findCategory(sections, type) ? type : undefined,
+    // Only for denim and twill (knit tops have no stretch setting).
+    stretch: hasStretch(sections, type) && (stretch === "stretch" || stretch === "non-stretch") ? stretch : undefined,
     q: one("q")?.slice(0, 80),
     sort: SORTS.find((option) => option.value === sort)?.value,
   };
 }
 
 async function ShopResults({ searchParams }: { searchParams: PageProps<"/wholesale-shop">["searchParams"] }) {
-  const filters = filtersFrom(await searchParams);
-  const [categories, { items, total }] = await Promise.all([getShopCategories(), getProducts(filters)]);
+  const sections = await getShopSections();
+  const filters = filtersFrom(await searchParams, sections);
+  const [pages, { items, total }] = await Promise.all([getShopPages(), getProducts(filters)]);
   const filtered = Boolean(filters.segment || filters.type || filters.stretch || filters.q);
 
   return (
     <>
-      <ShopFilterBar filters={filters} categories={categories} />
+      <ShopFilterBar filters={filters} pages={pages} sections={sections} />
       <p className="mt-8 text-sm text-muted-foreground" aria-live="polite">
         {total} style{total === 1 ? "" : "s"}
         {filters.q ? ` matching “${filters.q}”` : ""}
       </p>
       {items.length > 0 ? (
-        <ProductGrid products={items} className="mt-6" />
+        <ProductGrid products={items} sections={sections} className="mt-6" />
       ) : (
         <div className="mt-6 rounded-3xl border border-dashed bg-white/60 px-6 py-16 text-center">
           <p className="font-heading text-xl font-semibold">No styles match these filters</p>

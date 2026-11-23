@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { panelClass } from "@/components/forms/styles";
 import { ApiError } from "@/lib/api";
 import { customerApi, requireCustomer } from "@/lib/account/session";
+import { getShopSections } from "@/lib/catalog";
 import { countryOptions } from "@/lib/format";
 import { decodeItems, type SampleQuote } from "@/lib/samples";
 import { privatePageMetadata } from "@/lib/seo";
@@ -65,7 +66,18 @@ async function SampleOrderContent({ searchParams }: { searchParams: PageProps<"/
     throw error;
   }
 
-  return <SampleOrderForm initial={quote} items={items} withCustom={withCustom} customer={customer} countries={countryOptions()} />;
+  // The products a custom-design sample can be: the shop's categories.
+  const { categories } = await getShopSections();
+  return (
+    <SampleOrderForm
+      initial={quote}
+      items={items}
+      withCustom={withCustom}
+      customer={customer}
+      countries={countryOptions()}
+      products={categories.map((category) => category.name)}
+    />
+  );
 }
 
 function Notice({ text }: { text: string }) {

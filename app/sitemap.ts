@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getProducts, getShopCategories } from "@/lib/catalog";
+import { getProducts, getShopPages } from "@/lib/catalog";
 import { getPosts } from "@/lib/content";
 import { absoluteUrl } from "@/lib/seo";
 import { productUrl } from "@/lib/shop";
@@ -36,7 +36,7 @@ const STOCK_PAGES: { path: string; priority: number }[] = [
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [posts, categories, { items: products }, stock, stockDepartments] = await Promise.all([
     getPosts(100),
-    getShopCategories(),
+    getShopPages(),
     getProducts(),
     getStockStyles(),
     getStockDepartments(),

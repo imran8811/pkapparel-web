@@ -7,14 +7,14 @@ import { AdminForm, FormError, SubmitButton, TextAreaField, TextField, useAdminF
 import { Panel } from "@/components/admin/page-parts";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { inputClass } from "@/components/admin/styles";
-import { saveShopCategory } from "@/lib/admin/actions/shop-texts";
-import type { AdminShopCategory } from "@/lib/admin/types";
+import { saveShopPageText } from "@/lib/admin/actions/shop-texts";
+import type { AdminShopPage } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
 
-/** Title, intro, FAQ and SEO of a shop segment or category page. */
-export function ShopCategoryForm({ category }: { category: AdminShopCategory }) {
+/** Title, intro, FAQ and SEO of a shop department or category page. */
+export function ShopCategoryForm({ category }: { category: AdminShopPage }) {
   return (
-    <AdminForm action={saveShopCategory.bind(null, category.id)} className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <AdminForm action={saveShopPageText.bind(null, category.id)} className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
       <div className="grid min-w-0 gap-6">
         <Panel>
           <div className="grid gap-5">

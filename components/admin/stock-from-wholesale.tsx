@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Panel, Pill } from "@/components/admin/page-parts";
 import { copyFromWholesale } from "@/lib/admin/actions/stock";
 import type { StockCopied, StockFromWholesaleRow } from "@/lib/admin/types";
-import { productTypes } from "@/lib/nav";
 import { inSentence, sectionTitle, setContents } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
@@ -17,21 +16,19 @@ const plural = (count: number, word: string) => `${count} ${word}${count === 1 ?
 /** Copied now, or copied before as a hidden draft and shown by copying again. */
 const copyable = (row: StockFromWholesaleRow) => (row.stock_style_id === null && row.problem === null) || (row.hidden_copy && row.shown);
 
-type Group = { category: string; name: string; productType: string; rows: StockFromWholesaleRow[] };
+type Group = { category: string; name: string; productTypeName: string; rows: StockFromWholesaleRow[] };
 
 /** The colors by the stock category they go in, in the order the API lists them (the categories in staff order). */
 function byCategory(rows: StockFromWholesaleRow[]): Group[] {
   const groups = new Map<string, Group>();
   for (const row of rows) {
-    const group = groups.get(row.category) ?? { category: row.category, name: row.category_name, productType: row.product_type, rows: [] };
+    const group = groups.get(row.category) ?? { category: row.category, name: row.category_name, productTypeName: row.product_type_name, rows: [] };
     group.rows.push(row);
     groups.set(row.category, group);
   }
   return [...groups.values()];
 }
 
-/** "chino pants": the wholesale type a category's copies come from. */
-const typeName = (slug: string) => inSentence(productTypes.find((type) => type.slug === slug)?.label ?? slug);
 
 function doneMessage(done: StockCopied[]): string {
   if (done.length === 0) return "Nothing changed: those colors are in the stock already.";
@@ -112,7 +109,7 @@ export function StockFromWholesale({ rows }: { rows: StockFromWholesaleRow[] }) 
                       {group.name}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      From the wholesale {typeName(group.productType)} · {plural(group.rows.length, "color")}, {groupToCopy.length === 0 ? "none" : groupToCopy.length} to copy
+                      From the wholesale {inSentence(group.productTypeName)} · {plural(group.rows.length, "color")}, {groupToCopy.length === 0 ? "none" : groupToCopy.length} to copy
                     </p>
                   </div>
                   {groupToCopy.length > 0 ? (

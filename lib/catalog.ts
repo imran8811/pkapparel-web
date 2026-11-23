@@ -2,11 +2,12 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { api, ApiError, apiWithMeta } from "@/lib/api";
 import type { SampleStyle } from "@/lib/samples";
-import type { Product, ProductCard, ShopCategory, ShopFilters } from "@/lib/shop";
+import type { Product, ProductCard, ShopFilters, ShopPage, ShopSections } from "@/lib/shop";
 
 /*
  * Shop data from the API, cached until staff change something: saving a style
- * refreshes "products" and "product:<slug>", saving a category text refreshes "categories".
+ * refreshes "products" and "product:<slug>"; saving a page text, a department or a category refreshes "categories"
+ * (a department or category also refreshes "products": a style's details follow its category).
  */
 
 export async function getProducts(filters: ShopFilters = {}): Promise<{ items: ProductCard[]; total: number }> {
@@ -60,13 +61,22 @@ export async function getSampleStyles(): Promise<SampleStyle[]> {
     }));
 }
 
-/** Texts of the segment and category pages, with how many styles each one has. */
-export async function getShopCategories(): Promise<ShopCategory[]> {
+/** The departments and categories in staff order, each category with the departments that sell it. */
+export async function getShopSections(): Promise<ShopSections> {
+  "use cache";
+  cacheLife("max");
+  cacheTag("categories");
+
+  return api<ShopSections>("/v1/shop/sections");
+}
+
+/** Texts of the department and category pages, with how many styles each one has. */
+export async function getShopPages(): Promise<ShopPage[]> {
   "use cache";
   cacheLife("max");
   cacheTag("categories", "products");
 
-  return api<ShopCategory[]>("/v1/shop/categories");
+  return api<ShopPage[]>("/v1/shop/categories");
 }
 
 /** Where an old product URL (…/{slug}-{article}) points now. */

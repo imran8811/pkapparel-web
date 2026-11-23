@@ -1,9 +1,60 @@
 /* Shop types and helpers shared by server and client components. */
 
-import { formatMoney } from "@/lib/format";
-import { segmentInfo, typeInfo, type ProductType, type Segment } from "@/lib/nav";
+import { formatMoney, inSentence } from "@/lib/format";
 
 export type ProductImage = { path: string; alt: string; width: number; height: number };
+
+/*
+ * The shop's departments (Men, Women…) and categories (Jeans pants, T-shirts…), kept by staff in Admin → Shop
+ * categories (owner request 2026-11-23) and read with getShopSections() (lib/catalog.ts). A department's page is
+ * /wholesale-shop/{department}; each category it sells has a page below it. A style's `segment` is its department's
+ * slug and its `product_type` its category's.
+ */
+
+export type ShopDepartment = {
+  slug: string;
+  name: string;
+  /** Its name in titles: "Men's" in "Men's jeans pants". */
+  possessive: string;
+};
+
+export type ShopCategory = {
+  slug: string;
+  name: string;
+  /** The kind of garment whose details and sizes its styles have (e.g. "jeans-short" for cargo shorts). */
+  kind: string;
+  /** Denim and twill have a stretch setting (and the shop's stretch filter); knit tops don't. */
+  stretch: boolean;
+  /** The departments that sell it, in their order: each gives it a page. */
+  departments: string[];
+};
+
+/** In staff order: menus, filters and lists follow it. */
+export type ShopSections = { departments: ShopDepartment[]; categories: ShopCategory[] };
+
+export function findDepartment(sections: ShopSections, slug: string | undefined): ShopDepartment | undefined {
+  return sections.departments.find((department) => department.slug === slug);
+}
+
+export function findCategory(sections: ShopSections, slug: string | undefined): ShopCategory | undefined {
+  return sections.categories.find((category) => category.slug === slug);
+}
+
+/** The categories a department sells, in staff order. */
+export function categoriesIn(sections: ShopSections, department: string): ShopCategory[] {
+  return sections.categories.filter((category) => category.departments.includes(department));
+}
+
+/** Whether a department sells a category, i.e. /wholesale-shop/{department}/{category} is a page. */
+export function sells(sections: ShopSections, department: string, category: string): boolean {
+  return findCategory(sections, category)?.departments.includes(department) ?? false;
+}
+
+/**
+ * The shop had boys' and girls' pages until 2026-10-20; they lead to Men and Women (owner decision) while the shop has
+ * no such department. A department staff add at that address (e.g. Boys) takes it over.
+ */
+export const FORMER_DEPARTMENTS: Record<string, string> = { boys: "men", girls: "women" };
 
 export type ColorCard = {
   code: string;
@@ -18,8 +69,8 @@ export type ProductCard = {
   slug: string;
   name: string;
   style_no: string | null;
-  segment: Segment;
-  product_type: ProductType;
+  segment: string;
+  product_type: string;
   fit: string | null;
   stretch: "stretch" | "non-stretch" | null;
   fabric_weight: string | null;
@@ -72,8 +123,8 @@ export type Product = {
   slug: string;
   name: string;
   style_no: string | null;
-  segment: Segment;
-  product_type: ProductType;
+  segment: string;
+  product_type: string;
   specs: Specs;
   spec_fields: SpecField[];
   description_html: string;
@@ -108,10 +159,11 @@ export type ProductReview = {
 
 export type ProductReviews = { count: number; average: number | null; items: ProductReview[] };
 
-export type ShopCategory = {
-  segment: Segment;
-  /** "" for the segment page itself (e.g. /wholesale-shop/men). */
-  product_type: ProductType | "";
+/** The text of a department page (product_type "") or a category page in a department, with its number of styles shown. */
+export type ShopPage = {
+  segment: string;
+  /** "" for the department page itself (e.g. /wholesale-shop/men). */
+  product_type: string;
   title: string;
   intro_html: string;
   faq: { question: string; answer: string }[];
@@ -121,8 +173,8 @@ export type ShopCategory = {
 };
 
 export type ShopFilters = {
-  segment?: Segment;
-  type?: ProductType;
+  segment?: string;
+  type?: string;
   fit?: string;
   stretch?: "stretch" | "non-stretch";
   q?: string;
@@ -153,10 +205,10 @@ export function priceRange(fromCents: number, toCents: number): string {
   return `${formatMoney(fromCents)}–${formatMoney(toCents).replace("$", "")}`;
 }
 
-/** "Men's jeans pants", but "Men's T-shirts": the type's capital stays when it is more than a first letter. */
-export function categoryLabel(segment: Segment, type: ProductType): string {
-  const label = typeInfo(type).label;
-  return `${segmentInfo(segment).possessive} ${/^\p{Lu}\p{Ll}/u.test(label) ? label.charAt(0).toLowerCase() + label.slice(1) : label}`;
+/** "Men's jeans pants", but "Men's T-shirts": the category's capital stays when it is more than a first letter. */
+export function categoryLabel(sections: ShopSections, segment: string, type: string): string {
+  const department = findDepartment(sections, segment)?.possessive ?? segment;
+  return `${department} ${inSentence(findCategory(sections, type)?.name ?? type)}`;
 }
 
 export function specValue(key: string, value: string | null | undefined): string | null {

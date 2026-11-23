@@ -12,8 +12,7 @@ import { inputClass } from "@/components/admin/styles";
 import { deleteProduct, saveProduct } from "@/lib/admin/actions/products";
 import { closureSelect, isFlyClosure } from "@/lib/admin/labels";
 import type { AdminProduct, AdminSizeChart, CatalogDefinitions, CatalogSpec } from "@/lib/admin/types";
-import { segments, typesFor, type ProductType, type Segment } from "@/lib/nav";
-import type { SizeSystem } from "@/lib/shop";
+import { categoriesIn, type SizeSystem } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
 const STATUS_OPTIONS = [
@@ -70,10 +69,14 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
   const values = product ?? (copyOf ? asCopy(copyOf) : null);
   // The web address follows the name and style no. as they are typed (for a saved style, from its saved address).
   const naming = useNameAndAddress({ name: values?.name ?? "", styleNo: values?.style_no ?? "", address: values?.slug ?? "" }, Boolean(product));
-  const [segment, setSegment] = useState<Segment>((values?.segment as Segment) ?? "men");
-  const [type, setType] = useState<string>(values?.product_type ?? "jeans-pant");
-  const types = typesFor(segment);
-  const definition = catalog.types.find((t) => t.slug === type) ?? catalog.types[0];
+  // The department and category (Admin → Shop categories): the category's kind sets the specifications and sizes.
+  const [segment, setSegment] = useState<string>(() => values?.segment ?? catalog.departments.find((d) => categoriesIn(catalog, d.slug).length > 0)?.slug ?? "");
+  const [type, setType] = useState<string>(() => values?.product_type ?? categoriesIn(catalog, segment)[0]?.slug ?? "");
+  const types = categoriesIn(catalog, segment);
+  const kindOf = (slug: string) => catalog.categories.find((c) => c.slug === slug)?.kind;
+  const definition = catalog.types.find((t) => t.slug === kindOf(type)) ?? catalog.types[0];
+  // Departments that sell something, and the style's own.
+  const departments = catalog.departments.filter((d) => d.slug === segment || categoriesIn(catalog, d.slug).length > 0);
 
   const [sizeSystem, setSizeSystem] = useState<SizeSystem>(values?.size_system ?? definition.size_systems[0]);
   const [sizes, setSizes] = useState<string[]>(values && values.size_system !== "other" ? values.sizes : []);
@@ -89,12 +92,13 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
   };
   const chooseType = (slug: string) => {
     setType(slug);
-    const next = catalog.types.find((t) => t.slug === slug);
+    const next = catalog.types.find((t) => t.slug === kindOf(slug));
     if (next && !next.size_systems.includes(sizeSystem)) chooseSystem(next.size_systems[0]);
   };
-  const chooseSegment = (value: Segment) => {
+  const chooseSegment = (value: string) => {
     setSegment(value);
-    if (!typesFor(value).some((t) => t.slug === type)) chooseType(typesFor(value)[0].slug);
+    const first = categoriesIn(catalog, value)[0];
+    if (first && !categoriesIn(catalog, value).some((c) => c.slug === type)) chooseType(first.slug);
   };
 
   return (
@@ -129,16 +133,16 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
               label="For"
               name="segment"
               value={segment}
-              onChange={(event) => chooseSegment(event.target.value as Segment)}
-              options={segments.map((s) => ({ value: s.slug, label: s.label }))}
+              onChange={(event) => chooseSegment(event.target.value)}
+              options={departments.map((d) => ({ value: d.slug, label: d.name }))}
             />
             <SelectField
-              label="Product type"
+              label="Category"
               name="product_type"
               value={type}
-              onChange={(event) => chooseType(event.target.value as ProductType)}
-              options={types.map((t) => ({ value: t.slug, label: t.label }))}
-              hint="Sets the specifications and sizes below."
+              onChange={(event) => chooseType(event.target.value)}
+              options={types.map((c) => ({ value: c.slug, label: c.name }))}
+              hint="Sets the specifications and sizes below. Categories and the departments that sell them are under Shop categories."
             />
             <TextField
               label="Web address"
@@ -165,7 +169,7 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
 
         <Panel
           title="Specifications"
-          description="The details of this product type, shown on the product page in this order. Pick a suggestion or type your own. A color can change the fabric details."
+          description="The details of this category, shown on the product page in this order. Pick a suggestion or type your own. A color can change the fabric details."
         >
           <div className="grid gap-4 sm:grid-cols-2">
             {definition.specs.map((spec) =>

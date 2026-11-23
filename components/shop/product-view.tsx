@@ -7,7 +7,7 @@ import { Clock, PackageCheck, Ruler } from "lucide-react";
 import { OrderPanel } from "@/components/shop/order-panel";
 import { mediaSrc } from "@/lib/media";
 import { formatMoney } from "@/lib/format";
-import { categoryLabel, type Product } from "@/lib/shop";
+import type { Product } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
 const noSubscription = () => () => {};
@@ -17,8 +17,8 @@ function useColorParam(): string | null {
   return useSyncExternalStore(noSubscription, () => new URLSearchParams(window.location.search).get("color"), () => null);
 }
 
-/** Gallery, colors, price and order panel of a product page. */
-export function ProductView({ product }: { product: Product }) {
+/** Gallery, colors, price and order panel of a product page; `label` is its category ("Men's jeans pants"). */
+export function ProductView({ product, label }: { product: Product; label: string }) {
   const requested = useColorParam();
   const [chosen, setChosen] = useState<string | null>(null);
   const [photo, setPhoto] = useState(0);
@@ -80,7 +80,7 @@ export function ProductView({ product }: { product: Product }) {
       <div className="grid min-w-0 grid-cols-1 content-start gap-7 lg:col-span-5">
         <div>
           <p className="font-mono text-[11px] tracking-[0.18em] text-denim-600 uppercase">
-            {categoryLabel(product.segment, product.product_type)}
+            {label}
           </p>
           <h1 className="mt-3 text-4xl leading-[1.04] font-bold tracking-[-0.03em] sm:text-5xl">{product.name}</h1>
           <p className="mt-5 flex flex-wrap items-baseline gap-x-2">

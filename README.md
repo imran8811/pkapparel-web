@@ -58,12 +58,16 @@ This app calls the API only from its server, through `lib/api.ts`, sending the s
   - When staff change something, the API calls `POST /api/revalidate` with a secret and the affected tags, e.g. `products` and `product:<slug>`. The admin's server actions also call `updateTag`.
   - The tagged data expires at once (`revalidateTag(tag, { expire: 0 })`), so the next visitor gets the new version. Only pages using those tags are rebuilt.
   - Shop, category, product and blog post pages set `ensureStatic = "navigation"`: they are always served complete, never as a fallback shell that would still show old content.
+- **The shop's departments and categories** (Men, Women…; Jeans pants, T-shirts…) come from the API (`getShopSections()`, cache tag `categories`): staff keep them in the admin (*Shop categories*). The menus, footer, filters, shop pages and admin forms follow them.
+  - A department's page and its category pages are prerendered at build time. One staff add later is made on its first visit, then served as static output like the others.
+  - The API never leaves the shop without a category page (`generateStaticParams` must return at least one).
 - **Uploads:** images are served on this domain at `/uploads/...`. A rewrite in `next.config.ts` proxies them to the API, so image URLs never point at the API.
   - It is a `beforeFiles` rewrite: otherwise the catch-all page below would answer these URLs.
 - **Old and changed addresses:**
   - `next.config.ts` redirects the old site's fixed URL patterns (old blog addresses, `/user-account` and others).
   - Old product links ending in an article number are redirected by the product page.
-  - Staff manage other redirects in the admin (*Redirects*); changing a style's or post's address adds one there automatically. They are followed by `findRedirect()` (`lib/redirects.ts`, cache tag `redirects`) in the catch-all page `app/(site)/[...path]` and before the shop and blog pages show "not found".
+  - The shop's former boys' and girls' pages (until 2026-10-20) lead to Men and Women from the shop pages themselves (`FORMER_DEPARTMENTS` in `lib/shop.ts`), as long as the shop has no department at that address.
+  - Staff manage other redirects in the admin (*Redirects*); changing a style's or post's address adds one there automatically, and so does removing a shop department or category page. They are followed by `findRedirect()` (`lib/redirects.ts`, cache tag `redirects`) in the catch-all page `app/(site)/[...path]` and before the shop and blog pages show "not found".
   - These pages decide on the redirect or the 404 before anything streams, so both keep their HTTP status. For the same reason they export `instant = false`: reading the address at the top would otherwise raise the "URL data outside of Suspense" insight in development.
   - The "page not found" pages report the address (`MissingPageReporter`, `lib/actions/missing-pages.ts`). Staff see these addresses in *Redirects → Not found*, most visited first.
 - **Error pages:** `app/(site)/error.tsx` (inside the site header and footer), `app/admin/(panel)/error.tsx`, and `app/global-error.tsx` when the root layout fails.

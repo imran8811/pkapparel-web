@@ -7,11 +7,10 @@ import { EmptyState, GroupHeading, NoAccess, PageHeader, Pill } from "@/componen
 import { inputClass } from "@/components/admin/styles";
 import { inGroups, placeIn } from "@/lib/admin/list-groups";
 import { can } from "@/lib/admin/permissions";
-import { adminApiWithMeta, getStaff } from "@/lib/admin/session";
+import { adminApi, adminApiWithMeta, getStaff } from "@/lib/admin/session";
 import { formatDay } from "@/lib/admin/time";
-import type { AdminProductSummary, Pagination, ProductStatus } from "@/lib/admin/types";
+import type { AdminProductSummary, CatalogDefinitions, Pagination, ProductStatus } from "@/lib/admin/types";
 import { formatMoney } from "@/lib/format";
-import { isProductType, isSegment, productTypes, segments } from "@/lib/nav";
 import { categoryLabel } from "@/lib/shop";
 import { cn } from "@/lib/utils";
 
@@ -23,14 +22,6 @@ const STATUS: Record<ProductStatus, { label: string; tone: "green" | "neutral" |
   archived: { label: "Archived", tone: "muted" },
 };
 
-// The shop's categories in its menu order: the men's, then the women's, each by type.
-const SEGMENT_ORDER = segments.map((segment) => segment.slug);
-const TYPE_ORDER = productTypes.map((type) => type.slug);
-
-/** "Men's jeans pants": the shop category a style is in. */
-const categoryOf = (product: AdminProductSummary) =>
-  isSegment(product.segment) && isProductType(product.product_type) ? categoryLabel(product.segment, product.product_type) : product.product_type;
-
 export default async function ProductsPage({ searchParams }: PageProps<"/admin/products">) {
   const staff = await getStaff();
   if (!can(staff.role, "content")) return <NoAccess />;
@@ -38,10 +29,17 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
   const search = (await searchParams) as { status?: string; q?: string };
   const status = search.status && search.status in STATUS ? (search.status as ProductStatus) : undefined;
   const q = search.q?.trim() || undefined;
-  const { data: products, meta } = await adminApiWithMeta<AdminProductSummary[], { pagination: Pagination; counts: Record<ProductStatus, number> }>(
-    "/v1/admin/products",
-    { query: { status, q, per_page: 100 } },
-  );
+  const [{ data: products, meta }, catalog] = await Promise.all([
+    adminApiWithMeta<AdminProductSummary[], { pagination: Pagination; counts: Record<ProductStatus, number> }>("/v1/admin/products", {
+      query: { status, q, per_page: 100 },
+    }),
+    adminApi<CatalogDefinitions>("/v1/admin/product-types"),
+  ]);
+  /** "Men's jeans pants": the shop category a style is in. */
+  const categoryOf = (product: AdminProductSummary) => categoryLabel(catalog, product.segment, product.product_type);
+  // The shop's categories in its menu order: the first department's, then the next one's…, each by category.
+  const departmentOrder = catalog.departments.map((department) => department.slug);
+  const categoryOrder = catalog.categories.map((category) => category.slug);
   const total = Object.values(meta.counts).reduce((sum, count) => sum + count, 0);
   const tabs: { value?: ProductStatus; label: string; count: number }[] = [
     { label: "All", count: total },
@@ -51,7 +49,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
   const groups = inGroups(
     products,
     (product) => `${product.segment}/${product.product_type}`,
-    (a, b) => placeIn(SEGMENT_ORDER, a.segment) - placeIn(SEGMENT_ORDER, b.segment) || placeIn(TYPE_ORDER, a.product_type) - placeIn(TYPE_ORDER, b.product_type),
+    (a, b) => placeIn(departmentOrder, a.segment) - placeIn(departmentOrder, b.segment) || placeIn(categoryOrder, a.product_type) - placeIn(categoryOrder, b.product_type),
   );
 
   return (
@@ -100,7 +98,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
                 <GroupHeading id={`styles-${index}`} title={categoryOf(items[0])} count={items.length} noun="style" />
                 <ul className="overflow-hidden rounded-2xl border bg-white">
                   {items.map((product) => (
-                    <ProductRow key={product.id} product={product} />
+                    <ProductRow key={product.id} product={product} category={categoryOf(product)} />
                   ))}
                 </ul>
               </section>
@@ -118,7 +116,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
   );
 }
 
-function ProductRow({ product }: { product: AdminProductSummary }) {
+function ProductRow({ product, category }: { product: AdminProductSummary; category: string }) {
   return (
     <li className="flex items-center gap-4 border-b px-4 py-3 last:border-b-0 sm:px-5">
       <div className="relative aspect-[3/4] w-12 shrink-0 overflow-hidden rounded-lg bg-cotton-100">
@@ -133,7 +131,7 @@ function ProductRow({ product }: { product: AdminProductSummary }) {
           {product.name}
         </Link>
         <p className="mt-0.5 truncate text-xs text-muted-foreground">
-          {categoryOf(product)}
+          {category}
           {" · "}
           {product.color_count} color{product.color_count === 1 ? "" : "s"}
           {product.style_no ? ` · ${product.style_no}` : ""}

@@ -14,24 +14,28 @@ import { placeSampleOrder, quoteSamples } from "@/lib/account/actions/samples";
 import { transitText, type Customer } from "@/lib/account/types";
 import { countryName, formatMoney } from "@/lib/format";
 import { mediaSrc } from "@/lib/media";
-import { productTypes } from "@/lib/nav";
 import { encodeItem, MAX_PER_SIZE, type SampleItem, type SampleQuote } from "@/lib/samples";
 
 type Country = { code: string; name: string };
 
-/** The sample order: the chosen samples, an optional custom-design sample, the address, then the courier and total. */
+/**
+ * The sample order: the chosen samples, an optional custom-design sample, the address, then the courier and total.
+ * `products`: what a custom-design sample can be (the shop's categories).
+ */
 export function SampleOrderForm({
   initial,
   items,
   withCustom,
   customer,
   countries,
+  products,
 }: {
   initial: SampleQuote;
   items: SampleItem[];
   withCustom: boolean;
   customer: Customer;
   countries: Country[];
+  products: string[];
 }) {
   const [data, setData] = useState(initial);
   // Confirmed in another tab: the banner refreshes the page data (initial), and the form follows without losing input.
@@ -137,9 +141,9 @@ export function SampleOrderForm({
             <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
               <FormField label="Product" name="custom_product">
                 {(control) => (
-                  <select {...control} className={fieldClass} defaultValue="Jeans pants">
-                    {productTypes.map((type) => (
-                      <option key={type.slug}>{type.label}</option>
+                  <select {...control} className={fieldClass} defaultValue={products[0]}>
+                    {products.map((product) => (
+                      <option key={product}>{product}</option>
                     ))}
                   </select>
                 )}

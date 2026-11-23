@@ -40,3 +40,13 @@ export function countryOptions(): { code: string; name: string }[] {
     .sort((a, b) => a.name.localeCompare(b.name));
   return [...first, ...rest];
 }
+
+/** "Men's" for Men, "Boys'" for Boys: a department's name in titles (the stock's and the shop's; the API makes the same). */
+export function possessive(name: string): string {
+  return /s$/i.test(name) ? `${name}'` : `${name}'s`;
+}
+
+/** A name inside a sentence: "cotton pants", but "T-shirts" keeps its capital. */
+export function inSentence(name: string): string {
+  return /^\p{Lu}\p{Ll}/u.test(name) ? name.charAt(0).toLowerCase() + name.slice(1) : name;
+}
