@@ -246,7 +246,7 @@ function ProductEditor({ product, copyOf, charts, defaults, catalog, onSaved }: 
           </div>
         </Panel>
 
-        <Panel title="Packing" description="Used for freight estimates. Leave empty if not known yet.">
+        <Panel title="Packing" description="Shown on the product page and used for freight estimates. Leave empty what you don't know yet: buyers are told it comes with their quote.">
           <div className="grid gap-4 sm:grid-cols-3">
             <TextField label="Weight per piece (g)" name="piece_weight_g" type="number" min={1} defaultValue={values?.piece_weight_g ?? ""} />
             <TextField label="Pieces per carton" name="pcs_per_carton" type="number" min={1} defaultValue={values?.pcs_per_carton ?? ""} />

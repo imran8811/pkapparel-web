@@ -135,6 +135,7 @@ function structuredData(product: Product, currency: string) {
     brand: { "@type": "Brand", name: "PK Apparel" },
     color: product.colors.map((color) => color.name).join(", "),
     ...(product.specs.composition ? { material: product.specs.composition } : {}),
+    ...(product.packing.piece_weight_g ? { weight: { "@type": "QuantitativeValue", value: product.packing.piece_weight_g, unitCode: "GRM" } } : {}),
     offers: {
       "@type": "AggregateOffer",
       priceCurrency: currency,

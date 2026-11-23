@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Ruler } from "lucide-react";
+import { Package, Ruler } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Prose } from "@/components/site/prose";
 import { shippingModes } from "@/lib/shipping";
-import { sizesText, specValue, type Product } from "@/lib/shop";
+import { sizesText, specValue, type Packing, type Product } from "@/lib/shop";
 
-/** Description, specifications, sizes and shipping of a style (the parts that don't change with the color). */
+/** Description, specifications, sizes, packing and shipping of a style (the parts that don't change with the color). */
 export function ProductDetails({ product }: { product: Product }) {
   // The specs of this product type, labeled by the API (e.g. "Inseam" for jeans, "Neckline" for T-shirts).
   const specs = product.spec_fields.map(({ key, label }) => ({ label, value: specValue(key, product.specs[key]) })).filter(
@@ -81,14 +81,19 @@ export function ProductDetails({ product }: { product: Product }) {
               </div>
             ) : (
               <p className="mt-5 flex items-center gap-2 rounded-2xl bg-secondary px-4 py-3 text-sm">
-                <Ruler aria-hidden className="size-4 text-denim-600" /> We send the size chart with your quote, or{" "}
-                <Link href="/contact" className="font-medium text-denim-600 hover:underline">
-                  ask us for it
-                </Link>
-                .
+                <Ruler aria-hidden className="size-4 shrink-0 text-denim-600" />
+                <span>
+                  We send the size chart with your quote, or{" "}
+                  <Link href="/contact" className="font-medium text-denim-600 hover:underline">
+                    ask us for it
+                  </Link>
+                  .
+                </span>
               </p>
             )}
           </div>
+
+          <PackingDetails packing={product.packing} />
         </div>
 
         <aside className="grid min-w-0 grid-cols-1 content-start gap-10 lg:col-span-5">
@@ -99,7 +104,6 @@ export function ProductDetails({ product }: { product: Product }) {
               {specs.map((row) => (
                 <SpecRow key={row.label} label={row.label} value={row.value} />
               ))}
-              {product.piece_weight_g ? <SpecRow label="Weight per piece" value={`about ${product.piece_weight_g} g`} /> : null}
               <SpecRow label="Colors" value={product.colors.map((c) => `${c.name} (${c.code})`).join(", ")} />
             </dl>
             {differences.length > 0 ? (
@@ -131,6 +135,66 @@ export function ProductDetails({ product }: { product: Product }) {
         </aside>
       </Container>
     </section>
+  );
+}
+
+/** "650 g", "1.2 kg" */
+const weight = (grams: number) => (grams >= 1000 ? `${(grams / 1000).toLocaleString("en-US", { maximumFractionDigits: 1 })} kg` : `${grams} g`);
+
+/** Millimetres as centimetres: 605 → "60.5" */
+const cm = (mm: number) => (mm / 10).toLocaleString("en-US", { maximumFractionDigits: 1 });
+
+/**
+ * The style's packing as staff entered it (owner request 2026-11-23): weight per piece, pieces per carton, the carton's
+ * size and volume, and a full carton's weight. Only what is known is shown; without any, buyers are told it comes with
+ * their quote, as for a missing size chart.
+ */
+function PackingDetails({ packing }: { packing: Packing }) {
+  const { piece_weight_g: piece, pcs_per_carton: pieces, carton_length_mm: length, carton_width_mm: width, carton_height_mm: height, carton_weight_g: carton } = packing;
+  const net = piece && pieces ? piece * pieces : null;
+  const rows = [
+    piece ? { label: "Weight per piece", value: `about ${weight(piece)}` } : null,
+    pieces ? { label: "Pieces per carton", value: pieces.toLocaleString("en-US") } : null,
+    length && width && height
+      ? { label: "Carton size", value: `${cm(length)} × ${cm(width)} × ${cm(height)} cm · ${((length * width * height) / 1e9).toFixed(3)} CBM` }
+      : null,
+    // A full carton: the pieces, with the empty carton when its weight is known.
+    net ? { label: "Full carton", value: carton ? `about ${weight(net + carton)} gross, ${weight(net)} net` : `about ${weight(net)} net` } : null,
+    !net && carton ? { label: "Empty carton", value: weight(carton) } : null,
+  ].filter((row): row is { label: string; value: string } => row !== null);
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold tracking-tight">Packing</h2>
+      {rows.length > 0 ? (
+        <>
+          <dl className="mt-4 divide-y divide-border rounded-2xl border border-border bg-white">
+            {rows.map((row) => (
+              <SpecRow key={row.label} label={row.label} value={row.value} />
+            ))}
+          </dl>
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+            Approximate figures. Your freight estimate at checkout is worked out from them, and your shipment comes with a packing list of its cartons. Your own
+            polybags or carton marks?{" "}
+            <Link href="/private-label" className="underline underline-offset-2">
+              See private label
+            </Link>
+            .
+          </p>
+        </>
+      ) : (
+        <p className="mt-5 flex items-center gap-2 rounded-2xl bg-secondary px-4 py-3 text-sm">
+          <Package aria-hidden className="size-4 shrink-0 text-denim-600" />
+          <span>
+            We confirm the packing (pieces per carton, carton size and weight) with your quote, or{" "}
+            <Link href="/contact" className="font-medium text-denim-600 hover:underline">
+              ask us for it
+            </Link>
+            .
+          </span>
+        </p>
+      )}
+    </div>
   );
 }
 

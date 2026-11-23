@@ -119,6 +119,20 @@ export type OrderRules = {
 
 export type PriceTier = { min_qty: number; price_cents: number };
 
+/**
+ * A style's own packing, as staff entered it (owner request 2026-11-23: shown on its product page). Null where they left
+ * it empty: the shop's default packing is only used for freight estimates, never shown as a style's.
+ */
+export type Packing = {
+  piece_weight_g: number | null;
+  pcs_per_carton: number | null;
+  carton_length_mm: number | null;
+  carton_width_mm: number | null;
+  carton_height_mm: number | null;
+  /** The empty carton. */
+  carton_weight_g: number | null;
+};
+
 export type Product = {
   slug: string;
   name: string;
@@ -137,7 +151,7 @@ export type Product = {
   price_to_cents: number;
   tiers: PriceTier[];
   rules: OrderRules;
-  piece_weight_g: number | null;
+  packing: Packing;
   colors: ProductColor[];
   is_featured: boolean;
   seo_title: string | null;
